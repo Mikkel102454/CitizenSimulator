@@ -1,4 +1,6 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.Abstractions.Timing;
+using CitizenSimulator.Engine.Events;
 
 namespace CitizenSimulator.Engine.ECS;
 
@@ -18,13 +20,18 @@ public sealed class SystemScheduler
     
     private readonly ISystemRegistry _registry;
     private EntityStore _store = null!;
+    private readonly EventBus _events;
     
     private IReadOnlyList<GameSystem> _systems = [];
     private readonly List<GameSystem> _startedSystems = new();
     
-    public SystemScheduler(ISystemRegistry registry)
+    public SystemScheduler(ISystemRegistry registry, EventBus events)
     {
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(events);
+        
         _registry = registry;
+        _events = events;
     }
 
     public void Start(EntityStore store)
@@ -92,7 +99,7 @@ public sealed class SystemScheduler
             throw new AggregateException("Scheduler startup failed.", errors);
         }
     }
-    public void Update()
+    public void Update(SimulationTime time)
     {
         if (_state != SchedulerState.Running)
         {
@@ -103,7 +110,7 @@ public sealed class SystemScheduler
         {
             try
             {
-                ExecuteCallback(buffer => system.Update(buffer));
+                ExecuteCallback(buffer => system.Update(time, buffer));
             }
             catch (Exception exception)
             {
@@ -111,6 +118,19 @@ public sealed class SystemScheduler
 
                 throw new InvalidOperationException($"System '{system.Name}' failed during update.", exception);
             }
+        }
+        
+        // send out event after we updated (so at end of tick)
+        try
+        {
+            _events.Dispatch(time, ExecuteCallback);
+        }
+        catch (Exception exception)
+        {
+            _state = SchedulerState.Faulted;
+
+            throw new InvalidOperationException(
+                "Event delivery failed during update.", exception);
         }
     }
 

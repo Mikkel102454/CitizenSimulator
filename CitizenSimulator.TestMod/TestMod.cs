@@ -14,7 +14,7 @@ public sealed class TestMod : IMod
     {
         // system register automatically 
         // register system
-        context.Systems.Register(new MessageSystem());
+        context.Systems.Register(new MessageSystem(context.Events));
 
         // create entity
         var entity = context.Store.CreateEntity();

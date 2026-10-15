@@ -1,3 +1,5 @@
+using CitizenSimulator.Abstractions.Timing;
+
 namespace CitizenSimulator.Abstractions.ECS;
 
 public abstract class GameSystem(int priority = 0)
@@ -19,11 +21,11 @@ public abstract class GameSystem(int priority = 0)
         OnStart(commandBuffer);
     }
 
-    public void Update(ICommandBuffer commandBuffer)
+    public void Update(SimulationTime time, ICommandBuffer commandBuffer)
     {
         ArgumentNullException.ThrowIfNull(commandBuffer);
         
-        OnUpdate(commandBuffer);
+        OnUpdate(time, commandBuffer);
     }
 
     public void Stop(ICommandBuffer commandBuffer)
@@ -41,6 +43,6 @@ public abstract class GameSystem(int priority = 0)
     }
     
     protected virtual void OnStart(ICommandBuffer commandBuffer) { }
-    protected abstract void OnUpdate(ICommandBuffer commandBuffer);
+    protected abstract void OnUpdate(SimulationTime time, ICommandBuffer commandBuffer);
     protected virtual void OnStop(ICommandBuffer commandBuffer) { }
 }

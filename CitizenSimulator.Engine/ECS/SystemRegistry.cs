@@ -13,8 +13,7 @@ public sealed class SystemRegistry : ISystemRegistry
         ArgumentNullException.ThrowIfNull(system);
 
         if (IsRegistered(system.GetType()))
-            throw new InvalidOperationException(
-                $"System {system.Name} is already registered.");
+            throw new InvalidOperationException($"System {system.Name} is already registered.");
 
         _isCacheGood = false;
         _systems.Add(system);

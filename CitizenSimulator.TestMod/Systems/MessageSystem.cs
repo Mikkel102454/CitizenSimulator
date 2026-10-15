@@ -1,10 +1,13 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Abstractions.ECS.Queries;
+using CitizenSimulator.Abstractions.Events;
+using CitizenSimulator.Mod2.Events;
 using CitizenSimulator.TestMod.Components;
 
 namespace CitizenSimulator.TestMod.Systems;
 
-public sealed class MessageSystem() : GameSystem(priority: 10)
+public sealed class MessageSystem(IEventBus events) : GameSystem(priority: 10)
 {
     private IQuery _messageComponent = null!;
     protected override void OnStart(ICommandBuffer commandBuffer)
@@ -12,7 +15,7 @@ public sealed class MessageSystem() : GameSystem(priority: 10)
         _messageComponent = MessageComponent.GetComponentType();
     }
 
-    protected override void OnUpdate(ICommandBuffer commandBuffer)
+    protected override void OnUpdate(SimulationTime time, ICommandBuffer commandBuffer)
     {
         //var query = Query.And(MessageComponent.GetComponentType());
         
@@ -23,9 +26,9 @@ public sealed class MessageSystem() : GameSystem(priority: 10)
             if (message is null)
                 continue;
 
-            Console.WriteLine($"[Entity {entity.Id}] {message.Message}");
-            
-            commandBuffer.RemoveComponent<MessageComponent>(entity);
+            //Console.WriteLine($"[Entity {entity.Id}] {message.Message}");
+            events.Publish(new MessagePublished(entity, message.Message));
+            //commandBuffer.RemoveComponent<MessageComponent>(entity);
         }
     }
 
