@@ -1,4 +1,5 @@
-﻿using CitizenSimulator.Abstractions;
+using CitizenSimulator.TestMod.Services;
+using CitizenSimulator.Abstractions;
 using CitizenSimulator.Abstractions.Modding;
 using CitizenSimulator.Mod2.Systems;
 
@@ -11,6 +12,9 @@ public sealed class Mod2 : IMod
 {
     public void OnLoad(IModContext context)
     {
+        var greeting = context.Services.Get<IGreetingService>();
+        Console.WriteLine(greeting.Greet("Mod2"));
+
         context.Systems.Register(new Mod2System(context.Events));
     }
 }

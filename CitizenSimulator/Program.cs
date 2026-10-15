@@ -6,6 +6,7 @@ using CitizenSimulator.Engine.ECS;
 using CitizenSimulator.Engine.Events;
 using CitizenSimulator.Engine.Modding;
 using CitizenSimulator.Engine.Timing;
+using CitizenSimulator.Engine.Services;
 
 namespace CitizenSimulator;
 
@@ -30,9 +31,10 @@ class Program
         var systems = new SystemRegistry();
         var store = new EntityStore();
         var events = new EventBus();
+        var services = new ServiceRegistry();
         ComponentTypes.Initialize(components);
 
-        var context = new ModContext(store, components, systems, clock, events);
+        var context = new ModContext(store, components, systems, clock, events, services);
         var loader = new ModLoader(components);
         string modsFolder = Path.Combine(AppContext.BaseDirectory, "Mods");
         loader.LoadMods(modsFolder, context);

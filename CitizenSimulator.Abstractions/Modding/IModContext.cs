@@ -1,3 +1,4 @@
+using CitizenSimulator.Abstractions.Services;
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Abstractions.Timing;
@@ -6,6 +7,8 @@ namespace CitizenSimulator.Abstractions.Modding;
 
 public interface IModContext
 {
+    IServiceRegistry Services { get; }
+
     ISimulationClock Clock { get; }
 
     IEntityStore Store { get; }

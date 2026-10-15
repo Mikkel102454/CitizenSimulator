@@ -1,4 +1,5 @@
-﻿using CitizenSimulator.Abstractions;
+using CitizenSimulator.TestMod.Services;
+using CitizenSimulator.Abstractions;
 using CitizenSimulator.Abstractions.Modding;
 using CitizenSimulator.TestMod.Components;
 using CitizenSimulator.TestMod.Systems;
@@ -12,6 +13,8 @@ public sealed class TestMod : IMod
 {
     public void OnLoad(IModContext context)
     {
+        context.Services.Register<IGreetingService>(new GreetingService());
+
         // system register automatically 
         // register system
         context.Systems.Register(new MessageSystem(context.Events));
