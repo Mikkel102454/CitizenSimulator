@@ -1,5 +1,6 @@
 namespace CitizenSimulator.Abstractions.ECS;
 
+// interface for the command buffer that will buffer commands and execute safetly
 public interface ICommandBuffer
 {
     EntityRef CreateEntity();

@@ -2,14 +2,15 @@ using CitizenSimulator.Abstractions.Timing;
 
 namespace CitizenSimulator.Abstractions.ECS;
 
+// for implmenting logic in mods
 public abstract class GameSystem(int priority = 0)
 {
     protected IEntityStore Store { get; private set; } = null!;
     
-    // Name of the system
+    // name of the system
     public virtual string Name => GetType().Name;
 
-    // Controls the execution order
+    // controls the execution order
     public int Priority { get; } = priority;
 
     public void Start(IEntityStore store, ICommandBuffer commandBuffer)

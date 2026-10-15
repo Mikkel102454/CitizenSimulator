@@ -4,16 +4,20 @@ namespace CitizenSimulator.Engine.ECS;
 
 public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
 {
-    private readonly List<ICommand> _commands = new();
-    private readonly HashSet<EntityRef> _pendingEntities = new();
+    private readonly List<ICommand> _commands = new(); // commands that needs to be executed this tick
+    private readonly HashSet<EntityRef> _pendingEntities = new(); // entities that is pending its creation
     private bool _isClosed;
     
-    private interface ICommand
+    private interface ICommand // basic command interface
     {
         void Execute(EntityStore store);
     }
     
-    private sealed class CreateEntityCommand(EntityRef entity) : ICommand
+    // command definitions are in two parts.
+    // first we have the command class which contains instruction
+    // of how to execute and needed data. next we have the public function witch
+    // is what everything else calls to execute the command
+    private sealed class CreateEntityCommand(EntityRef entity) : ICommand 
     {
         public EntityRef Entity { get; } = entity;
         public void Execute(EntityStore store)
@@ -23,8 +27,8 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
     }
     public EntityRef CreateEntity()
     {
-        EnsureOpen();
-        EntityRef entity = store.ReserveEntity();
+        EnsureOpen(); // ensure we havent already operated the command buffer this tick
+        EntityRef entity = store.ReserveEntity(); // reserve and entities id and get a ref back
         _pendingEntities.Add(entity);
         _commands.Add(new CreateEntityCommand(entity));
         return entity;
@@ -93,6 +97,7 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
         _commands.Add(new RemoveComponentCommand<T>(entity));
     }
 
+    // throw if we have already operated the buffer this tick
     private void EnsureOpen()
     {
         if (_isClosed)
@@ -102,12 +107,13 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
         }
     }
     
+    // operate the buffer this tick
     internal void Playback()
     {
         EnsureOpen();
         try
         {
-            for (int index = 0; index < _commands.Count; index++)
+            for (int index = 0; index < _commands.Count; index++) // loop all command
             {
                 var command = _commands[index];
 
@@ -115,7 +121,7 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
                 {
                     command.Execute(store);
                 }
-                catch (Exception exception)
+                catch (Exception exception) // catch exceptions and say what command it was
                 {
                     throw new InvalidOperationException($"Command #{index + 1} ({command.GetType().Name}) failed.", exception);
                 }
@@ -132,6 +138,7 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
         }
     }
     
+    // discard the buffer (this marks the buffer as have been operated this tick)
     internal void Discard()
     {
         if (_isClosed)
@@ -142,12 +149,13 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
             store.CancelReservation(entity);
         }
 
+        // clear data
         _pendingEntities.Clear();
         _commands.Clear();
         _isClosed = true;
     }
     
-    private void ValidateReference(EntityRef entity)
+    private void ValidateReference(EntityRef entity) // make sure we own the reference and not someone else
     {
         if (!store.OwnsReference(entity))
         {

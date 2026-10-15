@@ -16,7 +16,7 @@ public sealed class SystemScheduler
         Faulted
     }
 
-    private SchedulerState _state = SchedulerState.Created;
+    private SchedulerState _state = SchedulerState.Created; // the state to track what can happen
     
     private readonly ISystemRegistry _registry;
     private EntityStore _store = null!;
@@ -34,7 +34,7 @@ public sealed class SystemScheduler
         _events = events;
     }
 
-    public void Start(EntityStore store)
+    public void Start(EntityStore store) // start the schedular to tick
     {
         ArgumentNullException.ThrowIfNull(store);
 
@@ -56,6 +56,7 @@ public sealed class SystemScheduler
             {
                 startingSystem = system;
 
+                // run start in all systems
                 ExecuteCallback(buffer => system.Start(_store, buffer));
 
                 _startedSystems.Add(system);
@@ -79,6 +80,7 @@ public sealed class SystemScheduler
 
                 try
                 {
+                    // run stop in all systems if we failed to start all mods
                     ExecuteCallback(buffer => failedSystem.Stop(buffer));
                 }
                 catch (Exception cleanupException)
@@ -180,6 +182,8 @@ public sealed class SystemScheduler
         }
     }
     
+    
+    // executes the parsed in function and lock the entity store cause the schedular now runs
     private void ExecuteCallback(Action<ICommandBuffer> callback)
     {
         var commandBuffer = new CommandBuffer(_store);
@@ -201,6 +205,7 @@ public sealed class SystemScheduler
                 _store.EndSystemExecution();
             }
 
+            // after this singular mods runs its tick all its commands get played
             try
             {
                 commandBuffer.Playback();

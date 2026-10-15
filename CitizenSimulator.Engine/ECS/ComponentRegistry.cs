@@ -38,6 +38,7 @@ public sealed class ComponentRegistry : IComponentRegistry
     }
 
 
+    // get a component we have registred and throw if we dont have it
     public ComponentType<T> Get<T>() where T : class, IComponent
     {
         if (!_types.TryGetValue(typeof(T), out int id))
@@ -48,6 +49,7 @@ public sealed class ComponentRegistry : IComponentRegistry
         return new ComponentType<T>(id);
     }
 
+    // returns if the component has been registered duuuh
     public bool IsRegistered<T>() where T : class, IComponent
     {
         return _types.ContainsKey(typeof(T));

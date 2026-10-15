@@ -4,12 +4,14 @@ using CitizenSimulator.Abstractions.Timing;
 
 namespace CitizenSimulator.Engine.Events;
 
+// this is where all things communicate with the event dispatcher
 public class EventBus : IEventBus
 {
     private readonly Queue<(Type EventType, IEvent Payload)> _pendingEvents = new();
     
     private readonly Dictionary<Type, List<ISubscription>> _subscriptions = new();
     
+    // object 
     private interface ISubscription : IDisposable
     {
         void Invoke(IEvent eventData, SimulationTime time, ICommandBuffer commandBuffer);
@@ -37,6 +39,7 @@ public class EventBus : IEventBus
         }
     }
     
+    // publish an event other's can lsiten to
     public void Publish<TEvent>(TEvent eventData) where TEvent : IEvent
     {
         ArgumentNullException.ThrowIfNull(eventData);
@@ -44,6 +47,7 @@ public class EventBus : IEventBus
         _pendingEvents.Enqueue((typeof(TEvent), eventData));
     }
 
+    // public function where mods can subscribe to an event (its disposable so we can easily unsubscribe by releasing it)
     public IDisposable Subscribe<TEvent>(Abstractions.Events.EventHandler<TEvent> handler) where TEvent : IEvent
     {
         ArgumentNullException.ThrowIfNull(handler);
@@ -63,6 +67,7 @@ public class EventBus : IEventBus
         return subscription;
     }
     
+    // dispatch a service (used my the schedular do dispatch all events at the end of tick)
     internal void Dispatch(SimulationTime time, Action<Action<ICommandBuffer>> executeCallback)
     {
         var batch = _pendingEvents.ToArray();

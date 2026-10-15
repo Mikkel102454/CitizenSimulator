@@ -2,6 +2,7 @@ using CitizenSimulator.Abstractions.ECS.Queries;
 
 namespace CitizenSimulator.Abstractions.ECS;
 
+// entitystore hols all entities and their components
 public interface IEntityStore
 {
     EntityRef CreateEntity();

@@ -1,5 +1,6 @@
 namespace CitizenSimulator.Abstractions.Events;
 
+// where the magic happens later
 public interface IEventBus
 {
     void Publish<TEvent>(TEvent eventData) where TEvent : IEvent;

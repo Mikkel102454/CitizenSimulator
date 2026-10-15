@@ -1,5 +1,6 @@
 namespace CitizenSimulator.Abstractions.ECS;
 
+// registry for all game systems
 public interface ISystemRegistry
 {
     void Register(GameSystem system);

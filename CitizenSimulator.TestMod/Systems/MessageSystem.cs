@@ -17,7 +17,7 @@ public sealed class MessageSystem(IEventBus events) : GameSystem(priority: 10)
 
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commandBuffer)
     {
-        //var query = Query.And(MessageComponent.GetComponentType());
+        //var query = Query.And(MessageComponent.GetComponentType(), Query.Or(MessageComponent.GetComponentType()));
         
         foreach (var entity in Store.Query(_messageComponent))
         {

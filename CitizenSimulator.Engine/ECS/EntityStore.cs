@@ -4,19 +4,20 @@ using CitizenSimulator.Abstractions.ECS.Queries;
 
 namespace CitizenSimulator.Engine.ECS;
 
+// holds all the entities and refrences
 public sealed class EntityStore : IEntityStore
 {
     private readonly Dictionary<int, Dictionary<Type, IComponent>> _entities = new();
 
-    private static int _nextStoreId = 0;
+    private static int _nextStoreId = 0; // we can use this later if we want multiple stores
 
-    private readonly int _storeId = Interlocked.Increment(ref _nextStoreId);
+    private readonly int _storeId = Interlocked.Increment(ref _nextStoreId); // always one store currently
     
     private int _nextId = 1;
 
-    private readonly HashSet<int> _reservedEntities = new ();
+    private readonly HashSet<int> _reservedEntities = new (); // entities that has been reserved in this store for creation
     
-    private bool _isExecutingSystem;
+    private bool _isExecutingSystem; // if the schedule system is executing
     
     public EntityRef CreateEntity()
     {
@@ -61,7 +62,8 @@ public sealed class EntityStore : IEntityStore
         return OwnsReference(entity) && _reservedEntities.Contains(entity.Id);
     }
     
-    internal EntityRef ReserveEntity()
+    // reserve a new entity
+    internal EntityRef ReserveEntity() 
     {
         int id = _nextId++;
         EntityRef entity = new EntityRef(id, 1, _storeId);
@@ -97,11 +99,13 @@ public sealed class EntityStore : IEntityStore
         _entities.Remove(entity.Id);
     }
 
+    // check if entity has been created (should be one tick after creation command schedule)
     public bool IsAlive(EntityRef entity)
     {
         return entity.StoreId == _storeId && entity.Generation == 1 && _entities.ContainsKey(entity.Id);
     }
 
+    // adds a component to an entity
     public void AddComponent<T>(EntityRef entity, T component) where T : class, IComponent
     {
         EnsureStructuralChangesAllowed();
@@ -130,6 +134,7 @@ public sealed class EntityStore : IEntityStore
         _entities[entity.Id].Remove(typeof(T));
     }
     
+    // query for an entity with specific components
     public IEnumerable<EntityRef> Query(IQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
