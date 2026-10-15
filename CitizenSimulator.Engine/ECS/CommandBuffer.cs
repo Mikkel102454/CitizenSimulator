@@ -107,10 +107,19 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
         EnsureOpen();
         try
         {
-            foreach (var command in _commands)
+            for (int index = 0; index < _commands.Count; index++)
             {
-                command.Execute(store);
-                
+                var command = _commands[index];
+
+                try
+                {
+                    command.Execute(store);
+                }
+                catch (Exception exception)
+                {
+                    throw new InvalidOperationException($"Command #{index + 1} ({command.GetType().Name}) failed.", exception);
+                }
+
                 if (command is CreateEntityCommand creation)
                 {
                     _pendingEntities.Remove(creation.Entity);

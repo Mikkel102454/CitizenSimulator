@@ -10,13 +10,13 @@ class Program
     {
         Console.WriteLine("CitizenSimulator");
 
-        
+
         var components = new ComponentRegistry();
         var systems = new SystemRegistry();
         var store = new EntityStore();
 
         ComponentTypes.Initialize(components);
-        
+
         var context = new ModContext(store, components, systems);
         var loader = new ModLoader(components);
 
@@ -26,28 +26,55 @@ class Program
 
         var scheduler = new SystemScheduler(systems);
 
-        scheduler.Start(store);
+        using var cancellation = new CancellationTokenSource();
 
-        ulong tick = 0;
-        Console.WriteLine("Start");
-        Console.WriteLine();
-
-        while (true)
+        ConsoleCancelEventHandler cancelHandler = (_, eventArgs) =>
         {
-            Console.WriteLine($"Tick {tick}");
+            eventArgs.Cancel = true;
+            cancellation.Cancel();
+        };
 
-            scheduler.Update();
+        Console.CancelKeyPress += cancelHandler;
 
-            //we make 30 tps
-            Thread.Sleep(1000 / 30);
-            
-            tick++;
+        try
+        {
+            scheduler.Start(store);
+
+            ulong tick = 0;
+            Console.WriteLine("Start");
+
+            while (!cancellation.IsCancellationRequested)
+            {
+                Console.WriteLine($"Tick {tick}");
+
+                scheduler.Update();
+
+                Thread.Sleep(1000 / 30);
+                tick++;
+            }
         }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine(exception);
+            Environment.ExitCode = 1;
+        }
+        finally
+        {
+            try
+            {
+                scheduler.Stop();
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine(exception);
+                Environment.ExitCode = 1;
+            }
+            finally
+            {
+                Console.CancelKeyPress -= cancelHandler;
+            }
 
-        scheduler.Stop();
-
-        Console.WriteLine();
-        Console.WriteLine("Stopped");
-
+            Console.WriteLine("Stopped");
+        }
     }
 }

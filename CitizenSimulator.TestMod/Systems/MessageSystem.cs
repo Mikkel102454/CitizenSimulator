@@ -28,4 +28,9 @@ public sealed class MessageSystem() : GameSystem(priority: 10)
             commandBuffer.RemoveComponent<MessageComponent>(entity);
         }
     }
+
+    protected override void OnStop(ICommandBuffer commandBuffer)
+    {
+        Console.WriteLine("MessageSystem stopped");
+    }
 }
