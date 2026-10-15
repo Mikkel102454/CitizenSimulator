@@ -7,12 +7,12 @@ namespace CitizenSimulator.TestMod.Systems;
 public sealed class MessageSystem() : GameSystem(priority: 10)
 {
     private IQuery _messageComponent = null!;
-    protected override void OnStart()
+    protected override void OnStart(ICommandBuffer commandBuffer)
     {
         _messageComponent = MessageComponent.GetComponentType();
     }
 
-    protected override void OnUpdate()
+    protected override void OnUpdate(ICommandBuffer commandBuffer)
     {
         //var query = Query.And(MessageComponent.GetComponentType());
         
@@ -24,6 +24,8 @@ public sealed class MessageSystem() : GameSystem(priority: 10)
                 continue;
 
             Console.WriteLine($"[Entity {entity.Id}] {message.Message}");
+            
+            commandBuffer.RemoveComponent<MessageComponent>(entity);
         }
     }
 }

@@ -14,16 +14,85 @@ public sealed class EntityStore : IEntityStore
     
     private int _nextId = 1;
 
+    private readonly HashSet<int> _reservedEntities = new ();
+    
+    private bool _isExecutingSystem;
+    
     public EntityRef CreateEntity()
     {
+        EnsureStructuralChangesAllowed();
+        EntityRef entity = ReserveEntity();
+        ActivateEntity(entity);
+        return entity;
+    }
+
+    internal void BeginSystemExecution()
+    {
+        if (_isExecutingSystem)
+        {
+            throw new InvalidOperationException(
+                "A system is already executing.");
+        }
+
+        _isExecutingSystem = true;
+    }
+
+    internal void EndSystemExecution()
+    {
+        _isExecutingSystem = false;
+    }
+
+    private void EnsureStructuralChangesAllowed()
+    {
+        if (_isExecutingSystem)
+        {
+            throw new InvalidOperationException(
+                "Use the command buffer for structural changes during system execution.");
+        }
+    }
+    
+    internal bool OwnsReference(EntityRef entity)
+    {
+        return entity.StoreId == _storeId && entity.Generation == 1;
+    }
+
+    internal bool IsReserved(EntityRef entity)
+    {
+        return OwnsReference(entity) && _reservedEntities.Contains(entity.Id);
+    }
+    
+    internal EntityRef ReserveEntity()
+    {
         int id = _nextId++;
-        _entities.Add(id, new Dictionary<Type, IComponent>());
-        
-        return new EntityRef(id, 1, _storeId);
+        EntityRef entity = new EntityRef(id, 1, _storeId);
+        _reservedEntities.Add(entity.Id);
+        return entity;
+    }
+    
+    internal void CancelReservation(EntityRef entity)
+    {
+        if (IsReserved(entity))
+        { 
+            _reservedEntities.Remove(entity.Id);
+            return;
+        }
+        throw new InvalidOperationException("Entity is not a valid pending reservation");
+    }
+
+    internal void ActivateEntity(EntityRef entity)
+    {
+        if (IsReserved(entity))
+        { 
+            _entities.Add(entity.Id, new Dictionary<Type, IComponent>());
+            _reservedEntities.Remove(entity.Id);
+            return;
+        }
+        throw new InvalidOperationException("Entity is not a valid pending reservation");
     }
 
     public void DestroyEntity(EntityRef entity)
     {
+        EnsureStructuralChangesAllowed();
         Validate(entity);
         _entities.Remove(entity.Id);
     }
@@ -35,6 +104,7 @@ public sealed class EntityStore : IEntityStore
 
     public void AddComponent<T>(EntityRef entity, T component) where T : class, IComponent
     {
+        EnsureStructuralChangesAllowed();
         Validate(entity);
         ArgumentNullException.ThrowIfNull(component);
 
@@ -55,6 +125,7 @@ public sealed class EntityStore : IEntityStore
 
     public void RemoveComponent<T>(EntityRef entity) where T : class, IComponent
     {
+        EnsureStructuralChangesAllowed();
         Validate(entity);
         _entities[entity.Id].Remove(typeof(T));
     }

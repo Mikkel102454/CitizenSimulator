@@ -10,34 +10,37 @@ public abstract class GameSystem(int priority = 0)
     // Controls the execution order
     public int Priority { get; } = priority;
 
-    public void Start(IEntityStore store)
+    public void Start(IEntityStore store, ICommandBuffer commandBuffer)
     {
         ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(commandBuffer);
+
         Store = store;
-
-        OnStart();
+        OnStart(commandBuffer);
     }
 
-    public void Update()
+    public void Update(ICommandBuffer commandBuffer)
     {
-        // Required engine logic before each update goes here.
-        OnUpdate();
+        ArgumentNullException.ThrowIfNull(commandBuffer);
+        
+        OnUpdate(commandBuffer);
     }
 
-    public void Stop()
+    public void Stop(ICommandBuffer commandBuffer)
     {
+        ArgumentNullException.ThrowIfNull(commandBuffer);
+
         try
         {
-            OnStop();
+            OnStop(commandBuffer);
         }
         finally
         {
-            // Required engine cleanup goes here.
             Store = null!;
         }
     }
     
-    protected virtual void OnStart() { }
-    protected abstract void OnUpdate();
-    protected virtual void OnStop() { }
+    protected virtual void OnStart(ICommandBuffer commandBuffer) { }
+    protected abstract void OnUpdate(ICommandBuffer commandBuffer);
+    protected virtual void OnStop(ICommandBuffer commandBuffer) { }
 }
