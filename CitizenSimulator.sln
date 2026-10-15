@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator", "CitizenSimulator\CitizenSimulator.csproj", "{7133901B-3B30-473D-97C1-86D937E53D18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Abstractions", "CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj", "{65D28E8E-8411-4490-AD54-3714EFABFADD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Engine", "CitizenSimulator.Engine\CitizenSimulator.Engine.csproj", "{77C4D82A-8639-4357-A92D-80E4DA6583A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.TestMod", "CitizenSimulator.TestMod\CitizenSimulator.TestMod.csproj", "{FB8C2786-E795-4D9E-B7CA-364C14EB31AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7133901B-3B30-473D-97C1-86D937E53D18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7133901B-3B30-473D-97C1-86D937E53D18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7133901B-3B30-473D-97C1-86D937E53D18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7133901B-3B30-473D-97C1-86D937E53D18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65D28E8E-8411-4490-AD54-3714EFABFADD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65D28E8E-8411-4490-AD54-3714EFABFADD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65D28E8E-8411-4490-AD54-3714EFABFADD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65D28E8E-8411-4490-AD54-3714EFABFADD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77C4D82A-8639-4357-A92D-80E4DA6583A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C4D82A-8639-4357-A92D-80E4DA6583A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77C4D82A-8639-4357-A92D-80E4DA6583A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77C4D82A-8639-4357-A92D-80E4DA6583A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB8C2786-E795-4D9E-B7CA-364C14EB31AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB8C2786-E795-4D9E-B7CA-364C14EB31AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB8C2786-E795-4D9E-B7CA-364C14EB31AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB8C2786-E795-4D9E-B7CA-364C14EB31AD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
