@@ -7,7 +7,7 @@ using CitizenSimulator.TestMod.Components;
 
 namespace CitizenSimulator.TestMod.Systems;
 
-public sealed class MessageSystem(IEventBus events) : GameSystem(priority: 10)
+public sealed class MessageSystem(IEventBus events) : GameSystem
 {
     private IQuery _messageComponent = null!;
     protected override void OnStart(ICommandBuffer commandBuffer)

@@ -8,6 +8,10 @@ namespace CitizenSimulator.Abstractions.Modding;
 public interface IModContext
 {
     IServiceRegistry Services { get; }
+    // Delivered between batches even while paused; held events are delivered once per tick.
+    IEventBus InputEvents { get; }
+    // Queued controls are safe to request from input handlers and system updates.
+    ISimulationControls Controls { get; }
 
     ISimulationClock Clock { get; }
 

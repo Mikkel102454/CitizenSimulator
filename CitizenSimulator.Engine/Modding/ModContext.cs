@@ -9,6 +9,8 @@ namespace CitizenSimulator.Engine.Modding;
 public sealed class ModContext : IModContext
 {
     public IServiceRegistry Services { get; }
+    public IEventBus InputEvents { get; }
+    public ISimulationControls Controls { get; }
 
     public ISimulationClock Clock { get; }
 
@@ -20,11 +22,13 @@ public sealed class ModContext : IModContext
     
     public IEventBus Events { get; }
 
-    public ModContext(IEntityStore store, IComponentRegistry components, ISystemRegistry systems, ISimulationClock clock, IEventBus events, IServiceRegistry services)
+    public ModContext(IEntityStore store, IComponentRegistry components, ISystemRegistry systems, ISimulationClock clock, IEventBus events, IServiceRegistry services, IEventBus inputEvents, ISimulationControls controls)
     {
         ArgumentNullException.ThrowIfNull(clock);
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(services);
+        InputEvents = inputEvents ?? throw new ArgumentNullException(nameof(inputEvents));
+        Controls = controls ?? throw new ArgumentNullException(nameof(controls));
         Services = services;
         Clock = clock;
         Store = store;

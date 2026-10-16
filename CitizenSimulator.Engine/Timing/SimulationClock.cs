@@ -136,7 +136,7 @@ public sealed class SimulationClock : ISimulationClock
         SetTarget(target == Elapsed ? Tick : ticks);
     }
 
-    public int RunBatch(Action<SimulationTime> update, CancellationToken cancellation = default)
+    public int RunBatch(Action<SimulationTime> update, CancellationToken cancellation = default, Action? afterTick = null)
     {
         ArgumentNullException.ThrowIfNull(update);
         EnsureControllable();
@@ -179,6 +179,7 @@ public sealed class SimulationClock : ISimulationClock
             {
                 _pendingTicks = Math.Max(0, _pendingTicks - 1);
             }
+            afterTick?.Invoke();
         }
         return completed;
     }

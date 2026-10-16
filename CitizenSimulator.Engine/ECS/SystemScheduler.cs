@@ -136,6 +136,15 @@ public sealed class SystemScheduler
         }
     }
 
+    // Dispatches independently of simulation ticks, including while paused.
+    public void DispatchInput(EventBus inputEvents, SimulationTime time)
+    {
+        if (_state != SchedulerState.Running)
+            throw new InvalidOperationException($"Cannot dispatch input while scheduler is {_state}.");
+        try { inputEvents.Dispatch(time, ExecuteCallback); }
+        catch { _state = SchedulerState.Faulted; throw; }
+    }
+
     public void Stop()
     {
         if (_state == SchedulerState.Stopped)

@@ -1,6 +1,6 @@
 namespace CitizenSimulator.Abstractions.Timing;
 
-/// <summary>Read-only clock state. Clock controls are owned by the host.</summary>
+// read only clock state
 public interface ISimulationClock
 {
     int TickRate { get; }

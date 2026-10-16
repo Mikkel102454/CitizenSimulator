@@ -38,7 +38,7 @@ public sealed class ModLoader(ComponentRegistry componentRegistry)
 
     private void DiscoverMods(string folder)
     {
-        var dlls = Directory.GetFiles(folder, "*.dll", SearchOption.TopDirectoryOnly);
+        var dlls = Directory.GetFiles(folder, "*.dll", SearchOption.AllDirectories);
 
         // asm name to path
         var paths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
