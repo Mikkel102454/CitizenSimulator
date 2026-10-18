@@ -10,7 +10,7 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
 {
     private uint nextAccountId = 1;
     
-    public bool CreateVault(ICommandBuffer commands, EntityRef entityRef, string name, double interestRate, out VaultComponent? outVault)
+    public bool CreateVault(ICommandBuffer commands, EntityRef entityRef, string name, out VaultComponent? outVault)
     {
         if (store.HasComponent<VaultComponent>(entityRef))
         {
@@ -20,7 +20,6 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
         
         outVault = commands.AddComponent(entityRef, new VaultComponent());
         outVault.Name = name;
-        outVault.InterestRate = interestRate;
 
         return true;
     }

@@ -6,7 +6,7 @@ namespace CitizenSimulator.Vault.Services.Abstractions;
 
 public interface IVaultService
 {
-    bool CreateVault(ICommandBuffer commands, EntityRef entityRef, string name, double interestRate, out VaultComponent? outVault);
+    bool CreateVault(ICommandBuffer commands, EntityRef entityRef, string name, out VaultComponent? outVault);
     bool DeleteVault(ICommandBuffer commands, VaultComponent vault);
     bool AddBankAccount(VaultComponent vault, CitizenComponent citizen);
     bool RemoveBankAccount(VaultComponent vault, VaultComponent.Account account);
