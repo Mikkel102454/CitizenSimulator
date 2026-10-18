@@ -1,0 +1,15 @@
+﻿{
+  "id": "food.banana",
+  "name": "Banana",
+  "description": "A ripe banana.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -15
+      }
+    }
+  ]
+}

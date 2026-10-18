@@ -1,0 +1,15 @@
+﻿{
+  "id": "food.bread",
+  "name": "Bread",
+  "description": "A freshly baked loaf of bread.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -30
+      }
+    }
+  ]
+}

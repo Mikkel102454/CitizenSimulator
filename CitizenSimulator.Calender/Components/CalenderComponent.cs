@@ -2,7 +2,7 @@ using CitizenSimulator.Abstractions.ECS;
 
 namespace CitizenSimulator.Calender.Components;
 
-public class CalenderComponent : Component<CalenderComponent>
+public sealed class CalenderComponent : Component<CalenderComponent>
 {
     public enum Days
     {

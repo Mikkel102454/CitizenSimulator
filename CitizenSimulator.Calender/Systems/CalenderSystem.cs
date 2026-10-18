@@ -3,20 +3,21 @@ using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Calender.Components;
 using CitizenSimulator.Calender.Events;
+using CitizenSimulator.Calender.Services;
 
 namespace CitizenSimulator.Calender.Systems;
 
-public class CalenderSystem(IEventBus events) : GameSystem
+public class CalenderSystem(IEventBus events, CalenderService calenderService) : GameSystem
 {
-    private const ulong TICKS_PER_DAY = 30 * 10; // 10 seconds
     private const int STARTYEAR = 2000; // 10 seconds
     private CalenderComponent _calenderComponent;
+    private CalenderService _calenderService;
 
     protected override void OnStart(ICommandBuffer commands)
     {
         EntityRef entity = commands.CreateEntity();
         _calenderComponent = commands.AddComponent(entity, new CalenderComponent());
-        
+            
         _calenderComponent.DayOfWeek = (STARTYEAR + STARTYEAR / 4 - STARTYEAR / 100 + STARTYEAR / 400) % 7;
         _calenderComponent.DayOfMonth = 1;
         _calenderComponent.MonthOfYear = CalenderComponent.Months.JANUARY;
@@ -30,9 +31,9 @@ public class CalenderSystem(IEventBus events) : GameSystem
 
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
     {
-        ulong tickOfDay = time.Tick % TICKS_PER_DAY;
+        ulong tickOfDay = time.Tick % calenderService.GetTicksPerDay();
         
-        if (time.Tick % TICKS_PER_DAY == 0)
+        if (tickOfDay == 0)
         { // new day
             events.Publish(new OnDayStart());
 
@@ -75,10 +76,10 @@ public class CalenderSystem(IEventBus events) : GameSystem
                               $"Date: {_calenderComponent.DayOfMonth}/{_calenderComponent.MonthOfYear}/{_calenderComponent.Year}");
         }
 
-        if (tickOfDay == GetDayStartTick(TICKS_PER_DAY))
+        if (tickOfDay == GetDayStartTick(calenderService.GetTicksPerDay()))
         {
             events.Publish(new OnMonthStart());
-        } else if (tickOfDay == GetNightStartTick(TICKS_PER_DAY))
+        } else if (tickOfDay == GetNightStartTick(calenderService.GetTicksPerDay()))
         {
             events.Publish(new OnNightStart());
         }

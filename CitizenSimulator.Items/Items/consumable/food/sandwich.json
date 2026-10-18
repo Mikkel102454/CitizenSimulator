@@ -1,0 +1,15 @@
+﻿{
+  "id": "food.sandwich",
+  "name": "Sandwich",
+  "description": "A filling sandwich with vegetables and meat.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -45
+      }
+    }
+  ]
+}

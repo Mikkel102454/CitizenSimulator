@@ -1,0 +1,15 @@
+﻿{
+  "id": "drink.water",
+  "name": "Water Bottle",
+  "description": "A bottle of clean drinking water.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "thirst",
+        "amount": -40
+      }
+    }
+  ]
+}

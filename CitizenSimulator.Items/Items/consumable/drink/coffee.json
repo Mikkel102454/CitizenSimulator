@@ -1,0 +1,22 @@
+﻿{
+  "id": "drink.coffee",
+  "name": "Coffee",
+  "description": "A freshly brewed cup of coffee.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "thirst",
+        "amount": -15
+      }
+    },
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "energy",
+        "amount": -20
+      }
+    }
+  ]
+}

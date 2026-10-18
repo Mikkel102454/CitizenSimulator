@@ -1,0 +1,15 @@
+﻿{
+  "id": "food.pizza",
+  "name": "Pizza",
+  "description": "A freshly prepared pizza.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -65
+      }
+    }
+  ]
+}

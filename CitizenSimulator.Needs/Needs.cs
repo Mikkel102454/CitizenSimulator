@@ -1,4 +1,6 @@
 using CitizenSimulator.Abstractions.Modding;
+using CitizenSimulator.Needs.Services;
+using CitizenSimulator.Needs.Services.Abstractions;
 
 namespace CitizenSimulator.Needs;
 
@@ -7,6 +9,6 @@ public class Needs : IMod
 {
     public void OnLoad(IModContext context)
     {
-
+        context.Services.Register<INeedsService>(new NeedsService(context.Store, context.Events));
     }
 }

@@ -1,0 +1,7 @@
+﻿{
+  "id": "material.wood",
+  "name": "Wood",
+  "description": "Raw timber used for construction and manufacturing.",
+  "consumable": false,
+  "effects": []
+}

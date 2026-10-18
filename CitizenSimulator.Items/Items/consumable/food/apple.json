@@ -1,0 +1,15 @@
+﻿{
+  "id": "food.apple",
+  "name": "Apple",
+  "description": "A fresh, juicy apple.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -12
+      }
+    }
+  ]
+}

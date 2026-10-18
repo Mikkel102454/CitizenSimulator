@@ -1,0 +1,22 @@
+﻿{
+  "id": "drink.milk",
+  "name": "Milk",
+  "description": "A carton of fresh milk.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "thirst",
+        "amount": -30
+      }
+    },
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -10
+      }
+    }
+  ]
+}

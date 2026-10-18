@@ -3,7 +3,7 @@ using CitizenSimulator.Citizen.Components;
 
 namespace CitizenSimulator.Vault.Components;
 
-public class VaultComponent : Component<VaultComponent>
+public sealed class VaultComponent : Component<VaultComponent>
 {
     public record struct Account
     { 

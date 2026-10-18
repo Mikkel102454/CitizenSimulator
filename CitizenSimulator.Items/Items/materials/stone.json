@@ -1,0 +1,7 @@
+﻿{
+  "id": "material.stone",
+  "name": "Stone",
+  "description": "A basic construction material.",
+  "consumable": false,
+  "effects": []
+}

@@ -1,0 +1,22 @@
+﻿{
+  "id": "food.soup",
+  "name": "Soup",
+  "description": "A warm bowl of vegetable soup.",
+  "consumable": true,
+  "effects": [
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "hunger",
+        "amount": -25
+      }
+    },
+    {
+      "type": "needs.modify",
+      "values": {
+        "need": "thirst",
+        "amount": -10
+      }
+    }
+  ]
+}
