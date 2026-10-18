@@ -96,6 +96,10 @@ public sealed class EntityStore : IEntityStore
     {
         EnsureStructuralChangesAllowed();
         Validate(entity);
+        foreach (var component in _entities[entity.Id].Values)
+        {
+            component.Parent = default;
+        }
         _entities.Remove(entity.Id);
     }
 
@@ -106,13 +110,36 @@ public sealed class EntityStore : IEntityStore
     }
 
     // adds a component to an entity
-    public void AddComponent<T>(EntityRef entity, T component) where T : class, IComponent
+    public T AddComponent<T>(EntityRef entity, T component) where T : class, IComponent
     {
         EnsureStructuralChangesAllowed();
         Validate(entity);
         ArgumentNullException.ThrowIfNull(component);
 
+        AssignParent(entity, component);
+        _entities[entity.Id].TryGetValue(typeof(T), out var previous);
         _entities[entity.Id][typeof(T)] = component;
+        if (previous is not null && !ContainsComponent(previous))
+        {
+            previous.Parent = default;
+        }
+        return component;
+    }
+
+    internal static void AssignParent(EntityRef entity, IComponent component)
+    {
+        if (component.Parent != default && component.Parent != entity)
+        {
+            throw new InvalidOperationException("A component instance cannot belong to multiple entities.");
+        }
+
+        component.Parent = entity;
+    }
+
+    internal bool ContainsComponent(IComponent component)
+    {
+        return IsAlive(component.Parent)
+            && _entities[component.Parent.Id].Values.Any(value => ReferenceEquals(value, component));
     }
 
     public T? GetComponent<T>(EntityRef entity) where T : class, IComponent
@@ -131,7 +158,10 @@ public sealed class EntityStore : IEntityStore
     {
         EnsureStructuralChangesAllowed();
         Validate(entity);
-        _entities[entity.Id].Remove(typeof(T));
+        if (_entities[entity.Id].Remove(typeof(T), out var component) && !ContainsComponent(component))
+        {
+            component.Parent = default;
+        }
     }
     
     // query for an entity with specific components

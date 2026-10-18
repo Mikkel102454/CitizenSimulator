@@ -1,8 +1,8 @@
 using CitizenSimulator.Abstractions.ECS;
 
-namespace CitizenSimulator.Human.Components;
+namespace CitizenSimulator.Citizen.Components;
 
-public class HumanComponent : Component<HumanComponent>
+public class CitizenComponent : Component<CitizenComponent>
 {
     public string Name { get; internal set; } = "";
     public int Age { get; internal set; } = 0;

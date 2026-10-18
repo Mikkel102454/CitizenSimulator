@@ -74,6 +74,9 @@ class Program
 
             var previous = Stopwatch.GetTimestamp();
 
+            
+            Console.Error.WriteLine("Simulation Started");
+            
             while (!cancellation.IsCancellationRequested)
             {
                 var now = Stopwatch.GetTimestamp();

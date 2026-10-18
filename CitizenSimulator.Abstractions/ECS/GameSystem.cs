@@ -13,29 +13,29 @@ public abstract class GameSystem(int priority = 0)
     // controls the execution order
     public int Priority { get; } = priority;
 
-    public void Start(IEntityStore store, ICommandBuffer commandBuffer)
+    public void Start(IEntityStore store, ICommandBuffer commands)
     {
         ArgumentNullException.ThrowIfNull(store);
-        ArgumentNullException.ThrowIfNull(commandBuffer);
+        ArgumentNullException.ThrowIfNull(commands);
 
         Store = store;
-        OnStart(commandBuffer);
+        OnStart(commands);
     }
 
-    public void Update(SimulationTime time, ICommandBuffer commandBuffer)
+    public void Update(SimulationTime time, ICommandBuffer commands)
     {
-        ArgumentNullException.ThrowIfNull(commandBuffer);
+        ArgumentNullException.ThrowIfNull(commands);
         
-        OnUpdate(time, commandBuffer);
+        OnUpdate(time, commands);
     }
 
-    public void Stop(ICommandBuffer commandBuffer)
+    public void Stop(ICommandBuffer commands)
     {
-        ArgumentNullException.ThrowIfNull(commandBuffer);
+        ArgumentNullException.ThrowIfNull(commands);
 
         try
         {
-            OnStop(commandBuffer);
+            OnStop(commands);
         }
         finally
         {
@@ -43,7 +43,7 @@ public abstract class GameSystem(int priority = 0)
         }
     }
     
-    protected virtual void OnStart(ICommandBuffer commandBuffer) { }
-    protected abstract void OnUpdate(SimulationTime time, ICommandBuffer commandBuffer);
-    protected virtual void OnStop(ICommandBuffer commandBuffer) { }
+    protected virtual void OnStart(ICommandBuffer commands) { }
+    protected virtual void OnUpdate(SimulationTime time, ICommandBuffer commands) { }
+    protected virtual void OnStop(ICommandBuffer commands) { }
 }

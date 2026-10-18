@@ -2,7 +2,7 @@ using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Abstractions.ECS.Queries;
 using CitizenSimulator.Abstractions.Events;
-using CitizenSimulator.Mod2.Events;
+using CitizenSimulator.TestMod.Events;
 using CitizenSimulator.TestMod.Components;
 
 namespace CitizenSimulator.TestMod.Systems;

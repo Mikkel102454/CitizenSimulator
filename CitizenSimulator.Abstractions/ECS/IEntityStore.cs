@@ -11,7 +11,7 @@ public interface IEntityStore
 
     bool IsAlive(EntityRef entity);
     
-    void AddComponent<T>(EntityRef entity, T component) where T : class, IComponent;
+    T AddComponent<T>(EntityRef entity, T component) where T : class, IComponent;
 
     T? GetComponent<T>(EntityRef entity) where T : class, IComponent;
 

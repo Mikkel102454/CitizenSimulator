@@ -10,21 +10,4 @@
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
       <ProjectReference Include="..\CitizenSimulator.TestMod\CitizenSimulator.TestMod.csproj" />
     </ItemGroup>
-
-    <Target Name="CopyModToHost"
-            AfterTargets="Build">
-
-        <PropertyGroup>
-            <ModsDirectory>$(MSBuildProjectDirectory)/../CitizenSimulator/bin/$(Configuration)/$(TargetFramework)/Mods/</ModsDirectory>
-        </PropertyGroup>
-
-        <MakeDir Directories="$(ModsDirectory)" />
-
-        <Copy
-                SourceFiles="$(TargetPath)"
-                DestinationFolder="$(ModsDirectory)"
-                SkipUnchangedFiles="true" />
-
-    </Target>
-    
 </Project>

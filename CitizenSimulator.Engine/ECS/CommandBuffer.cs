@@ -6,6 +6,7 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
 {
     private readonly List<ICommand> _commands = new(); // commands that needs to be executed this tick
     private readonly HashSet<EntityRef> _pendingEntities = new(); // entities that is pending its creation
+    private readonly HashSet<IComponent> _pendingComponents = new(ReferenceEqualityComparer.Instance);
     private bool _isClosed;
     
     private interface ICommand // basic command interface
@@ -78,6 +79,8 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
         ValidateReference(entity);
         ArgumentNullException.ThrowIfNull(component);
 
+        EntityStore.AssignParent(entity, component);
+        _pendingComponents.Add(component);
         _commands.Add(new AddComponentCommand<T>(entity, component));
 
         return component;
@@ -144,6 +147,14 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
         if (_isClosed)
             return;
 
+        foreach (var component in _pendingComponents)
+        {
+            if (!store.ContainsComponent(component))
+            {
+                component.Parent = default;
+            }
+        }
+
         foreach (var entity in _pendingEntities)
         {
             store.CancelReservation(entity);
@@ -151,6 +162,7 @@ public sealed class CommandBuffer(EntityStore store) : ICommandBuffer
 
         // clear data
         _pendingEntities.Clear();
+        _pendingComponents.Clear();
         _commands.Clear();
         _isClosed = true;
     }

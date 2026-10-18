@@ -178,6 +178,8 @@ public sealed class ModLoader(ComponentRegistry componentRegistry)
         {
             var metadata = mod.Metadata;
 
+            Console.WriteLine($"[LOADING] {metadata.Name} v{metadata.Version}");
+            
             // init if all depends are valid
             bool ready = (metadata.Dependencies ?? []).All(dep => _initialized.Contains(dep));
 
@@ -198,6 +200,7 @@ public sealed class ModLoader(ComponentRegistry componentRegistry)
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] {metadata.Name}: {ex.Message}");
+                Console.WriteLine($"[FAILED] {metadata.Name} v{metadata.Version}");
             }
         }
     }
