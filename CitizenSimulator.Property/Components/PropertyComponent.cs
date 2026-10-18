@@ -21,4 +21,6 @@ public sealed class PropertyComponent : Component<PropertyComponent>
     public CitizenComponent? Owner { get; internal set; }
         
     public double Condition { get; internal set; } = 100;
+    
+    public bool Destroyed { get; internal set; } = false;
 }

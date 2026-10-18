@@ -2,25 +2,31 @@
 using CitizenSimulator.Abstractions.ECS.Queries;
 using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Abstractions.Timing;
+using CitizenSimulator.Calender.Events;
 using CitizenSimulator.Property.Components;
+using CitizenSimulator.Property.Services.Abstractions;
 
 namespace CitizenSimulator.Property.Services;
 
-public class PropertySystem(IEventBus events) : GameSystem
+public class PropertySystem(IEventBus events, IPropertyService propertyService) : GameSystem
 {
     private IQuery _propertyComponent = null!;
+    private IDisposable? _onDayStart;
     protected override void OnStart(ICommandBuffer commandBuffer)
     {
         _propertyComponent = PropertyComponent.GetComponentType();
+        _onDayStart = events.Subscribe<OnDayStart>(OnDayStart);
     }
     
-    protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
+    private void OnDayStart(OnDayStart eventData, SimulationTime time, ICommandBuffer commandBuffer)
     {
-        // this should change to per day or acttualy just listen to event
         foreach (var entity in Store.Query(_propertyComponent))
         {
-            PropertyComponent component = Store.GetComponent<PropertyComponent>(entity);
-            component.Condition -= (component.Owner == null ? 0.08 : 0.005);
+            PropertyComponent property = Store.GetComponent<PropertyComponent>(entity);
+            property.Condition -= (property.Owner == null ? 0.08 : 0.005);
+
+            if (property.Condition <= 0)
+                propertyService.DestroyProperty(property);
         }
     }
 }
