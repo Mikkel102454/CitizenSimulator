@@ -7,7 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CitizenSimulator.Items\CitizenSimulator.Items.csproj" />
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Property\CitizenSimulator.Property.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Business/**/*.json" />
+        <EmbeddedResource Include="Recipes/**/*.json" />
     </ItemGroup>
 
     <Target Name="CopyModToHost"

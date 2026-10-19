@@ -1,0 +1,7 @@
+{
+  "id": "equipment.workbench",
+  "name": "Carpentry Workbench",
+  "description": "A workbench used to manufacture wooden furniture. One inventory unit represents one workbench.",
+  "consumable": false,
+  "effects": []
+}

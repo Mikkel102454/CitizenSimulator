@@ -1,0 +1,47 @@
+{
+  "id": "business.landfill",
+  "name": "Ash Landfill",
+  "recipes": [],
+  "premises": {
+    "allowedUses": ["industrial"],
+    "minimumAreaM2": 20000,
+    "storageCapacity": 10000
+  },
+  "workforce": [
+    {
+      "role": "landfill_operator",
+      "desiredCount": 2,
+      "minimumSkill": 1,
+      "startingHourlyWage": 145
+    }
+  ],
+  "equipment": [],
+  "openingHours": [
+    {
+      "days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"],
+      "opens": "07:00",
+      "closes": "17:00"
+    }
+  ],
+  "utilities": {
+    "electricityKwhPerOperatingHour": 1,
+    "waterLitresPerOperatingHour": 20
+  },
+  "operatingCosts": {
+    "insurancePerDay": 30,
+    "maintenanceBudgetPerDay": 50
+  },
+  "stockPolicy": [],
+  "salesPolicy": {
+    "channels": [],
+    "sellItems": [],
+    "targetMarkupPercent": 0,
+    "customersServedPerWorkerHour": 0
+  },
+  "disposalPolicy": {
+    "acceptedItems": ["waste.ash"],
+    "capacityTonnes": 100000,
+    "maxIntakeTonnesPerDay": 200,
+    "feePerTonne": 80
+  }
+}

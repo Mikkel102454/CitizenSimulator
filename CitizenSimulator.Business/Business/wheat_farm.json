@@ -1,0 +1,60 @@
+{
+  "id": "business.wheat_farm",
+  "name": "Wheat Farm",
+  "recipes": [
+    "recipe.wheat"
+  ],
+  "premises": {
+    "allowedUses": [
+      "agricultural"
+    ],
+    "minimumAreaM2": 10000,
+    "storageCapacity": 2000
+  },
+  "workforce": [
+    {
+      "role": "farm_worker",
+      "desiredCount": 2,
+      "minimumSkill": 1,
+      "startingHourlyWage": 130
+    }
+  ],
+  "equipment": [
+    {
+      "equipmentId": "equipment.tractor",
+      "count": 1
+    }
+  ],
+  "openingHours": [
+    {
+      "days": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday"
+      ],
+      "opens": "08:00",
+      "closes": "17:00"
+    }
+  ],
+  "utilities": {
+    "electricityKwhPerOperatingHour": 1,
+    "waterLitresPerOperatingHour": 2
+  },
+  "operatingCosts": {
+    "insurancePerDay": 10,
+    "maintenanceBudgetPerDay": 15
+  },
+  "stockPolicy": [],
+  "salesPolicy": {
+    "channels": [
+      "wholesale"
+    ],
+    "sellItems": [
+      "material.wheat"
+    ],
+    "targetMarkupPercent": 30,
+    "customersServedPerWorkerHour": 20
+  }
+}

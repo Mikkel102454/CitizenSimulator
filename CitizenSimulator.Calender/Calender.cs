@@ -9,7 +9,7 @@ public class Calender : IMod
 {
     public void OnLoad(IModContext context)
     {
-        CalenderService calenderService = new CalenderService(context.Store, context.Events);
+        CalenderService calenderService = new CalenderService();
         
         context.Services.Register(calenderService);
         context.Systems.Register(new CalenderSystem(context.Events, calenderService));

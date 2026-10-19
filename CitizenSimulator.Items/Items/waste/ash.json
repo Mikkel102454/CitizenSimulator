@@ -1,0 +1,7 @@
+{
+  "id": "waste.ash",
+  "name": "Incinerator Ash",
+  "description": "Solid residue from burning waste, requiring disposal. One inventory unit represents one kilogram.",
+  "consumable": false,
+  "effects": []
+}

@@ -1,0 +1,63 @@
+{
+  "id": "business.waste_to_energy_facility",
+  "name": "Waste-to-Energy Facility",
+  "recipes": [
+    "recipe.waste_to_energy"
+  ],
+  "premises": {
+    "allowedUses": [
+      "industrial"
+    ],
+    "minimumAreaM2": 1000,
+    "storageCapacity": 5000
+  },
+  "workforce": [
+    {
+      "role": "plant_operator",
+      "desiredCount": 2,
+      "minimumSkill": 2,
+      "startingHourlyWage": 180
+    }
+  ],
+  "equipment": [
+    {
+      "equipmentId": "equipment.waste_incinerator",
+      "count": 1
+    }
+  ],
+  "openingHours": [
+    {
+      "days": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday"
+      ],
+      "opens": "06:00",
+      "closes": "22:00"
+    }
+  ],
+  "utilities": {
+    "electricityKwhPerOperatingHour": 1,
+    "waterLitresPerOperatingHour": 100
+  },
+  "operatingCosts": {
+    "insurancePerDay": 50,
+    "maintenanceBudgetPerDay": 100
+  },
+  "stockPolicy": [
+    {
+      "itemId": "waste.organic",
+      "reorderBelow": 300,
+      "targetQuantity": 2000
+    }
+  ],
+  "gridSupplyPolicy": {
+    "utility": "electricity",
+    "connectionRequired": true,
+    "maxExportKw": 30
+  }
+}

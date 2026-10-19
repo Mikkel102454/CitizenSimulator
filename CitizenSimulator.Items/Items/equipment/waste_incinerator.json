@@ -1,0 +1,7 @@
+{
+  "id": "equipment.waste_incinerator",
+  "name": "Waste-to-Energy Incinerator",
+  "description": "An incinerator with a generator that converts combustible waste into electricity. One inventory unit represents one installation.",
+  "consumable": false,
+  "effects": []
+}

@@ -1,0 +1,84 @@
+{
+  "id": "business.supermarket",
+  "name": "Supermarket",
+  "recipes": [],
+  "premises": {
+    "allowedUses": [
+      "commercial",
+      "mixed"
+    ],
+    "minimumAreaM2": 300,
+    "storageCapacity": 2000
+  },
+  "workforce": [
+    {
+      "role": "retail_worker",
+      "desiredCount": 4,
+      "minimumSkill": 1,
+      "startingHourlyWage": 125
+    }
+  ],
+  "equipment": [],
+  "openingHours": [
+    {
+      "days": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday"
+      ],
+      "opens": "08:00",
+      "closes": "17:00"
+    }
+  ],
+  "utilities": {
+    "electricityKwhPerOperatingHour": 1,
+    "waterLitresPerOperatingHour": 2
+  },
+  "operatingCosts": {
+    "insurancePerDay": 10,
+    "maintenanceBudgetPerDay": 15
+  },
+  "stockPolicy": [
+    {
+      "itemId": "food.bread",
+      "reorderBelow": 20,
+      "targetQuantity": 80
+    },
+    {
+      "itemId": "food.apple",
+      "reorderBelow": 30,
+      "targetQuantity": 120
+    },
+    {
+      "itemId": "food.banana",
+      "reorderBelow": 30,
+      "targetQuantity": 100
+    },
+    {
+      "itemId": "drink.water",
+      "reorderBelow": 40,
+      "targetQuantity": 150
+    },
+    {
+      "itemId": "drink.milk",
+      "reorderBelow": 20,
+      "targetQuantity": 60
+    }
+  ],
+  "salesPolicy": {
+    "channels": [
+      "retail"
+    ],
+    "sellItems": [
+      "food.bread",
+      "food.apple",
+      "food.banana",
+      "drink.water",
+      "drink.milk"
+    ],
+    "targetMarkupPercent": 30,
+    "customersServedPerWorkerHour": 20
+  }
+}

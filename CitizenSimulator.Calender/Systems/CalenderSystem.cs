@@ -83,6 +83,8 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
         {
             events.Publish(new OnNightStart());
         }
+
+        _calenderService.TickOfDay = tickOfDay;
     }
     
     private static uint GetDaysInMonth(CalenderComponent.Months month, int year)

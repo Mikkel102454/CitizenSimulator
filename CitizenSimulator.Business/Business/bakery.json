@@ -1,0 +1,69 @@
+{
+  "id": "business.bakery",
+  "name": "Bakery",
+
+  "recipes": ["recipe.bread"],
+
+  "premises": {
+    "allowedUses": ["commercial", "mixed"],
+    "minimumAreaM2": 60,
+    "storageCapacity": 500
+  },
+
+  "workforce": [
+    {
+      "role": "baker",
+      "desiredCount": 2,
+      "minimumSkill": 1,
+      "startingHourlyWage": 150
+    },
+    {
+      "role": "cashier",
+      "desiredCount": 1,
+      "minimumSkill": 0,
+      "startingHourlyWage": 125
+    }
+  ],
+
+  "equipment": [
+    {
+      "equipmentId": "equipment.oven",
+      "count": 1
+    }
+  ],
+
+  "openingHours": [
+    {
+      "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      "opens": "06:00",
+      "closes": "17:00"
+    }
+  ],
+
+  "utilities": {
+    "electricityKwhPerOperatingHour": 2,
+    "waterLitresPerOperatingHour": 5
+  },
+
+  "operatingCosts": {
+    "insurancePerDay": 10,
+    "maintenanceBudgetPerDay": 15
+  },
+
+  "stockPolicy": [
+    {
+      "itemId": "material.flour",
+      "reorderBelow": 20,
+      "targetQuantity": 100
+    }
+  ],
+
+  "salesPolicy": {
+    "channels": ["retail", "wholesale"],
+    "sellItems": {
+      "food.bread": 13
+    },
+    "targetMarkupPercent": 30,
+    "customersServedPerWorkerHour": 20
+  }
+}

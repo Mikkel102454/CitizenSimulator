@@ -1,0 +1,23 @@
+{
+  "id": "recipe.flour",
+  "inputs": {
+    "material.wheat": 10
+  },
+  "outputs": {
+    "material.flour": 8
+  },
+  "durationMinutes": 60,
+  "laborMinutes": 20,
+  "requiredEquipment": [
+    {
+      "equipmentId": "equipment.grain_mill",
+      "count": 1
+    }
+  ],
+  "utilitiesPerBatch": {
+    "electricityKwh": 3
+  },
+  "wasteOutputs": {
+    "waste.organic": 2
+  }
+}

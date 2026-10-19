@@ -1,0 +1,72 @@
+{
+  "id": "business.furniture_workshop",
+  "name": "Furniture Workshop",
+  "recipes": [
+    "recipe.furniture"
+  ],
+  "premises": {
+    "allowedUses": [
+      "industrial"
+    ],
+    "minimumAreaM2": 120,
+    "storageCapacity": 500
+  },
+  "workforce": [
+    {
+      "role": "carpenter",
+      "desiredCount": 2,
+      "minimumSkill": 1,
+      "startingHourlyWage": 160
+    }
+  ],
+  "equipment": [
+    {
+      "equipmentId": "equipment.workbench",
+      "count": 1
+    }
+  ],
+  "openingHours": [
+    {
+      "days": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday"
+      ],
+      "opens": "08:00",
+      "closes": "17:00"
+    }
+  ],
+  "utilities": {
+    "electricityKwhPerOperatingHour": 1,
+    "waterLitresPerOperatingHour": 2
+  },
+  "operatingCosts": {
+    "insurancePerDay": 10,
+    "maintenanceBudgetPerDay": 15
+  },
+  "stockPolicy": [
+    {
+      "itemId": "material.wood",
+      "reorderBelow": 30,
+      "targetQuantity": 150
+    },
+    {
+      "itemId": "material.iron",
+      "reorderBelow": 5,
+      "targetQuantity": 30
+    }
+  ],
+  "salesPolicy": {
+    "channels": [
+      "retail",
+      "wholesale"
+    ],
+    "sellItems": [
+      "product.furniture"
+    ],
+    "targetMarkupPercent": 30,
+    "customersServedPerWorkerHour": 20
+  }
+}

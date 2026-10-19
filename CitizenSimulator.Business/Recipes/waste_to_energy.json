@@ -1,0 +1,24 @@
+{
+  "id": "recipe.waste_to_energy",
+  "inputs": {
+    "waste.organic": 100
+  },
+  "outputs": {},
+  "utilityOutputsPerBatch": {
+    "electricityKwh": 30
+  },
+  "durationMinutes": 60,
+  "laborMinutes": 60,
+  "requiredEquipment": [
+    {
+      "equipmentId": "equipment.waste_incinerator",
+      "count": 1
+    }
+  ],
+  "utilitiesPerBatch": {
+    "electricityKwh": 2
+  },
+  "wasteOutputs": {
+    "waste.ash": 10
+  }
+}

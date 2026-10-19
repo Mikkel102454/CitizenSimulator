@@ -1,0 +1,21 @@
+{
+  "id": "recipe.wheat",
+  "inputs": {},
+  "outputs": {
+    "material.wheat": 100
+  },
+  "durationMinutes": 129600,
+  "laborMinutes": 480,
+  "requiredEquipment": [
+    {
+      "equipmentId": "equipment.tractor",
+      "count": 1
+    }
+  ],
+  "utilitiesPerBatch": {
+    "electricityKwh": 0
+  },
+  "wasteOutputs": {
+    "waste.organic": 10
+  }
+}

@@ -3,4 +3,5 @@
 public interface ICalenderService
 {
     ulong GetTicksPerDay();
+    string GetTimeOfDay();
 }

@@ -1,0 +1,7 @@
+{
+  "id": "utility.electricity",
+  "name": "Electricity",
+  "description": "Electrical energy generated for the power grid. One inventory unit represents one kilowatt-hour (kWh).",
+  "consumable": false,
+  "effects": []
+}

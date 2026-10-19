@@ -1,0 +1,7 @@
+{
+  "id": "equipment.grain_mill",
+  "name": "Grain Mill",
+  "description": "Equipment used to grind wheat into flour. One inventory unit represents one mill.",
+  "consumable": false,
+  "effects": []
+}

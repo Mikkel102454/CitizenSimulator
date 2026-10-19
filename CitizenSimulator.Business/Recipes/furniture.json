@@ -1,0 +1,22 @@
+{
+  "id": "recipe.furniture",
+  "inputs": {
+    "material.wood": 10,
+    "material.iron": 1
+  },
+  "outputs": {
+    "product.furniture": 1
+  },
+  "durationMinutes": 240,
+  "laborMinutes": 180,
+  "requiredEquipment": [
+    {
+      "equipmentId": "equipment.workbench",
+      "count": 1
+    }
+  ],
+  "utilitiesPerBatch": {
+    "electricityKwh": 2
+  },
+  "wasteOutputs": {}
+}

@@ -1,0 +1,7 @@
+{
+  "id": "equipment.tractor",
+  "name": "Tractor",
+  "description": "Equipment used to cultivate and harvest farmland. One inventory unit represents one tractor.",
+  "consumable": false,
+  "effects": []
+}

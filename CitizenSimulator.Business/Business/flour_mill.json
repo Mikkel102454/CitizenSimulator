@@ -1,0 +1,66 @@
+{
+  "id": "business.flour_mill",
+  "name": "Flour Mill",
+  "recipes": [
+    "recipe.flour"
+  ],
+  "premises": {
+    "allowedUses": [
+      "industrial"
+    ],
+    "minimumAreaM2": 150,
+    "storageCapacity": 1000
+  },
+  "workforce": [
+    {
+      "role": "mill_operator",
+      "desiredCount": 2,
+      "minimumSkill": 1,
+      "startingHourlyWage": 145
+    }
+  ],
+  "equipment": [
+    {
+      "equipmentId": "equipment.grain_mill",
+      "count": 1
+    }
+  ],
+  "openingHours": [
+    {
+      "days": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday"
+      ],
+      "opens": "08:00",
+      "closes": "17:00"
+    }
+  ],
+  "utilities": {
+    "electricityKwhPerOperatingHour": 1,
+    "waterLitresPerOperatingHour": 2
+  },
+  "operatingCosts": {
+    "insurancePerDay": 10,
+    "maintenanceBudgetPerDay": 15
+  },
+  "stockPolicy": [
+    {
+      "itemId": "material.wheat",
+      "reorderBelow": 100,
+      "targetQuantity": 500
+    }
+  ],
+  "salesPolicy": {
+    "channels": [
+      "wholesale"
+    ],
+    "sellItems": [
+      "material.flour"
+    ],
+    "targetMarkupPercent": 30,
+    "customersServedPerWorkerHour": 20
+  }
+}
