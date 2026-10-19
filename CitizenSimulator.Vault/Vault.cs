@@ -5,7 +5,7 @@ using CitizenSimulator.Vault.Systems;
 
 namespace CitizenSimulator.Vault;
 
-[Mod("vault", "Vault", "1.0.0", Dependencies = new[] { "calender" })]
+[Mod("vault", "Vault", "1.0.0")]
 public class Vault : IMod
 {
     public void OnLoad(IModContext context)

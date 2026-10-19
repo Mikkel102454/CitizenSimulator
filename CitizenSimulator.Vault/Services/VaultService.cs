@@ -1,15 +1,12 @@
 using CitizenSimulator.Vault.Services.Abstractions;
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.Events;
-using CitizenSimulator.Citizen.Components;
 using CitizenSimulator.Vault.Components;
 
 namespace CitizenSimulator.Vault.Services;
 
 public class VaultService(IEntityStore store, IEventBus events) : IVaultService
 {
-    private uint nextAccountId = 1;
-    
     public bool CreateVault(ICommandBuffer commands, EntityRef entityRef, string name, out VaultComponent? outVault)
     {
         if (store.HasComponent<VaultComponent>(entityRef))
@@ -30,12 +27,11 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
         return true;
     }
 
-    public bool AddBankAccount(VaultComponent vault, CitizenComponent citizen)
+    public bool AddBankAccount(VaultComponent vault, out VaultComponent.Account outAccount)
     {
-        VaultComponent.Account account = new VaultComponent.Account();
-        account.Balance = 0;
-        account.Citizen = citizen;
-        vault.Accounts.Add(account);
+        outAccount = new VaultComponent.Account();
+        outAccount.Balance = 0;
+        vault.Accounts.Add(outAccount);
         return true;
     }
 
@@ -45,41 +41,33 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
         return true;
     }
 
-    public bool AddBalance(VaultComponent vault, VaultComponent.Account account, double amount)
+    public bool AddBalance(VaultComponent.Account account, decimal amount)
     {
-        int index = vault.Accounts.FindIndex(a => a == account);
-        
-        if (index == -1) return false;
-        
-        var targetAccount = vault.Accounts[index];
-        targetAccount.Balance += amount;
-        vault.Accounts[index] = targetAccount;
+        account.Balance += amount;
         
         return true;
     }
 
-    public bool RemoveBalance(VaultComponent vault, VaultComponent.Account account, double amount)
+    public bool RemoveBalance(VaultComponent.Account account, decimal amount)
     {
-        int index = vault.Accounts.FindIndex(a => a == account);
-        
-        if (index == -1) return false;
-        
-        var targetAccount = vault.Accounts[index];
-        targetAccount.Balance -= amount;
-        vault.Accounts[index] = targetAccount;
+        account.Balance -= amount;
         
         return true;
     }
 
-    public bool SetBalance(VaultComponent vault, VaultComponent.Account account, double amount)
+    public bool TransferBalance(VaultComponent.Account senderAccount, VaultComponent.Account receiverAccount, decimal amount)
     {
-        int index = vault.Accounts.FindIndex(a => a == account);
+        if(senderAccount.Balance < amount)
+            return false;
         
-        if (index == -1) return false;
-        
-        var targetAccount = vault.Accounts[index];
-        targetAccount.Balance = amount;
-        vault.Accounts[index] = targetAccount;
+        senderAccount.Balance -= amount;
+        receiverAccount.Balance += amount;
+        return true;
+    }
+
+    public bool SetBalance(VaultComponent.Account account, decimal amount)
+    {
+        account.Balance = amount;
         
         return true;
     }

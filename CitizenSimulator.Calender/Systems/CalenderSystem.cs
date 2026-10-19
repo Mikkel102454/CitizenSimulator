@@ -11,7 +11,6 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
 {
     private const int STARTYEAR = 2000; // 10 seconds
     private CalenderComponent _calenderComponent;
-    private CalenderService _calenderService;
 
     protected override void OnStart(ICommandBuffer commands)
     {
@@ -84,7 +83,7 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
             events.Publish(new OnNightStart());
         }
 
-        _calenderService.TickOfDay = tickOfDay;
+        calenderService.TickOfDay = tickOfDay;
     }
     
     private static uint GetDaysInMonth(CalenderComponent.Months month, int year)

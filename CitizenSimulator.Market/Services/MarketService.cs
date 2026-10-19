@@ -4,10 +4,11 @@ using CitizenSimulator.Business.Components;
 using CitizenSimulator.Inventory.Components;
 using CitizenSimulator.Market.Services.Abstractions;
 using CitizenSimulator.Vault.Components;
+using CitizenSimulator.Vault.Services.Abstractions;
 
 namespace CitizenSimulator.Market.Services;
 
-public class MarketService(IEntityStore store, IEventBus events) : IMarketService
+public class MarketService(IEntityStore store, IEventBus events, IVaultService vaultService) : IMarketService
 {
     public bool TryBuy(InventoryComponent receiveInventory, VaultComponent.Account paymentAccount, string itemId, int amount)
     {
@@ -20,15 +21,23 @@ public class MarketService(IEntityStore store, IEventBus events) : IMarketServic
             
             var salesPolicy = business.Type.SalesPolicy;
             
-            if (salesPolicy is null || !salesPolicy.SellItems.Contains(itemId))
+            if (salesPolicy is null || !salesPolicy.SellItems.ContainsKey(itemId))
                 continue;
             
-            var inventory = store.GetComponent<InventoryComponent>(seller);
+            var businessInventory = store.GetComponent<InventoryComponent>(seller);
             
-            if (inventory.GetQuantity(itemId) < amount)
+            if (businessInventory.GetQuantity(itemId) < amount)
                 continue;
 
+            if(!salesPolicy.SellItems.TryGetValue(itemId, out var price))
+                continue;
             
+            vaultService.TransferBalance(paymentAccount, business.PaymentAccount, price * amount);
+            
+            receiveInventory.Inventory[itemId] += amount;
+            businessInventory.Inventory[itemId] -= amount;
+            
+            return true;
         }
 
         return false;

@@ -71,13 +71,13 @@
     "channels": [
       "retail"
     ],
-    "sellItems": [
-      "food.bread",
-      "food.apple",
-      "food.banana",
-      "drink.water",
-      "drink.milk"
-    ],
+    "sellItems": {
+      "food.bread": 15,
+      "food.apple": 4,
+      "food.banana": 4,
+      "drink.water": 5,
+      "drink.milk": 12
+    },
     "targetMarkupPercent": 30,
     "customersServedPerWorkerHour": 20
   }

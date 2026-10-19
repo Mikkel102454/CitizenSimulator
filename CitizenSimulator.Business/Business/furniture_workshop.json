@@ -63,9 +63,9 @@
       "retail",
       "wholesale"
     ],
-    "sellItems": [
-      "product.furniture"
-    ],
+    "sellItems": {
+      "product.furniture": 500
+    },
     "targetMarkupPercent": 30,
     "customersServedPerWorkerHour": 20
   }

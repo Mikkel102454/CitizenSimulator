@@ -25,19 +25,19 @@ public class WalletService(IEntityStore store, IEventBus events) : IWalletServic
         return true;
     }
 
-    public bool AddBalance(WalletComponent wallet, double amount)
+    public bool AddBalance(WalletComponent wallet, decimal amount)
     {
         wallet.Money += amount;
         return true;
     }
 
-    public bool RemoveBalance(WalletComponent wallet, double amount)
+    public bool RemoveBalance(WalletComponent wallet, decimal amount)
     {
         wallet.Money -= amount;
         return true;
     }
 
-    public bool SetBalance(WalletComponent wallet, double amount)
+    public bool SetBalance(WalletComponent wallet, decimal amount)
     {
         wallet.Money = amount;
         return true;

@@ -5,7 +5,7 @@ namespace CitizenSimulator.Inventory.Components;
 
 public class InventoryComponent : Component<InventoryComponent>
 {
-    private Dictionary<string, decimal> Inventory { get; } = [];
+    public Dictionary<string, decimal> Inventory { get; set; } = [];
 
     public decimal GetQuantity(Item item) => GetQuantity(item.Id);
 

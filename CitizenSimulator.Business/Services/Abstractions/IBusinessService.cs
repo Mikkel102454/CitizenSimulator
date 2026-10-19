@@ -7,6 +7,6 @@ namespace CitizenSimulator.Business.Services.Abstractions;
 
 public interface IBusinessService
 {
-    bool CreateBusiness(ICommandBuffer commands, EntityRef entityRef, string typeId, string name, CitizenComponent owner, PropertyComponent property, 
+    bool CreateBusiness(ICommandBuffer commands, string typeId, string name, CitizenComponent owner, PropertyComponent property, 
         out BusinessComponent? outBusiness);
 }

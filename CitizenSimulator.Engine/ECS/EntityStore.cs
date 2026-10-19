@@ -116,6 +116,12 @@ public sealed class EntityStore : IEntityStore
         Validate(entity);
         ArgumentNullException.ThrowIfNull(component);
 
+        if (_entities[entity.Id].ContainsKey(typeof(T)))
+        {
+            throw new InvalidOperationException(
+                $"Entity {entity.Id} already has a {typeof(T).Name}.");
+        }
+        
         AssignParent(entity, component);
         _entities[entity.Id].TryGetValue(typeof(T), out var previous);
         _entities[entity.Id][typeof(T)] = component;

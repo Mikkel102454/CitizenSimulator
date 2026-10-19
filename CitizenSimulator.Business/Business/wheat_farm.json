@@ -51,9 +51,9 @@
     "channels": [
       "wholesale"
     ],
-    "sellItems": [
-      "material.wheat"
-    ],
+    "sellItems": {
+      "material.wheat": 3
+    },
     "targetMarkupPercent": 30,
     "customersServedPerWorkerHour": 20
   }

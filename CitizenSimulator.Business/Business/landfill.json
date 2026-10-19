@@ -34,7 +34,7 @@
   "stockPolicy": [],
   "salesPolicy": {
     "channels": [],
-    "sellItems": [],
+    "sellItems": {},
     "targetMarkupPercent": 0,
     "customersServedPerWorkerHour": 0
   },
