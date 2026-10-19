@@ -1,4 +1,4 @@
-# Abstractions and mod development
+# Make a mod
 
 CitizenSimulator separates contracts in `CitizenSimulator.Abstractions` from implementations in `CitizenSimulator.Engine`. A mod implements `IMod`, supplies a `ModAttribute`, and receives an `IModContext` during loading. The context provides the world, component registry, system registry, service registry, simulation clock, queued controls, and two event buses.
 
@@ -12,8 +12,7 @@ The host discovers assemblies under `Mods` beside the executable. It resolves de
 4. [Systems and queries](systems.md) covers system callbacks and query composition.
 5. [Services and events](communication.md) covers communication between mods.
 6. [Time and input](timing.md) covers every clock property, control request, and input event.
-7. [Game services](gameplay.md) describes optional gameplay APIs and current limitations.
-8. [Troubleshooting](troubleshooting.md) explains common failures and verification.
+7. [Troubleshooting](troubleshooting.md) explains common failures and verification.
 
 ## Context properties
 
@@ -51,10 +50,8 @@ A separate `IEventBus` delivers input even when the simulation is paused. Subscr
 
 `ISimulationControls` queues requests that the host applies between ticks. A request does not immediately change the clock.
 
-## Scope and examples
+## Using this guide
 
-The core call reference covers all public types in `CitizenSimulator.Abstractions`. Gameplay services belong to their individual mod assemblies and require those mods to be installed and initialized.
+Start with the tutorial to create your own component, system, and event. Use the reference pages when implementing loading, world changes, communication, or input.
 
-Call sequences are explicitly pseudocode. They preserve API names and argument order but omit C# statement terminators to satisfy this documentation's punctuation constraints. Convert those sequences to ordinary C# statements when implementing a mod. XML project examples are usable as written.
-
-Implementation references are repository paths in inline code. The most useful starting points are `CitizenSimulator/Program.cs`, `CitizenSimulator.Engine/Modding/ModLoader.cs`, and `CitizenSimulator.Engine/ECS/SystemScheduler.cs`.
+Call sequences are pseudocode. Translate them into valid C# when implementing your mod. XML project examples are usable as written.

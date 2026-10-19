@@ -1,0 +1,757 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Learn how to create and install CitizenSimulator mods">
+      
+      
+      
+      
+        <link rel="prev" href="../communication/">
+      
+      
+        <link rel="next" href="../troubleshooting/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Time and input - CitizenSimulator mod documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#time-and-input" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CitizenSimulator mod documentation" class="md-header__button md-logo" aria-label="CitizenSimulator mod documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CitizenSimulator mod documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Time and input
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CitizenSimulator mod documentation" class="md-nav__button md-logo" aria-label="CitizenSimulator mod documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CitizenSimulator mod documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build a mod
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading and lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entities and components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems and queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../communication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services and events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Time and input
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Time and input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#simulationtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SimulationTime
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isimulationclock-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ISimulationClock properties
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isimulationcontrols-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ISimulationControls calls
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ISimulationControls calls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pause()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resume()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setspeeddouble-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SetSpeed(double speed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stepulong-count-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step(ulong count = 1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advancebytimespan-duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AdvanceBy(TimeSpan duration)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advancetotimespan-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AdvanceTo(TimeSpan target)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quit()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-event-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input event types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iinputstateisdowninputkey-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IInputState.IsDown(InputKey key)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pause-binding-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pause binding recipe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-text-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add text controls
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="time-and-input">Time and input</h1>
+<h2 id="simulationtime">SimulationTime</h2>
+<p><code>SimulationTime(ulong Tick, TimeSpan Delta, TimeSpan Elapsed)</code> is the callback time value. <code>Tick</code> is the destination tick number. <code>Delta</code> is the fixed simulation duration of one tick. <code>Elapsed</code> is the simulation timestamp at that destination.</p>
+<p>Inside a tick callback the shared clock can still report the previously completed tick. The clock commits the destination tick after all work for the tick succeeds. Use the callback argument when calculating current tick behavior.</p>
+<h2 id="isimulationclock-properties">ISimulationClock properties</h2>
+<p><code>TickRate</code> is the configured number of simulation ticks per simulation second. The host defaults to <code>30</code>.</p>
+<p><code>Tick</code> is the latest committed tick, initially zero. <code>Delta</code> is the fixed tick duration. <code>Elapsed</code> is total simulation time at the committed tick, rather than wall clock time.</p>
+<p><code>IsPaused</code> reports whether normal time accumulation is paused. <code>Speed</code> is the positive real time multiplier, initially <code>1</code>. Speed changes the pace of ticks while leaving each tick's simulation duration fixed.</p>
+<p><code>IsAdvancing</code> reports an active manual target. It can be true while <code>IsPaused</code> is also true because manual advancement executes ticks without resuming normal time accumulation.</p>
+<p>The host defaults to batches of at most <code>8</code> ticks, allowing input and queued controls to be processed between batches. Controls are also applied after each completed tick.</p>
+<h2 id="isimulationcontrols-calls">ISimulationControls calls</h2>
+<p>Requests are queued and applied in submission order between ticks. Reading the clock immediately after requesting a change may show the old state. The host handles up to <code>64</code> queued requests per application pass.</p>
+<h3 id="pause">Pause()</h3>
+<p>Pauses normal advancement and cancels an active manual target. Use this to establish the state required for stepping or to cancel a long advance.</p>
+<h3 id="resume">Resume()</h3>
+<p>Resumes normal accumulation. Fails if a manual target is still active. Queue <code>Pause()</code> before <code>Resume()</code> when cancelling an advance and returning to normal running.</p>
+<h3 id="setspeeddouble-speed">SetSpeed(double speed)</h3>
+<p>Sets the real time multiplier. The value must be finite and greater than zero. Zero is invalid, so use <code>Pause()</code> to stop advancement.</p>
+<h3 id="stepulong-count-1">Step(ulong count = 1)</h3>
+<p>Runs the requested positive number of ticks while remaining paused afterward. Requires a paused clock with no active manual target. A count of zero is invalid. The target is calculated from the current committed tick when the queued request is applied.</p>
+<h3 id="advancebytimespan-duration">AdvanceBy(TimeSpan duration)</h3>
+<p>Advances relative to the current simulation elapsed time. Requires a paused clock without an active target. Duration must be nonnegative. A duration of zero completes without scheduling extra ticks.</p>
+<h3 id="advancetotimespan-target">AdvanceTo(TimeSpan target)</h3>
+<p>Advances to an absolute simulation timestamp. Requires a paused clock without an active target. The target cannot precede the current elapsed time. A target between tick boundaries rounds upward to the first tick reaching that timestamp. The exposed current timestamp is recognized without adding a tick.</p>
+<h3 id="quit">Quit()</h3>
+<p>Requests host cancellation. The host exits its main loop and stops systems. This uses the normal shutdown path.</p>
+<p>Invalid queued control arguments, invalid state, and arithmetic overflow are reported as <code>ControlFailed</code> events on <code>InputEvents</code>. Subscribe to these events to display errors. Validation happens when the request is applied, so a try block around the request alone does not receive those failures.</p>
+<h2 id="input-event-types">Input event types</h2>
+<p>All input events are in <code>CitizenSimulator.Abstractions.Input</code> and implement <code>IEvent</code>.</p>
+<p><code>KeyPressed(InputKey Key, KeyModifiers Modifiers)</code> reports a transition to held state. Repeated native presses while already held do not produce another transition event.</p>
+<p><code>KeyReleased(InputKey Key, KeyModifiers Modifiers)</code> reports a transition out of held state.</p>
+<p><code>KeyHeld(InputKey Key, KeyModifiers Modifiers)</code> is published once per simulation tick for each held key. It does not continue firing while fully paused. Its modifier value comes from the dispatcher's latest modifier state.</p>
+<p><code>LineSubmitted(string Text)</code> reports a complete console line. <code>ControlFailed(string Message)</code> reports a rejected queued control operation.</p>
+<p>Pressed, released, and submitted line events are drained between batches even while paused. Between batch input callbacks receive a time value with zero <code>Delta</code> and the current committed time. Held callbacks run before system updates with the destination tick time.</p>
+<h2 id="key-values">Key values</h2>
+<p><code>InputKey</code> includes <code>Unknown</code>, <code>Enter</code>, <code>Escape</code>, <code>Space</code>, <code>Left</code>, <code>Right</code>, <code>Up</code>, <code>Down</code>, <code>Backspace</code>, <code>Tab</code>, <code>Shift</code>, <code>Control</code>, <code>Alt</code>, letters <code>A</code> through <code>Z</code>, and <code>F1</code> through <code>F12</code>.</p>
+<p><code>KeyModifiers</code> is a flags enum. <code>None</code> is <code>0</code>, <code>Shift</code> is <code>1</code>, <code>Control</code> is <code>2</code>, and <code>Alt</code> is <code>4</code>. Combine flags when matching chords.</p>
+<h2 id="iinputstateisdowninputkey-key">IInputState.IsDown(InputKey key)</h2>
+<p>Retrieve <code>IInputState</code> through <code>context.Services.Get&lt;IInputState&gt;()</code>. The host registers it before loading mods. <code>IsDown</code> reports whether the dispatcher currently considers the key held. <code>Unknown</code> is not added to held state.</p>
+<p>Native keyboard input is available through the Windows console adapter when it can be created. Otherwise the host falls back to submitted console lines, so keyboard transition events should not be assumed available on every host.</p>
+<h2 id="pause-binding-recipe">Pause binding recipe</h2>
+<p>During a system's <code>OnStart</code>, subscribe to <code>KeyPressed</code> on <code>context.InputEvents</code> and keep the returned subscription. The handler can use this pseudocode.</p>
+<pre><code class="language-text">if data.Key == InputKey.Space
+    if context.Clock.IsPaused
+        context.Controls.Resume()
+    else
+        context.Controls.Pause()
+</code></pre>
+<p>For a manual advance, enqueue calls in this order.</p>
+<pre><code class="language-text">context.Controls.Pause()
+context.Controls.AdvanceBy(TimeSpan.FromSeconds(10))
+</code></pre>
+<p>Dispose the binding subscription during <code>OnStop</code>. Subscribe to <code>ControlFailed</code> to report errors if a request conflicts with another queued control.</p>
+<h2 id="add-text-controls">Add text controls</h2>
+<p>To add console commands to your mod, subscribe to <code>LineSubmitted</code> on <code>context.InputEvents</code>. Compare <code>data.Text</code> with command names you define, then queue the matching control request.</p>
+<p>For example, handle <code>pause</code> with <code>context.Controls.Pause()</code> and <code>resume</code> with <code>context.Controls.Resume()</code>. Validate numeric arguments before requesting a speed change or a manual advance. Subscribe to <code>ControlFailed</code> to report requests rejected by the host.</p>
+<p>Keep the subscription in a system and dispose it during <code>OnStop</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

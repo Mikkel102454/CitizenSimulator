@@ -1,0 +1,800 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Learn how to create and install CitizenSimulator mods">
+      
+      
+      
+      
+        <link rel="prev" href="../lifecycle/">
+      
+      
+        <link rel="next" href="../systems/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Entities and components - CitizenSimulator mod documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#entities-and-components" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CitizenSimulator mod documentation" class="md-header__button md-logo" aria-label="CitizenSimulator mod documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CitizenSimulator mod documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Entities and components
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CitizenSimulator mod documentation" class="md-nav__button md-logo" aria-label="CitizenSimulator mod documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CitizenSimulator mod documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build a mod
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading and lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entities and components
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entities and components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#entityref" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityRef
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component contracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ientitystore-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IEntityStore calls
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IEntityStore calls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#createentity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CreateEntity()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#destroyentityentityref-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DestroyEntity(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isaliveentityref-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IsAlive(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#addcomponententityref-entity-t-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AddComponent(EntityRef entity, T component)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getcomponententityref-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GetComponent(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hascomponententityref-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HasComponent(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removecomponententityref-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RemoveComponent(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queryiquery-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query(IQuery query)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#icommandbuffer-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ICommandBuffer calls
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ICommandBuffer calls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#createentity_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CreateEntity()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#destroyentityentityref-entity_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DestroyEntity(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trydestroyentityentityref-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TryDestroyEntity(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#addcomponententityref-entity-t-component_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AddComponent(EntityRef entity, T component)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removecomponententityref-entity_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RemoveComponent(EntityRef entity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-related-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating related state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-registry-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component registry calls
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems and queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../communication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services and events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../timing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Time and input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="entities-and-components">Entities and components</h1>
+<h2 id="entityref">EntityRef</h2>
+<p><code>EntityRef(int Id, int Generation, int StoreId)</code> is a value identifying an entity within a store. Equality includes all three fields. Do not construct references from a guessed ID. The current implementation issues increasing IDs with generation <code>1</code> and assigns each store its own identifier.</p>
+<p>The default value is a detached or absent reference. A reserved entity returned by a command buffer is also not alive until its create command plays. Use <code>Store.IsAlive(entity)</code> before reading a reference that might have been destroyed.</p>
+<h2 id="component-contracts">Component contracts</h2>
+<p><code>IComponent</code> exposes <code>Parent</code>. Its setter is internal to the contract. <code>Component&lt;T&gt;</code> implements this contract and gives derived components a publicly readable parent. Prefer deriving from <code>Component&lt;YourComponent&gt;</code> rather than implementing parent bookkeeping yourself.</p>
+<p>The engine assigns <code>Parent</code> during direct attachment or when attachment is queued. A queued parent therefore does not prove that the component is already in the store. Removal, entity destruction, or discarded unattached commands clear the parent to its default value.</p>
+<p>A component instance cannot belong to different entities simultaneously. Use a fresh instance for each entity. Components are stored by the exact generic type supplied to <code>AddComponent&lt;T&gt;</code>, so use the concrete component type consistently.</p>
+<h2 id="ientitystore-calls">IEntityStore calls</h2>
+<h3 id="createentity">CreateEntity()</h3>
+<p>Returns a new active <code>EntityRef</code> immediately. Use during mod loading or other host controlled setup outside scheduled callbacks. During callbacks call <code>commands.CreateEntity()</code> instead.</p>
+<h3 id="destroyentityentityref-entity">DestroyEntity(EntityRef entity)</h3>
+<p>Immediately removes a live entity and clears all attached component parents. Invalid or destroyed references throw. Use the command buffer during callbacks.</p>
+<h3 id="isaliveentityref-entity">IsAlive(EntityRef entity)</h3>
+<p>Returns whether the reference belongs to this store, has the expected generation, and currently identifies an active entity. Returns false for pending reservations, destroyed references, and foreign references.</p>
+<h3 id="addcomponententityref-entity-t-component">AddComponent<T>(EntityRef entity, T component)</h3>
+<p>Immediately attaches and returns the same component instance. <code>T</code> must be a class implementing <code>IComponent</code>. The entity must be alive, the instance must be nonnull, and the entity must not already contain this exact component type. Attaching a duplicate throws rather than replacing data. During callbacks use the command buffer.</p>
+<h3 id="getcomponententityref-entity">GetComponent<T>(EntityRef entity)</h3>
+<p>Returns the component or null when that type is absent on a live entity. An invalid entity throws rather than returning null. Reading returns the stored reference, so changing its properties changes shared state immediately.</p>
+<h3 id="hascomponententityref-entity">HasComponent<T>(EntityRef entity)</h3>
+<p>Reports whether a live entity contains the exact component type. An invalid entity throws. This call cannot see attachments waiting in a command buffer.</p>
+<h3 id="removecomponententityref-entity">RemoveComponent<T>(EntityRef entity)</h3>
+<p>Immediately removes the type when present and clears the detached component's parent. Missing components are harmless on a valid entity. Invalid entities throw. Use the command buffer during callbacks.</p>
+<h3 id="queryiquery-query">Query(IQuery query)</h3>
+<p>Lazily enumerates active entities whose component dictionaries match the query. A null query throws. Avoid direct structural mutation while enumerating. Queue structural work for the end of the callback instead.</p>
+<h2 id="icommandbuffer-calls">ICommandBuffer calls</h2>
+<p>Every method operates on the current callback's buffer. Never retain the buffer for another callback, another thread, or later asynchronous work. Playback and discard close it permanently.</p>
+<h3 id="createentity_1">CreateEntity()</h3>
+<p>Reserves and returns an <code>EntityRef</code>, then queues activation. You may queue component attachments to this reference in the same buffer. Store reads still reject it until playback activates it.</p>
+<h3 id="destroyentityentityref-entity_1">DestroyEntity(EntityRef entity)</h3>
+<p>Queues strict destruction. The reference must belong to this store and must not be reserved by another buffer. Liveness is enforced when the command executes. Destroying an already destroyed entity causes playback failure.</p>
+<h3 id="trydestroyentityentityref-entity">TryDestroyEntity(EntityRef entity)</h3>
+<p>Queues destruction only if the entity is alive when playback reaches the command. Useful when multiple operations might destroy the same entity. Foreign references and reservations owned by another buffer still throw when queued. This is not a universal validation bypass.</p>
+<h3 id="addcomponententityref-entity-t-component_1">AddComponent<T>(EntityRef entity, T component)</h3>
+<p>Queues attachment and immediately returns the supplied object. <code>Parent</code> is assigned when queued, so you can configure the returned component before attachment. Duplicate type checks happen during playback. Repeated additions of the same type can therefore fail after earlier commands have already succeeded.</p>
+<h3 id="removecomponententityref-entity_1">RemoveComponent<T>(EntityRef entity)</h3>
+<p>Queues removal. Missing types are harmless at playback if the entity is alive. Removing from an entity destroyed by an earlier command fails validation.</p>
+<h2 id="creating-related-state">Creating related state</h2>
+<p>This is pseudocode for a callback that creates an entity and attaches data.</p>
+<pre><code class="language-text">entity = commands.CreateEntity()
+counter = commands.AddComponent(entity, new CounterComponent { Count = 0 })
+counter.Count = 5
+</code></pre>
+<p>Do not call <code>Store.GetComponent&lt;CounterComponent&gt;(entity)</code> in this sequence. The reference is still reserved. Retain the returned component object for work within this callback and read through the store in later callbacks.</p>
+<h2 id="component-registry-calls">Component registry calls</h2>
+<p><code>IComponentRegistry.Register&lt;T&gt;()</code> registers the type and returns <code>ComponentType&lt;T&gt;</code>. Registering the same type again returns its existing token.</p>
+<p><code>IComponentRegistry.Get&lt;T&gt;()</code> returns an existing token and throws when the type is unregistered. <code>IComponentRegistry.IsRegistered&lt;T&gt;()</code> checks registration without throwing for absence.</p>
+<p><code>ComponentTypes.Initialize(IComponentRegistry registry)</code> sets the global registry used by static helpers. The host calls it before loading mods. Mods should use the supplied registry rather than reinitialize this shared state.</p>
+<p><code>ComponentTypes.Get&lt;T&gt;()</code> forwards to that registry and throws if initialization has not occurred or the type is absent. <code>Component&lt;T&gt;.GetComponentType()</code> is the convenient inherited form.</p>
+<p><code>ComponentType&lt;T&gt;(int Id)</code> implements <code>IQuery</code>. Its <code>Matches</code> method checks the presence of <code>typeof(T)</code> in a component dictionary. The numeric ID is registry metadata rather than a persistent identifier to save or transmit.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

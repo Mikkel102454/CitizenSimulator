@@ -17,7 +17,7 @@ Use the .NET 10 SDK. Create a class library beside the existing projects, for ex
 </Project>
 ```
 
-Reference additional gameplay projects only when using their types. Add matching mod IDs to the entry point metadata when those mods must initialize first. A project reference makes types available to the compiler. A mod dependency controls runtime initialization order.
+Reference a shared contract assembly when your mod uses types defined outside the core abstractions. Declare the providing mod ID when it must initialize first. A project reference makes types available to the compiler. A mod dependency controls runtime initialization order.
 
 ## Define the entry point
 
@@ -29,10 +29,10 @@ Create a public concrete class called `ExampleMod` implementing `CitizenSimulato
 
 Implement `void OnLoad(IModContext context)`. The loader calls it once for this load attempt after required dependencies have initialized. Keep constructors free of world setup because discovery constructs mod instances before initialization order has been resolved.
 
-For a mod that requires items and needs, metadata looks like this.
+If you create a separate mod that provides a shared service, declare its ID as a dependency. For a provider you name example_services, metadata looks like this.
 
 ```text
-[Mod("example", "Example mod", "1.0.0", Dependencies = new[] { "items", "needs" })]
+[Mod("example", "Example mod", "1.0.0", Dependencies = new[] { "example_services" })]
 ```
 
 The displayed version is descriptive metadata. The loader does not enforce version ranges.
@@ -115,7 +115,3 @@ dotnet run
 The loader always uses the executable base directory for `Mods`, regardless of the working directory.
 
 Look for `[DISCOVERED]`, `[LOADING]`, and `[LOADED]` messages. Verify that the counter completion handler runs once and that removing the component prevents later updates from incrementing it.
-
-## Existing examples
-
-`CitizenSimulator.TestMod/TestMod.cs` demonstrates a service, an entity, a component, and explicit system registration. `CitizenSimulator.TestMod/Systems/MessageSystem.cs` demonstrates querying and event publication. `CitizenSimulator.Mod2` demonstrates consumption from another mod. `CitizenSimulator.ConsoleMod/ConsoleMod.cs` demonstrates input subscriptions and cleanup.

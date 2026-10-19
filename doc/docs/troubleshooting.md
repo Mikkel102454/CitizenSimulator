@@ -10,7 +10,7 @@ IDs are case insensitive. All entries in a duplicate ID group are excluded. Depe
 
 ## A service is not registered
 
-Check the exact generic registration type. A concrete class registration does not satisfy an interface lookup. Required providers must initialize first through a declared dependency. Some modules, including the current brain entry point, do not register every service class present in their source tree.
+Check the exact generic registration type. A concrete class registration does not satisfy an interface lookup. Required providers must initialize first through a declared dependency. Ensure the providing entry point actually registers the interface during `OnLoad`.
 
 ## A system does not execute
 
@@ -18,7 +18,7 @@ Register an instance through `context.Systems.Register` during `OnLoad`. Compone
 
 ## Structural mutation throws
 
-Entity creation, destruction, component attachment, and removal must use the callback's command buffer during system and event callbacks. A service can also trigger this error if its implementation directly changes structure. `ICitizenService.CreateCitizen` currently takes that direct path.
+Entity creation, destruction, component attachment, and removal must use the callback's command buffer during system and event callbacks. A service can also trigger this error if its implementation directly changes structure. Inspect your service implementation for direct store calls and pass the callback buffer when queueing structural changes.
 
 ## A new entity is invalid
 
@@ -48,9 +48,3 @@ Command playback is ordered without rollback. Earlier commands can succeed befor
 6. Pause and verify that submitted input still reaches its listener.
 7. Step once and confirm that the simulation performs exactly one update per registered system.
 8. Quit and confirm subscription cleanup and system shutdown.
-
-## Documentation maintenance
-
-Keep changes to this documentation inside `doc`. Run `mkdocs build` from that folder to validate navigation and generate the site. The supplied configuration keeps output in `doc/site` and uses the built in MkDocs theme.
-
-The primary implementation references are `CitizenSimulator.Abstractions`, `CitizenSimulator.Engine/ECS`, `CitizenSimulator.Engine/Events`, `CitizenSimulator.Engine/Modding`, `CitizenSimulator.Engine/Timing`, `CitizenSimulator.Engine/Input`, and each gameplay provider's `Services` directory.

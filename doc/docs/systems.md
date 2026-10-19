@@ -50,23 +50,23 @@ You can also construct `AndQuery`, `OrQuery`, and `NotQuery` directly with the s
 
 ## Query composition example
 
-Suppose a system needs citizens with needs and without a sleeping marker. Cache this expression during `OnStart` after all three component types have been registered.
+Define your own CounterComponent, EnabledComponent, and CompletedComponent types. To process enabled counters that have not completed, cache this expression during `OnStart` after registering all three types.
 
 ```text
 Query.And(
-    CitizenComponent.GetComponentType(),
-    NeedsComponent.GetComponentType(),
-    Query.Not(SleepingComponent.GetComponentType())
+    CounterComponent.GetComponentType(),
+    EnabledComponent.GetComponentType(),
+    Query.Not(CompletedComponent.GetComponentType())
 )
 ```
 
-To match either of two tags, use this expression.
+To match either of your own marker types, such as PendingComponent and ActiveComponent, use this expression. Register both types before constructing the query.
 
 ```text
 Query.Or(
-    WorkingComponent.GetComponentType(),
-    ShoppingComponent.GetComponentType()
+    PendingComponent.GetComponentType(),
+    ActiveComponent.GetComponentType()
 )
 ```
 
-Component queries test presence rather than property values. After retrieving a component, inspect its fields for conditions such as `Alive`, stock quantity, or balance. Alternatively, implement a custom `IQuery` that reads those properties.
+Component queries test presence rather than property values. After retrieving a component, inspect its fields for conditions such as `Count` or a completion flag. Alternatively, implement a custom `IQuery` that reads those properties.

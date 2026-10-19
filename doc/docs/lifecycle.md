@@ -39,5 +39,3 @@ If a callback throws, its queued structural commands are discarded. Direct field
 A failed system startup triggers a cleanup attempt for that system followed by shutdown of already started systems. An update or event delivery failure faults the scheduler. The host reports the exception and attempts shutdown. A failed tick also faults the clock because world state cannot safely be rolled back.
 
 Use `OnStop` to dispose subscriptions and release mod resources. Cleanup should tolerate partial initialization. The `Store` property remains assigned during `OnStop` and is cleared afterward even if cleanup throws.
-
-These behaviors come from `CitizenSimulator.Engine/Modding/ModLoader.cs`, `CitizenSimulator.Engine/ECS/SystemScheduler.cs`, and `CitizenSimulator.Engine/ECS/CommandBuffer.cs`.

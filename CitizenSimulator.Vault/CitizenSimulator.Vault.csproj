@@ -10,10 +10,6 @@
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Events\" />
-    </ItemGroup>
-
     <Target Name="CopyModToHost"
             AfterTargets="Build">
 

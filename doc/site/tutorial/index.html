@@ -1,0 +1,675 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Learn how to create and install CitizenSimulator mods">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../lifecycle/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Build a mod - CitizenSimulator mod documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#build-a-mod" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CitizenSimulator mod documentation" class="md-header__button md-logo" aria-label="CitizenSimulator mod documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CitizenSimulator mod documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Build a mod
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CitizenSimulator mod documentation" class="md-nav__button md-logo" aria-label="CitizenSimulator mod documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CitizenSimulator mod documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build a mod
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build a mod
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-the-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create the project
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-entry-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define the entry point
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-component-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define component data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#register-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implement-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implement callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#receive-the-completion-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Receive the completion event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-and-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and install
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading and lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entities and components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems and queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../communication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services and events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../timing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Time and input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="build-a-mod">Build a mod</h1>
+<h2 id="create-the-project">Create the project</h2>
+<p>Use the .NET 10 SDK. Create a class library beside the existing projects, for example <code>ExampleMod/ExampleMod.csproj</code>. Reference the same abstraction project that the host uses.</p>
+<pre><code class="language-xml">&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include=&quot;../CitizenSimulator.Abstractions/CitizenSimulator.Abstractions.csproj&quot; /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;
+</code></pre>
+<p>Reference a shared contract assembly when your mod uses types defined outside the core abstractions. Declare the providing mod ID when it must initialize first. A project reference makes types available to the compiler. A mod dependency controls runtime initialization order.</p>
+<h2 id="define-the-entry-point">Define the entry point</h2>
+<p>Create a public concrete class called <code>ExampleMod</code> implementing <code>CitizenSimulator.Abstractions.Modding.IMod</code>. Give it a public constructor with no arguments, or use the implicit constructor. Apply this attribute to the class.</p>
+<pre><code class="language-text">[Mod(&quot;example&quot;, &quot;Example mod&quot;, &quot;1.0.0&quot;)]
+</code></pre>
+<p>Implement <code>void OnLoad(IModContext context)</code>. The loader calls it once for this load attempt after required dependencies have initialized. Keep constructors free of world setup because discovery constructs mod instances before initialization order has been resolved.</p>
+<p>If you create a separate mod that provides a shared service, declare its ID as a dependency. For a provider you name example_services, metadata looks like this.</p>
+<pre><code class="language-text">[Mod(&quot;example&quot;, &quot;Example mod&quot;, &quot;1.0.0&quot;, Dependencies = new[] { &quot;example_services&quot; })]
+</code></pre>
+<p>The displayed version is descriptive metadata. The loader does not enforce version ranges.</p>
+<h2 id="define-component-data">Define component data</h2>
+<p>Create a public class <code>CounterComponent</code> deriving from <code>Component&lt;CounterComponent&gt;</code>. Add an integer property called <code>Count</code> with public accessors. The base class supplies <code>Parent</code> and <code>GetComponentType()</code>.</p>
+<p>Component types in valid discovered mod assemblies are registered automatically before any mod receives <code>OnLoad</code>. For component classes in a separate helper assembly without a discovered mod entry point, explicitly register the type through <code>context.Components.Register&lt;CounterComponent&gt;()</code>.</p>
+<h2 id="register-behavior">Register behavior</h2>
+<p>Create a public class <code>CounterSystem</code> deriving from <code>GameSystem</code>. Its constructor accepts an <code>IEventBus</code> and stores it for later publication. Give the base constructor priority <code>10</code> if this system should run after systems with priority <code>0</code>.</p>
+<p>Inside <code>OnLoad</code>, perform this pseudocode sequence.</p>
+<pre><code class="language-text">context.Systems.Register(new CounterSystem(context.Events))
+entity = context.Store.CreateEntity()
+context.Store.AddComponent(entity, new CounterComponent { Count = 0 })
+</code></pre>
+<p>The entity and component are immediately visible because loading happens before scheduled execution. Systems are registered explicitly. Discovering a mod does not automatically register its systems.</p>
+<h2 id="implement-callbacks">Implement callbacks</h2>
+<p>Override <code>OnStart(ICommandBuffer commands)</code> and cache the component query.</p>
+<pre><code class="language-text">counterQuery = CounterComponent.GetComponentType()
+</code></pre>
+<p>Override <code>OnUpdate(SimulationTime time, ICommandBuffer commands)</code> with this pseudocode.</p>
+<pre><code class="language-text">for each entity in Store.Query(counterQuery)
+    counter = Store.GetComponent&lt;CounterComponent&gt;(entity)
+    if counter is null
+        continue
+    counter.Count = counter.Count + 1
+    if counter.Count &gt;= 30
+        events.Publish(new CounterCompleted(entity, counter.Count))
+        commands.RemoveComponent&lt;CounterComponent&gt;(entity)
+</code></pre>
+<p>Define <code>CounterCompleted</code> as an immutable class or record implementing <code>IEvent</code>, with <code>EntityRef Entity</code> and <code>int Count</code> data. The example counts updates, so the real elapsed duration depends on the configured tick rate. Use <code>time.Delta.TotalSeconds</code> for behavior expressed in simulation seconds.</p>
+<p>Removing the component takes effect when this callback finishes successfully. A later system in the same tick can see the removal. The completion event is delivered after all system updates finish.</p>
+<h2 id="receive-the-completion-event">Receive the completion event</h2>
+<p>Create a listener system whose <code>OnStart</code> stores the subscription returned by this call.</p>
+<pre><code class="language-text">events.Subscribe&lt;CounterCompleted&gt;(HandleCompleted)
+</code></pre>
+<p>The handler signature is <code>void HandleCompleted(CounterCompleted data, SimulationTime time, ICommandBuffer commands)</code>. It can inspect <code>data.Entity</code>, print <code>data.Count</code>, or queue further changes. Check <code>Store.IsAlive(data.Entity)</code> before accessing entity data because references can become stale before event delivery.</p>
+<p>Override <code>OnStop</code> and call <code>Dispose()</code> on the stored subscription. Register the listener system during <code>OnLoad</code>. This gives the subscription a clear lifetime and prevents abandoned listeners.</p>
+<h2 id="build-and-install">Build and install</h2>
+<p>Run these commands from the repository root after creating the project.</p>
+<pre><code class="language-text">dotnet build ExampleMod/ExampleMod.csproj
+dotnet build CitizenSimulator/CitizenSimulator.csproj
+</code></pre>
+<p>Copy <code>ExampleMod/bin/Debug/net10.0/ExampleMod.dll</code> into <code>CitizenSimulator/bin/Debug/net10.0/Mods/ExampleMod/</code>. Copy any additional required mod and helper assemblies into the <code>Mods</code> tree as well. Use the abstraction assembly supplied by the host and avoid distributing competing copies of shared assemblies.</p>
+<p>Start the host with these commands from the repository root.</p>
+<pre><code class="language-text">cd CitizenSimulator
+dotnet run
+</code></pre>
+<p>The loader always uses the executable base directory for <code>Mods</code>, regardless of the working directory.</p>
+<p>Look for <code>[DISCOVERED]</code>, <code>[LOADING]</code>, and <code>[LOADED]</code> messages. Verify that the counter completion handler runs once and that removing the component prevents later updates from incrementing it.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

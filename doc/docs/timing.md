@@ -99,6 +99,10 @@ context.Controls.AdvanceBy(TimeSpan.FromSeconds(10))
 
 Dispose the binding subscription during `OnStop`. Subscribe to `ControlFailed` to report errors if a request conflicts with another queued control.
 
-## Console controls mod
+## Add text controls
 
-The optional mod with ID `console` translates submitted lines into controls. Its commands are `pause`, `resume`, `speed <multiplier>`, `step [count]`, `advance <seconds>`, `until <seconds>`, `status`, `help`, and `quit`. `until` uses absolute simulation elapsed seconds. Parsing uses invariant culture. The host itself supplies input rather than interpreting these commands.
+To add console commands to your mod, subscribe to `LineSubmitted` on `context.InputEvents`. Compare `data.Text` with command names you define, then queue the matching control request.
+
+For example, handle `pause` with `context.Controls.Pause()` and `resume` with `context.Controls.Resume()`. Validate numeric arguments before requesting a speed change or a manual advance. Subscribe to `ControlFailed` to report requests rejected by the host.
+
+Keep the subscription in a system and dispose it during `OnStop`.
