@@ -1,0 +1,18 @@
+{
+  "site_name": "CitizenSimulator mod documentation",
+  "site_description": "Abstraction contracts and practical mod development",
+  "docs_dir": "docs",
+  "site_dir": "site",
+  "theme": { "name": "mkdocs" },
+  "nav": [
+    { "Overview": "index.md" },
+    { "Build a mod": "tutorial.md" },
+    { "Loading and lifecycle": "lifecycle.md" },
+    { "Entities and components": "entities.md" },
+    { "Systems and queries": "systems.md" },
+    { "Services and events": "communication.md" },
+    { "Time and input": "timing.md" },
+    { "Game services": "gameplay.md" },
+    { "Troubleshooting": "troubleshooting.md" }
+  ]
+}
