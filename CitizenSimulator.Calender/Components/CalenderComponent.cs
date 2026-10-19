@@ -29,6 +29,17 @@ public sealed class CalenderComponent : Component<CalenderComponent>
         NOVEMBER = 10,
         DECEMBER = 11,
     }
+    public struct Date(uint day, Months month, int year)
+    {
+        public readonly uint Day = day;
+        public readonly Months Month = month;
+        public readonly int Year = year;
+
+        public bool Equals(Date date)
+        {
+            return Day == date.Day && Month == date.Month && Year == date.Year;
+        }
+    }
     public Days DayOfWeek { get; internal set; } = 0;
     public uint DayOfMonth { get; internal set; } = 0;
     public Months MonthOfYear { get; internal set; } = 0;

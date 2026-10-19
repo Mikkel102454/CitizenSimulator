@@ -49,11 +49,5 @@ public class ItemsSystem(IEventBus events) : GameSystem
                 );
             }
         }
-
-
-        foreach (var item in Item.ItemList)
-        {
-            Console.WriteLine($"Item: {item.Id}");
-        }
     }
 }

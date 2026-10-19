@@ -5,7 +5,7 @@ using CitizenSimulator.Citizen.Systems;
 
 namespace CitizenSimulator.Citizen;
 
-[Mod("citizen", "Citizen", "1.0.0")]
+[Mod("citizen", "Citizen", "1.0.0", Dependencies = new[] { "calender" })]
 public class Citizen : IMod
 {
     public void OnLoad(IModContext context)

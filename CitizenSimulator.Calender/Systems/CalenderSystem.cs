@@ -22,10 +22,12 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
         _calenderComponent.MonthOfYear = CalenderComponent.Months.JANUARY;
         _calenderComponent.Year = STARTYEAR;
         
-        events.Publish(new OnDayStart());
-        events.Publish(new OnMonthStart());
-        events.Publish(new OnYearStart());
-        events.Publish(new OnWeekStart());
+        CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
+        
+        events.Publish(new OnDayStart(currentDate));
+        events.Publish(new OnMonthStart(currentDate));
+        events.Publish(new OnYearStart(currentDate));
+        events.Publish(new OnWeekStart(currentDate));
     }
 
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
@@ -34,15 +36,17 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
         
         if (tickOfDay == 0)
         { // new day
-            events.Publish(new OnDayStart());
+            CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
+            
+            events.Publish(new OnDayStart(currentDate));
 
             if (GetDaysInMonth(_calenderComponent.MonthOfYear, _calenderComponent.Year) - (_calenderComponent.DayOfMonth + 1) <= 0)
             { // new month
-                events.Publish(new OnMonthStart());
+                events.Publish(new OnMonthStart(currentDate));
                 
                 if (_calenderComponent.MonthOfYear == CalenderComponent.Months.DECEMBER)
                 { // new year
-                    events.Publish(new OnYearStart());
+                    events.Publish(new OnYearStart(currentDate));
                     
                     _calenderComponent.MonthOfYear = CalenderComponent.Months.JANUARY;
                     _calenderComponent.Year++;
@@ -61,7 +65,7 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
 
             if (_calenderComponent.DayOfWeek == CalenderComponent.Days.Sunday)
             {
-                events.Publish(new OnWeekStart());
+                events.Publish(new OnWeekStart(currentDate));
 
                 _calenderComponent.DayOfWeek = CalenderComponent.Days.MONDAY;
             }
@@ -77,10 +81,12 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
 
         if (tickOfDay == GetDayStartTick(calenderService.GetTicksPerDay()))
         {
-            events.Publish(new OnMonthStart());
+            CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
+            events.Publish(new OnMonthStart(currentDate));
         } else if (tickOfDay == GetNightStartTick(calenderService.GetTicksPerDay()))
         {
-            events.Publish(new OnNightStart());
+            CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
+            events.Publish(new OnNightStart(currentDate));
         }
 
         calenderService.TickOfDay = tickOfDay;
