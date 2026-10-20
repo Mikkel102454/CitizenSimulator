@@ -4,11 +4,11 @@ namespace CitizenSimulator.Needs.Services.Abstractions;
 
 public interface INeedsService
 {
-    bool SetHunger(NeedsComponent needsComponent, float hunger);
-    bool SetThirst(NeedsComponent needsComponent, float thirst);
-    bool SetEnergy(NeedsComponent needsComponent, float energy);
+    bool SetHunger(NeedsComponent needsComponent, double hunger);
+    bool SetThirst(NeedsComponent needsComponent, double thirst);
+    bool SetEnergy(NeedsComponent needsComponent, double energy);
     
-    bool AddHunger(NeedsComponent needsComponent, float hunger);
-    bool AddThirst(NeedsComponent needsComponent, float thirst);
-    bool AddEnergy(NeedsComponent needsComponent, float energy);
+    bool AddHunger(NeedsComponent needsComponent, double hunger);
+    bool AddThirst(NeedsComponent needsComponent, double thirst);
+    bool AddEnergy(NeedsComponent needsComponent, double energy);
 }

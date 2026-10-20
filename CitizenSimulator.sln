@@ -24,7 +24,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Needs", "C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Calender", "CitizenSimulator.Calender\CitizenSimulator.Calender.csproj", "{27F70B89-F56C-4A0D-8785-6FB7292D1BC1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.CitizenBrain", "CitizenSimulator.CitizenBrain\CitizenSimulator.CitizenBrain.csproj", "{F70131CD-7EB9-4AC5-8C55-B8D425CBBB8D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.CitizenMind", "CitizenSimulator.CitizenMind\CitizenSimulator.CitizenMind.csproj", "{F70131CD-7EB9-4AC5-8C55-B8D425CBBB8D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Property", "CitizenSimulator.Property\CitizenSimulator.Property.csproj", "{844EED39-91C2-4E1C-97DA-ABE85FF6CC78}"
 EndProject

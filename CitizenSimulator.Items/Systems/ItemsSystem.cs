@@ -8,6 +8,7 @@ namespace CitizenSimulator.Items.Systems;
 
 public class ItemsSystem(IEventBus events) : GameSystem
 {
+    // prob make the item and effect class parse the json themself
     protected override void OnStart(ICommandBuffer commands)
     {
         Assembly assembly = typeof(ItemsSystem).Assembly;

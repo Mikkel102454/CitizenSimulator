@@ -1,0 +1,14 @@
+id: citizen_brain.core.satisfy_thirst
+eligible: {op: gte, args: [{fact: needs.thirst}, {literal: 0.35}]}
+emergency:
+  when: {op: gte, args: [{fact: needs.thirst}, {literal: 0.95}]}
+  priority: 100
+desired:
+  - {op: lte, args: [{fact: needs.thirst}, {literal: 0.25}]}
+utility:
+  bias: 1.0
+  considerations:
+    - input: {fact: needs.thirst}
+      weight: 1
+      curve: [[0, 0], [0.35, 0.15], [0.70, 0.75], [1, 1]]
+  actions: [citizen_brain.core.drink_safe_water]

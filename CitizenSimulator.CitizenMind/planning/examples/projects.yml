@@ -1,0 +1,41 @@
+schema_version: 1
+pack: citizen_brain.core
+projects:
+  - id: citizen_brain.core.own_house
+    requires_capabilities: [housing_transactions]
+    activation: {handler: housing.assess_desire_and_feasibility}
+    priority: 0.65
+    review_interval_minutes: 10080
+    budget:
+      maximum_discretionary_fraction: 0.60
+      preserve_essentials_reserve: true
+    milestones:
+      - id: become_affordable
+        request: housing.estimate_and_build_deposit
+        evidence: {fact: projects.house.affordable}
+      - id: purchase
+        request: housing.inspect_offer_and_close
+        evidence: {fact: projects.house.owned}
+    on_blocked: {retain_progress: true, retry_on: [SavingsChanged, HousingListingChanged, EmploymentChanged]}
+    # Requests yield bounded tasks; ownership is confirmed from the property
+    # domain, not assigned as a prediction or by reaching a savings threshold.
+
+  - id: citizen_brain.core.start_business
+    requires_capabilities: [enterprise]
+    activation: {handler: enterprise.assess_ambition_and_opportunity}
+    priority: 0.55
+    review_interval_minutes: 10080
+    budget:
+      maximum_discretionary_fraction: 0.50
+      preserve_essentials_reserve: true
+    milestones:
+      - id: feasibility
+        request: enterprise.assess_sector_skills_premises_and_runway
+        evidence: {fact: projects.business.feasible}
+      - id: open
+        request: enterprise.procure_register_and_open
+        evidence: {fact: projects.business.operating}
+    on_blocked: {retain_progress: true, retry_on: [SavingsChanged, PremisesChanged, SkillChanged]}
+    on_complete: {handler: enterprise.establish_owner_commitments}
+    # Milestones are intentionally coarse and need subtask handlers. This is
+    # not a claim that CreateBusiness already performs these operations.

@@ -9,11 +9,11 @@
     <ItemGroup>
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
       <ProjectReference Include="..\CitizenSimulator.Calender\CitizenSimulator.Calender.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.CitizenMind\CitizenSimulator.CitizenMind.csproj" />
       <ProjectReference Include="..\CitizenSimulator.Citizen\CitizenSimulator.Citizen.csproj" />
     </ItemGroup>
 
-    <Target Name="CopyModToHost"
-            AfterTargets="Build">
+    <Target Name="CopyModToHost" AfterTargets="Build">
 
         <PropertyGroup>
             <ModsDirectory>$(MSBuildProjectDirectory)/../CitizenSimulator/bin/$(Configuration)/$(TargetFramework)/Mods/</ModsDirectory>
@@ -21,10 +21,7 @@
 
         <MakeDir Directories="$(ModsDirectory)/Core" />
 
-        <Copy
-                SourceFiles="$(TargetPath)"
-                DestinationFolder="$(ModsDirectory)/Core"
-                SkipUnchangedFiles="true" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsDirectory)/Core" SkipUnchangedFiles="true" />
 
     </Target>
 </Project>

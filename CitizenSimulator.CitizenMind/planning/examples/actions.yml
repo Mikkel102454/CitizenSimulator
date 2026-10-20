@@ -1,0 +1,194 @@
+schema_version: 1
+pack: citizen_brain.core
+actions:
+  - id: citizen_brain.core.eat_owned_meal
+    handler: food.consume_bound_meal
+    candidates: {provider: food.owned_meals, bind_as: meal}
+    preconditions:
+      - {op: gte, args: [{fact: inventory.ready_meal_count}, {literal: 1}]}
+    parameters: {meal_id: {binding: meal.id}}
+    duration: {literal: 15}
+    effort: 0.05
+    risk: 0
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: inventory.ready_meal_count, subtract: {literal: 1}}
+      - {fact: needs.hunger, set: {binding: meal.hunger_after}}
+    # Handler validates location/access and consumes the actual bound portion.
+
+  - id: citizen_brain.core.buy_ready_meal
+    requires_capabilities: [food_market, travel]
+    handler: food.travel_and_purchase_ready_meal
+    candidates: {provider: food.meal_offers, bind_as: offer}
+    preconditions:
+      - {op: gte, args: [{fact: finance.discretionary}, {binding: offer.price}]}
+    parameters: {offer_id: {binding: offer.id}, portions: {literal: 1}}
+    duration: {binding: offer.total_minutes}
+    effort: 0.10
+    risk: 0.05
+    spending: {binding: offer.price}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: inventory.ready_meal_count, add: {literal: 1}}
+      - {fact: finance.discretionary, subtract: {binding: offer.price}}
+    projected_outputs:
+      - {kind: ready_meal, portions: 1, payload_from: offer}
+    # This compound handler has travel/quote/purchase checkpoints. On arrival it
+    # refreshes the projection; subsequent eating binds the newly owned meal.
+
+  - id: citizen_brain.core.buy_ingredients
+    requires_capabilities: [food_market, cooking, travel]
+    handler: food.travel_and_purchase_recipe_portion
+    candidates: {provider: food.ingredient_offers, bind_as: offer}
+    preconditions:
+      - {fact: home.can_cook}
+      - {op: gte, args: [{fact: finance.discretionary}, {binding: offer.price}]}
+    parameters: {offer_id: {binding: offer.id}, portions: {literal: 1}}
+    duration: {binding: offer.total_minutes}
+    effort: 0.20
+    risk: 0.05
+    spending: {binding: offer.price}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: inventory.ingredient_portions, add: {literal: 1}}
+      - {fact: finance.discretionary, subtract: {binding: offer.price}}
+    projected_outputs:
+      - {kind: ingredient_portion, portions: 1, payload_from: offer}
+
+  - id: citizen_brain.core.cook_portion
+    requires_capabilities: [cooking]
+    handler: food.prepare_bound_recipe
+    candidates: {provider: food.cookable_recipes, bind_as: recipe}
+    preconditions:
+      - {fact: home.can_cook}
+      - {op: gte, args: [{fact: inventory.ingredient_portions}, {literal: 1}]}
+      - {op: lte, args: [{fact: needs.fatigue}, {literal: 0.85}]}
+    parameters: {recipe_id: {binding: recipe.id}, portions: {literal: 1}}
+    duration: {binding: recipe.minutes}
+    effort: 0.65
+    risk: 0.05
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: inventory.ingredient_portions, subtract: {literal: 1}}
+      - {fact: inventory.ready_meal_count, add: {literal: 1}}
+    projected_outputs:
+      - {kind: ready_meal, portions: 1, payload_from: recipe}
+
+  - id: citizen_brain.core.drink_safe_water
+    handler: needs.drink_accessible_safe_water
+    preconditions: [{fact: home.can_drink}]
+    duration: {literal: 5}
+    effort: 0.05
+    risk: 0
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: needs.thirst, set: {literal: 0.10}}
+    # Handler checks access, reserves/consumes available water, and confirms
+    # need relief. This minimal example assumes a zero-priced home supply.
+
+  - id: citizen_brain.core.sleep
+    handler: rest.sleep_until_checkpoint
+    preconditions: [{fact: home.can_sleep}]
+    parameters:
+      preferred_window: profile.schedule.preferred_sleep
+      wake_for_commitment: true
+      allow_nap: true
+    duration: {literal: 480}
+    effort: 0
+    risk: 0
+    spending: {literal: 0}
+    prediction:
+      - {fact: needs.fatigue, set: {literal: 0.20}}
+    # Simplified planning estimate; actual recovery is integrated over sleep.
+    # Wake checkpoint can yield partial success and a new projection/decision.
+
+  - id: citizen_brain.core.travel_to_shift
+    requires_capabilities: [employment, travel]
+    handler: employment.travel_to_next_shift
+    preconditions: [{fact: schedule.has_next_shift}]
+    parameters: {shift: schedule.next_shift_id}
+    duration: {literal: 30}
+    effort: 0.15
+    risk: 0.05
+    spending: {literal: 0}
+    prediction:
+      - {fact: schedule.at_workplace, set: {literal: true}}
+    # Real implementation must replace the estimate with the travel adapter's
+    # quote and include any fare before planning a specific route.
+
+  - id: citizen_brain.core.check_in
+    requires_capabilities: [employment]
+    handler: employment.wait_and_check_in
+    preconditions:
+      - {fact: schedule.has_next_shift}
+      - {fact: schedule.at_workplace}
+    parameters: {shift: schedule.next_shift_id}
+    duration: {literal: 1}
+    effort: 0.05
+    risk: 0
+    spending: {literal: 0}
+    prediction:
+      - {fact: schedule.attending_shift, set: {literal: true}}
+
+  - id: citizen_brain.core.apply_for_job
+    requires_capabilities: [employment]
+    handler: employment.submit_application
+    candidates: {provider: employment.known_vacancies, bind_as: vacancy}
+    preconditions:
+      - {op: not, args: [{fact: career.application_pending}]}
+    parameters:
+      vacancy_id: {binding: vacancy.id}
+      expected_revision: {binding: vacancy.revision}
+    duration: {binding: vacancy.application_minutes}
+    effort: 0.25
+    risk: 0.05
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: career.application_pending, set: {literal: true}}
+    # Completes when submission is acknowledged, not when hiring finishes.
+
+  - id: citizen_brain.core.review_career_action
+    requires_capabilities: [employment]
+    handler: career.assess_offers_runway_and_notice
+    preconditions: [{fact: career.review_due}]
+    duration: {literal: 15}
+    effort: 0.10
+    risk: 0
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: career.review_completed, set: {literal: true}}
+    # Handler may schedule offer acceptance/resignation as separate confirmed
+    # domain operations. Review completion does not imply a contract change.
+
+  - id: citizen_brain.core.propose_and_meet
+    requires_capabilities: [social, travel]
+    handler: social.propose_schedule_and_interact
+    candidates: {provider: social.available_contacts, bind_as: contact}
+    preconditions:
+      - {op: gte, args: [{fact: social.contact_pressure}, {literal: 0.40}]}
+    parameters: {recipient: {binding: contact.id}}
+    duration: {binding: contact.estimated_minutes}
+    effort: 0.20
+    risk: 0.10
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: social.interaction_completed, set: {literal: true}}
+    # May decline, defer, travel, or cancel. Only actual interaction confirms
+    # completion; future accepted meetings become commitments, freeing the brain.
+
+  - id: citizen_brain.core.review_projects_action
+    handler: projects.review_active_milestones
+    preconditions: []
+    duration: {literal: 15}
+    effort: 0.10
+    risk: 0
+    spending: {literal: 0}
+    requires_fit_before_commitment: true
+    prediction:
+      - {fact: projects.review_completed, set: {literal: true}}

@@ -1,0 +1,78 @@
+schema_version: 1
+pack: citizen_brain.core
+affect:
+  stress:
+    range: [0, 1]
+    input_aggregation: capped_sum
+    maximum_load_per_hour: 0.08
+    maximum_recovery_per_hour: 0.06
+    sensitivity_from: profile.traits.stress_sensitivity
+    loads:
+      - {provider: affect.workload_pressure, weight: 0.025}
+      - {provider: affect.sleep_debt_pressure, weight: 0.035}
+      - {provider: affect.financial_insecurity, weight: 0.020}
+    recovery:
+      - {provider: affect.actual_sleep, weight: 0.040}
+      - {provider: affect.actual_leisure, weight: 0.020}
+      - {provider: affect.actual_social_support, weight: 0.025}
+  emotions:
+    range: [0, 1]
+    half_life_minutes: 120
+  mood:
+    range: [-1, 1]
+    half_life_minutes: 2880
+
+relationships:
+  directed: true
+  maximum_active_edges: 64
+  affinity_range: [-1, 1]
+  trust_range: [0, 1]
+  familiarity_range: [0, 1]
+  eviction: weakest_inactive_unprotected_first
+  protect: [active_commitments, household, close_ties]
+  consent: {handler: social.recipient_decides}
+
+memory:
+  maximum_episodes: 128
+  maximum_semantic_summaries: 64
+  episode_half_life_minutes: 10080
+  consolidate_by: [event_kind, subject_id]
+  eviction: lowest_decayed_salience_first
+  protect_event_tags: [major_loss, major_commitment]
+  event_deduplication: source_event_id
+  learning:
+    estimator: exponential_moving_average
+    learning_rate: 0.15
+    minimum_samples_before_strong_preference: 3
+    maximum_preference_shift_per_day: 0.05
+
+appraisal_rules:
+  - id: citizen_brain.core.support_received
+    requires_capabilities: [social]
+    event: SocialSupportCompleted
+    observe_as: recipient
+    subject: event.actor_id
+    rate_limit_minutes: 60
+    affect_delta: {joy: 0.10, stress: -0.03}
+    relationship_delta: {affinity: 0.04, trust: 0.03, familiarity: 0.02}
+    memory: {kind: support_received, salience: 0.6}
+
+  - id: citizen_brain.core.promise_broken
+    requires_capabilities: [social]
+    event: PromiseBroken
+    observe_as: affected_citizen
+    subject: event.actor_id
+    rate_limit_minutes: 60
+    affect_delta: {sadness: 0.10, anger: 0.08}
+    relationship_delta: {trust: -0.08, affinity: -0.03}
+    memory: {kind: promise_broken, salience: 0.7}
+
+  - id: citizen_brain.core.pay_overdue
+    requires_capabilities: [employment]
+    event: WageOverdueConfirmed
+    observe_as: employee
+    subject: event.employer_id
+    rate_limit_minutes: 1440
+    affect_delta: {fear: 0.08, anger: 0.10, stress: 0.04}
+    memory: {kind: employer_paid_late, salience: 0.8}
+    learn: {estimate: career.employer_reliability, observation: 0}

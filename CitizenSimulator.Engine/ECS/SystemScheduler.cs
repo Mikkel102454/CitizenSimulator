@@ -195,7 +195,7 @@ public sealed class SystemScheduler
     // executes the parsed in function and lock the entity store cause the schedular now runs
     private void ExecuteCallback(Action<ICommandBuffer> callback)
     {
-        var commandBuffer = new CommandBuffer(_store);
+        var commands = new CommandBuffer(_store);
 
         try
         {
@@ -203,7 +203,7 @@ public sealed class SystemScheduler
 
             try
             {
-                callback(commandBuffer);
+                callback(commands);
             }
             catch (Exception exception)
             {
@@ -217,7 +217,7 @@ public sealed class SystemScheduler
             // after this singular mods runs its tick all its commands get played
             try
             {
-                commandBuffer.Playback();
+                commands.Playback();
             }
             catch (Exception exception)
             {
@@ -226,7 +226,7 @@ public sealed class SystemScheduler
         }
         finally
         {
-            commandBuffer.Discard();
+            commands.Discard();
         }
     }
 }

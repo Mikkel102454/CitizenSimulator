@@ -1,0 +1,135 @@
+schema_version: 1
+pack: citizen_brain.core
+goals:
+  - id: citizen_brain.core.satisfy_thirst
+    eligible: {op: gte, args: [{fact: needs.thirst}, {literal: 0.35}]}
+    emergency:
+      when: {op: gte, args: [{fact: needs.thirst}, {literal: 0.95}]}
+      priority: 100
+    desired:
+      - {op: lte, args: [{fact: needs.thirst}, {literal: 0.25}]}
+    utility:
+      bias: 1.0
+      considerations:
+        - input: {fact: needs.thirst}
+          weight: 1
+          curve: [[0, 0], [0.35, 0.15], [0.70, 0.75], [1, 1]]
+    actions: [citizen_brain.core.drink_safe_water]
+
+  - id: citizen_brain.core.satisfy_hunger
+    eligible: {op: gte, args: [{fact: needs.hunger}, {literal: 0.35}]}
+    emergency:
+      when: {op: gte, args: [{fact: needs.hunger}, {literal: 0.95}]}
+      priority: 90
+    desired:
+      - {op: lte, args: [{fact: needs.hunger}, {literal: 0.25}]}
+    utility:
+      bias: 1.0
+      considerations:
+        - input: {fact: needs.hunger}
+          weight: 1
+          curve: [[0, 0], [0.35, 0.15], [0.70, 0.70], [1, 1]]
+    actions:
+      - citizen_brain.core.eat_owned_meal
+      - citizen_brain.core.buy_ready_meal
+      - citizen_brain.core.buy_ingredients
+      - citizen_brain.core.cook_portion
+
+  - id: citizen_brain.core.recover_energy
+    eligible:
+      op: and
+      args:
+        - {fact: home.can_sleep}
+        - op: or
+          args:
+            - {fact: schedule.sleep_preference_active}
+            - {op: gte, args: [{fact: needs.fatigue}, {literal: 0.65}]}
+    emergency:
+      when: {op: gte, args: [{fact: needs.fatigue}, {literal: 0.98}]}
+      priority: 80
+    desired:
+      - {op: lte, args: [{fact: needs.fatigue}, {literal: 0.25}]}
+    utility:
+      bias: 1.0
+      considerations:
+        - input: {fact: needs.fatigue}
+          weight: 0.7
+          curve: [[0, 0], [0.60, 0.5], [1, 1]]
+        - input: {fact: schedule.sleep_preference_active}
+          weight: 0.3
+          # Bool consideration inputs explicitly map false->0, true->1.
+          curve: [[0, 0], [1, 1]]
+    actions: [citizen_brain.core.sleep]
+
+  - id: citizen_brain.core.attend_shift
+    requires_capabilities: [employment, travel]
+    eligible: {fact: schedule.has_next_shift}
+    desired:
+      - {fact: schedule.attending_shift}
+    utility:
+      bias: 1.0
+      considerations:
+        - input: {fact: schedule.minutes_until_departure}
+          weight: 1
+          curve: [[-60, 1], [0, 1], [30, 0.90], [120, 0.30], [480, 0]]
+    actions: [citizen_brain.core.travel_to_shift, citizen_brain.core.check_in]
+    # Successful check-in hands over to the work commitment executor through shift
+    # end, including breaks/check-out. It is not a second freely replaceable plan.
+    on_success: {handler: employment.execute_shift_commitment}
+
+  - id: citizen_brain.core.seek_employment
+    requires_capabilities: [employment]
+    eligible:
+      op: and
+      args:
+        - {op: gte, args: [{fact: career.search_desire}, {literal: 0.30}]}
+        - {op: not, args: [{fact: career.application_pending}]}
+    desired:
+      - {fact: career.application_pending}
+    utility:
+      bias: 0.8
+      considerations:
+        - input: {fact: career.search_desire}
+          weight: 1
+          curve: [[0, 0], [0.50, 0.60], [1, 1]]
+    actions: [citizen_brain.core.apply_for_job]
+    # Search sensing populates known vacancies; submitting is not getting hired.
+
+  - id: citizen_brain.core.review_career
+    requires_capabilities: [employment]
+    eligible: {fact: career.review_due}
+    desired:
+      - {fact: career.review_completed}
+    utility:
+      bias: 0.85
+      considerations:
+        - input: {fact: affect.stress}
+          weight: 1
+          curve: [[0, 0.20], [0.60, 0.50], [1, 1]]
+    actions: [citizen_brain.core.review_career_action]
+
+  - id: citizen_brain.core.connect_socially
+    requires_capabilities: [social, travel]
+    eligible: {op: gte, args: [{fact: social.contact_pressure}, {literal: 0.40}]}
+    desired:
+      - {fact: social.interaction_completed}
+    utility:
+      bias: 0.7
+      considerations:
+        - input: {fact: social.contact_pressure}
+          weight: 1
+          curve: [[0, 0], [0.5, 0.4], [1, 1]]
+    actions: [citizen_brain.core.propose_and_meet]
+
+  - id: citizen_brain.core.review_projects
+    eligible: {literal: true}
+    desired:
+      - {fact: projects.review_completed}
+    utility:
+      bias: 0.3
+      considerations:
+        - input: {literal: 1}
+          weight: 1
+          curve: [[0, 0], [1, 1]]
+    actions: [citizen_brain.core.review_projects_action]
+    cooldown_minutes: 10080

@@ -1,0 +1,58 @@
+schema_version: 1
+pack: citizen_brain.core
+profiles:
+  - id: citizen_brain.core.default
+    traits:
+      conscientiousness: 0.65
+      sociability: 0.50
+      ambition: 0.55
+      risk_tolerance: 0.35
+      stress_sensitivity: 0.50
+    # Sample once from a seeded per-citizen stream, then persist.
+    variation:
+      traits: {distribution: bounded_uniform_offset, min: -0.10, max: 0.10}
+      sleep_window_offset_minutes: {min: -30, max: 30}
+    schedule:
+      preferred_sleep:
+        start_local: '23:00'
+        end_local: '07:00'
+        end_day_offset: 1
+        minimum_target_minutes: 420
+      meals:
+        - {local_time: '07:30', tolerance_minutes: 60}
+        - {local_time: '12:30', tolerance_minutes: 90}
+        - {local_time: '18:30', tolerance_minutes: 90}
+      shift_arrival_buffer_minutes: 10
+      preparation_before_departure_minutes: 30
+    food:
+      enjoyment_weight: 0.30
+      price_weight: 0.35
+      effort_weight: 0.20
+      nutrition_weight: 0.15
+    career:
+      ordinary_quit_requires_offer_or_runway: true
+      minimum_runway_days: 30
+      sustained_stress_threshold: 0.80
+      sustained_stress_minutes: 4320
+      unsafe_work_may_override_offer_requirement: true
+      notice_policy: follow_contract
+    projects:
+      maximum_active: 2
+      candidates: [citizen_brain.core.own_house, citizen_brain.core.start_business]
+      budget:
+        essentials_reserve_days: 30
+        allocation_order: priority_then_project_id
+        allow_double_allocation: false
+    social:
+      preferred_contacts_per_week: 3
+      recent_partner_penalty_minutes: 1440
+
+  - id: citizen_brain.core.entrepreneur
+    extends: citizen_brain.core.default
+    traits:
+      ambition: 0.85
+      risk_tolerance: 0.65
+    # Personality affects scoring, never contract/transaction validity.
+    projects:
+      maximum_active: 1
+      candidates: [citizen_brain.core.start_business]

@@ -1,0 +1,5 @@
+<Project>
+    <ItemGroup>
+        <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    </ItemGroup>
+</Project>

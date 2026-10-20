@@ -4,12 +4,22 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>CitizenSimulator.CitizenMind</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Data\" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <EmbeddedResource Include="Data/**/*.yml" />
+    </ItemGroup>
+    
     <Target Name="CopyModToHost"
             AfterTargets="Build">
 

@@ -1,0 +1,63 @@
+# Proposal only: no loader currently consumes these files.
+schema_version: 1
+pack: citizen_brain.core
+version: 0.1.0
+files:
+  - profiles.yml
+  - goals.yml
+  - actions.yml
+  - projects.yml
+  - social-memory.yml
+
+units:
+  duration: simulation_minutes
+  money: {currency: SIM, representation: decimal}
+  pressure: {min: 0, max: 1, urgent_at: 1}
+
+capabilities:
+  required:
+    - {id: time, version: 1}
+    - {id: citizen_lifecycle, version: 1}
+    - {id: needs, version: 1}
+    - {id: inventory, version: 1}
+    - {id: basic_actions, version: 1}
+  optional:
+    - {id: travel, version: 1}
+    - {id: food_market, version: 1}
+    - {id: cooking, version: 1}
+    - {id: employment, version: 1}
+    - {id: social, version: 1}
+    - {id: housing_transactions, version: 1}
+    - {id: enterprise, version: 1}
+
+decision:
+  routine_interval_minutes: 5
+  minimum_intention_hold_minutes: 10
+  switch_score_margin: 0.12
+  emergency_bypasses_hold: true
+  tie_break: stable_goal_then_target_id
+  failed_target_backoff_minutes: [5, 15, 60]
+  relevant_change_clears_backoff: true
+
+planner:
+  algorithm: uniform_cost
+  maximum_expansions: 128
+  maximum_depth: 8
+  maximum_candidates_per_provider: 8
+  maximum_projected_minutes: 1440
+  maximum_repetitions_per_grounded_action: 2
+  cost:
+    elapsed_minutes_weight: 1
+    discretionary_budget_fraction_weight: 30
+    effort_weight: 10
+    risk_weight: 50
+  no_plan: {handler: brain.safe_idle_or_sense, retry_minutes: 15}
+
+reviews:
+  career_interval_minutes: 1440
+  projects_interval_minutes: 10080
+  shift_horizon_days: 7
+
+trace:
+  retain_decisions_per_citizen: 32
+  include: [eligibility, considerations, selected_goal, plan, failures, interruptions]

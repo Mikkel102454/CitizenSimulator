@@ -5,34 +5,34 @@ using CitizenSimulator.Needs.Services.Abstractions;
 
 namespace CitizenSimulator.Needs.Services;
 
-public class NeedsService(IEntityStore store, IEventBus events) : INeedsService
+public class NeedsService : INeedsService
 {
-    public bool SetHunger(NeedsComponent needsComponent, float hunger)
+    public bool SetHunger(NeedsComponent needsComponent, double hunger)
     {
         throw new NotImplementedException();
     }
 
-    public bool SetThirst(NeedsComponent needsComponent, float thirst)
+    public bool SetThirst(NeedsComponent needsComponent, double thirst)
     {
         throw new NotImplementedException();
     }
 
-    public bool SetEnergy(NeedsComponent needsComponent, float energy)
+    public bool SetEnergy(NeedsComponent needsComponent, double energy)
     {
         throw new NotImplementedException();
     }
 
-    public bool AddHunger(NeedsComponent needsComponent, float hunger)
+    public bool AddHunger(NeedsComponent needsComponent, double hunger)
     {
         throw new NotImplementedException();
     }
 
-    public bool AddThirst(NeedsComponent needsComponent, float thirst)
+    public bool AddThirst(NeedsComponent needsComponent, double thirst)
     {
         throw new NotImplementedException();
     }
 
-    public bool AddEnergy(NeedsComponent needsComponent, float energy)
+    public bool AddEnergy(NeedsComponent needsComponent, double energy)
     {
         throw new NotImplementedException();
     }

@@ -9,6 +9,7 @@ using BusinessDefinition = CitizenSimulator.Business.Models.Business;
 namespace CitizenSimulator.Business.Systems;
 public class BusinessSystem(IItemService items) : GameSystem
 {
+    // prob make the recipie and business class parse the json themself
     protected override void OnStart(ICommandBuffer commands)
     {
         Recipe.RecipeList.Clear();

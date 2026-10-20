@@ -12,13 +12,13 @@ public class PropertySystem(IEventBus events, IPropertyService propertyService) 
 {
     private IQuery _propertyComponent = null!;
     private IDisposable? _onDayStart;
-    protected override void OnStart(ICommandBuffer commandBuffer)
+    protected override void OnStart(ICommandBuffer commands)
     {
         _propertyComponent = PropertyComponent.GetComponentType();
         _onDayStart = events.Subscribe<OnDayStart>(OnDayStart);
     }
     
-    private void OnDayStart(OnDayStart eventData, SimulationTime time, ICommandBuffer commandBuffer)
+    private void OnDayStart(OnDayStart eventData, SimulationTime time, ICommandBuffer commands)
     {
         foreach (var entity in Store.Query(_propertyComponent))
         {

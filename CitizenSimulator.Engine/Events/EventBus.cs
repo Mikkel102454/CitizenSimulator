@@ -14,19 +14,19 @@ public class EventBus : IEventBus
     // object 
     private interface ISubscription : IDisposable
     {
-        void Invoke(IEvent eventData, SimulationTime time, ICommandBuffer commandBuffer);
+        void Invoke(IEvent eventData, SimulationTime time, ICommandBuffer commands);
     }
     
     private sealed class Subscription<TEvent>(CitizenSimulator.Abstractions.Events.EventHandler<TEvent> handler, Action<ISubscription> unsubscribe) : ISubscription where TEvent : IEvent
     {
         private bool _disposed;
 
-        public void Invoke(IEvent eventData, SimulationTime time, ICommandBuffer commandBuffer)
+        public void Invoke(IEvent eventData, SimulationTime time, ICommandBuffer commands)
         {
             if (_disposed)
                 return;
 
-            handler((TEvent)eventData, time, commandBuffer);
+            handler((TEvent)eventData, time, commands);
         }
 
         public void Dispose()

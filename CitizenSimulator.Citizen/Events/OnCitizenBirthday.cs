@@ -3,4 +3,4 @@ using CitizenSimulator.Citizen.Components;
 
 namespace CitizenSimulator.Citizen.Events;
 
-public sealed record CitizenDied(CitizenComponent citizen) : IEvent;
+public sealed record OnCitizenBirthday(CitizenComponent Citizen) : IEvent;

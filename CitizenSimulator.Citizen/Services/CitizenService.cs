@@ -3,6 +3,7 @@ using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Citizen.Components;
 using CitizenSimulator.Citizen.Events;
 using CitizenSimulator.Citizen.Services.Abstraction;
+using CitizenSimulator.CitizenMind.Components;
 
 namespace CitizenSimulator.Citizen.Services;
 
@@ -22,8 +23,9 @@ public sealed class CitizenService(IEntityStore store, IEventBus events) : ICiti
             Age = age,
             Alive = true
         });
+        store.AddComponent(entityRef, new MindComponent());
 
-        events.Publish(new CitizenCreated(outCitizen));
+        events.Publish(new OnCitizenCreated(outCitizen));
         
         
         return true;
@@ -33,7 +35,7 @@ public sealed class CitizenService(IEntityStore store, IEventBus events) : ICiti
     {
         citizen.Alive = false;
         
-        events.Publish(new CitizenDied(citizen));
+        events.Publish(new OnCitizenDied(citizen));
 
         return true;
     }

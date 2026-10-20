@@ -5,6 +5,8 @@ using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Calender.Events;
 using CitizenSimulator.Citizen.Components;
 using CitizenSimulator.Citizen.Events;
+using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.CitizenMind.Services.Abstractions;
 
 namespace CitizenSimulator.Citizen.Systems;
 
@@ -12,13 +14,13 @@ public class CitizenSystem(IEventBus events) : GameSystem
 {
     private IQuery _citizenComponent = null!;
     private IDisposable? _onDayStart;
-    protected override void OnStart(ICommandBuffer commandBuffer)
+    protected override void OnStart(ICommandBuffer commands)
     {
         _citizenComponent = CitizenComponent.GetComponentType();
         _onDayStart = events.Subscribe<OnDayStart>(OnDayStart);
     }
     
-    private void OnDayStart(OnDayStart eventData, SimulationTime time, ICommandBuffer commandBuffer)
+    private void OnDayStart(OnDayStart eventData, SimulationTime time, ICommandBuffer commands)
     {
         foreach (var entity in Store.Query(_citizenComponent))
         {
@@ -27,7 +29,7 @@ public class CitizenSystem(IEventBus events) : GameSystem
             if (eventData.Date.Equals(citizen.Birthday))
             {
                 citizen.Age++;
-                events.Publish(new CitizenBirthday(citizen));
+                events.Publish(new OnCitizenBirthday(citizen));
             }
         }
     }
