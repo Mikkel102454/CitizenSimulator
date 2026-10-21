@@ -7,6 +7,10 @@ public class ActionDependencyResolver
     
     private static void CollectFacts(ExpressionDefinition expression, HashSet<string> facts)
     {
+        
+        if (expression.Before != null)
+            facts.Add(expression.Before);
+        
         if (expression.Fact != null)
             facts.Add(expression.Fact);
 

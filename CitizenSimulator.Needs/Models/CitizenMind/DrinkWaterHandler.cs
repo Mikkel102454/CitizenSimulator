@@ -20,10 +20,10 @@ public sealed class DrinkWaterHandler(IEntityStore store, INeedsService needs) :
         if (component is null)
             return ActionResult.FAILED;
 
-        const float target = 0.10f;
-        const float reductionPerMinute = 0.80f / 5f;
-
-        double reduction = reductionPerMinute * (float)context.Delta.TotalMinutes;
+        double target = context.Parameters["targetThirst"];
+        double reductionPerMinute = context.Parameters["reductionPerMinute"];
+        
+        double reduction = reductionPerMinute * context.Delta.TotalMinutes;
 
         reduction = Math.Min(reduction, Math.Max(0f, component.Thirst - target));
 

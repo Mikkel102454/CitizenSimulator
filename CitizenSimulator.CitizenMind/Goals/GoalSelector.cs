@@ -6,7 +6,7 @@ namespace CitizenSimulator.CitizenMind.Services;
 
 public class GoalSelector(CitizenMindService citizenMindService)
 {
-    public GoalDefinition? SelectGoals(MindComponent mindComponent)
+    public GoalDefinition? SelectGoals(MindComponent mindComponent, ulong currentTick)
     {
         Dictionary<GoalDefinition, double> eligibleGoals = new Dictionary<GoalDefinition, double>();
         Dictionary<GoalDefinition, int> emergencyGoals = new Dictionary<GoalDefinition, int>();
@@ -15,10 +15,24 @@ public class GoalSelector(CitizenMindService citizenMindService)
         
         foreach (var goal in citizenMindService.Goals.Values)
         {
+            if (mindComponent.GoalRetryTicks.TryGetValue(goal.Id, out var retryTick))
+            {
+                if (currentTick < retryTick)
+                    continue;
+
+                mindComponent.GoalRetryTicks.Remove(goal.Id);
+            }
+            
+            if (goal.Desired.All(condition => ExpressionEvaluator.Evaluate(context, condition))) 
+            {
+                continue;
+            }
+            
             if (! ExpressionEvaluator.Evaluate(context, goal.Eligible))
             {
                 continue;
             }
+            
             if (goal.Emergency != null && ExpressionEvaluator.Evaluate(context, goal.Emergency.When))
             {
                 emergencyGoals.Add(goal, goal.Emergency.Priority);

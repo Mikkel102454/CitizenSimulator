@@ -31,8 +31,10 @@ public class Needs : IMod
         citizenMindService.RegisterFact("needs.hunger", (entity) =>
         {
             var component = context.Store.GetComponent<NeedsComponent>(entity);
-            return component?.Thirst;
+            return component?.Hunger;
         });
+        
+        citizenMindService.RegisterFact("home.can_drink", _ => true);
         
         citizenMindService.RegisterHandler("needs.drink_accessible_safe_water", new DrinkWaterHandler(context.Store, context.Services.Get<INeedsService>()));
     }

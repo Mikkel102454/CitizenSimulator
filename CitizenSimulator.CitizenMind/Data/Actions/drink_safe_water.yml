@@ -1,5 +1,5 @@
 id: citizen_brain.core.drink_safe_water
-handler: citizen_brain.core.drink_safe_water
+handler: needs.drink_accessible_safe_water
 
 # Configuration passed to the handler and shared with the planner.
 # All times below are simulation minutes; thirst is normalized to [0, 1].

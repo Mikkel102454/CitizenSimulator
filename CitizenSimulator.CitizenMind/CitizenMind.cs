@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
 using CitizenSimulator.Abstractions.Modding;
+using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.CitizenMind.Evaluations;
+using CitizenSimulator.CitizenMind.Executor;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Services;
@@ -11,7 +13,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace CitizenSimulator.CitizenMind;
 
-[Mod("citizen_mind", "CitizenMind", "1.0.0")]
+[Mod("citizen_mind", "CitizenMind", "1.0.0", Dependencies = new[] { "calender" })]
 public class CitizenMind : IMod
 {
     public void OnLoad(IModContext context)
@@ -20,7 +22,11 @@ public class CitizenMind : IMod
         context.Services.Register<ICitizenMindService>(citizenMindService);
         
         GoalSelector goalSelector = new GoalSelector(citizenMindService);
-        context.Systems.Register(new CitizenMindSystem(context.Events, goalSelector));
+        ICalenderService calenderService = context.Services.Get<ICalenderService>();
+        
+        var executor = new ActionExecutor(citizenMindService);
+        
+        context.Systems.Register(new CitizenMindSystem(context.Events, goalSelector, citizenMindService, calenderService, executor));
         
         var assembly = typeof(CitizenMind).Assembly;
 
@@ -60,27 +66,6 @@ public class CitizenMind : IMod
             ActionDefinition action = deserializer.Deserialize<ActionDefinition>(reader.ReadToEnd());
 
             citizenMindService.RegisterAction(action);
-        }
-        
-        var state = new EvaluationContext
-        {
-            Facts = new Dictionary<string, object?>
-            {
-                ["needs.thirst"] = 0.73,
-                ["home.can_drink"] = true,
-                ["needs.hunger"] = 0.8,
-                ["inventory.food_count"] = 0,
-                ["finance.money"] = 10,
-                ["shops.cheap_available"] = true,
-                ["shops.fast_available"] = true
-            }
-        };
-
-        foreach (var goal in citizenMindService.Goals.Values)
-        {
-            PlanResult result = ActionPlanner.FindPlan(goal, state, citizenMindService.Actions, new PlannerOptions());
-            
-            string breakr = "";
         }
     }
 }

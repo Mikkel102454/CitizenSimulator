@@ -15,6 +15,8 @@ public sealed class ExpressionDefinition
 
     public List<ExpressionDefinition> Args { get; init; } = [];
     
+    public string? Before { get; init; }
+    
     // only for actions
     public string? Parameter { get; init; }
     

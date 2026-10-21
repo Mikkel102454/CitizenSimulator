@@ -65,6 +65,14 @@ public class ExpressionEvaluator
         if (definition.Literal != null)
             return definition.Literal;
 
+        if (definition.Before != null)
+        {
+            if (!context.Before.TryGetValue(definition.Before, out var value))
+                throw new InvalidOperationException($"Missing before action fact '{definition.Before}'.");
+
+            return value;
+        }
+        
         string[] validOp = ["add", "subtract", "min", "max", "multiply", "divide", "gt", "gte", "lt", "lte",];
         
         if (!validOp.Contains(definition.Op))

@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Calender\CitizenSimulator.Calender.csproj" />
     </ItemGroup>
 
     <ItemGroup>

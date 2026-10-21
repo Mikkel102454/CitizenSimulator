@@ -31,7 +31,7 @@ public class NeedsSystem(IEventBus events, ICalenderService calenderService, ICi
             needs.Hunger += .1 / calenderService.GetTicksPerDay();
             needs.Thirst += .34 / calenderService.GetTicksPerDay();
 
-            if (needs.Hunger <= 1 || needs.Thirst <= 1 || needs.Energy <= 0)
+            if (needs.Hunger >= 1 || needs.Thirst >= 1 || needs.Energy <= 0)
             {
                 CitizenComponent citizen = Store.GetComponent<CitizenComponent>(entity);
                 citizenService.KillCitizen(citizen);
