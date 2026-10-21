@@ -34,6 +34,18 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             if(mind == null)
                 continue;
             
+            if (!mind.IsActive)
+            {
+                if (mind.Execution?.Status == PlanExecutionStatus.RUNNING)
+                    executor.Cancel(entity, mind.Execution, force: true);
+
+                mind.Execution = null;
+                mind.CurrentGoal = null;
+                mind.GoalRetryTicks.Clear();
+
+                continue;
+            }
+            
             if (mind.Execution != null)
             {
                 if (mind.Execution.Status == PlanExecutionStatus.RUNNING)

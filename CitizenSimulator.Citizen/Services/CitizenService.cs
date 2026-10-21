@@ -33,7 +33,15 @@ public sealed class CitizenService(IEntityStore store, IEventBus events) : ICiti
 
     public bool KillCitizen(CitizenComponent citizen)
     {
+        if (!citizen.Alive)
+            return false;
+        
         citizen.Alive = false;
+        
+        var mind = store.GetComponent<MindComponent>(citizen.Parent);
+
+        if (mind != null)
+            mind.IsActive = false;
         
         events.Publish(new OnCitizenDied(citizen));
 
