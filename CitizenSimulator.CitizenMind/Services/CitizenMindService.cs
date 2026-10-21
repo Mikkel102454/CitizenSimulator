@@ -4,6 +4,7 @@ using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Models.Abstractions;
+using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Planning.Abstractions;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
 
@@ -22,6 +23,8 @@ public class CitizenMindService : ICitizenMindService
     internal readonly Dictionary<string, ActionDefinition> Actions = [];
     
     internal readonly Dictionary<string, Func<EntityRef, IActionCandidateProvider>> CandidateProviderFactories = [];
+    
+    internal readonly Dictionary<string, CandidateProviderDescriptor> CandidateProviderDescriptors = [];
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)
     {
         ArgumentNullException.ThrowIfNull(provider);
@@ -88,18 +91,43 @@ public class CitizenMindService : ICitizenMindService
         };
     }
     
-    public void RegisterCandidateProvider(string id, Func<EntityRef, IActionCandidateProvider> factory)
+    public void RegisterCandidateProvider(CandidateProviderDescriptor descriptor, Func<EntityRef, IActionCandidateProvider> factory)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(descriptor);
         ArgumentNullException.ThrowIfNull(factory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(descriptor.Id);
 
-        if (!CandidateProviderFactories.TryAdd(id, factory))
-            throw new InvalidOperationException($"[CitizenMind] Duplicate candidate provider '{id}'.");
+        if (descriptor.BindingTypes == null)
+            throw new InvalidOperationException($"Provider '{descriptor.Id}': binding types are required.");
+
+        if (CandidateProviderFactories.ContainsKey(descriptor.Id) || CandidateProviderDescriptors.ContainsKey(descriptor.Id))
+        {
+            throw new InvalidOperationException($"Duplicate candidate provider '{descriptor.Id}'.");
+        }
+
+        var bindingTypes = new Dictionary<string, Type>();
+
+        foreach (var (name, type) in descriptor.BindingTypes)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            ArgumentNullException.ThrowIfNull(type);
+
+            bindingTypes.Add(name, type);
+        }
+
+        var registeredDescriptor = new CandidateProviderDescriptor
+        {
+            Id = descriptor.Id,
+            BindingTypes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, Type>(bindingTypes)
+        };
+
+        CandidateProviderFactories.Add(descriptor.Id, factory);
+        CandidateProviderDescriptors.Add(descriptor.Id, registeredDescriptor);
     }
     
-    public IReadOnlyDictionary<string, IActionCandidateProvider> CreateCandidateProviders(EntityRef citizen, IEnumerable<ActionDefinition> definitions)
+    public IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateCandidateProviders(EntityRef citizen, IEnumerable<ActionDefinition> definitions)
     {
-        var providers = new Dictionary<string, IActionCandidateProvider>();
+        var providers = new Dictionary<string, CandidateProviderSnapshot>();
 
         var ids = definitions.Select(action => action.CandidateProvider).OfType<string>()
             .Distinct().OrderBy(id => id, StringComparer.Ordinal);
@@ -111,7 +139,15 @@ public class CitizenMindService : ICitizenMindService
 
             var provider = factory(citizen) ?? throw new InvalidOperationException($"Candidate provider factory '{id}' returned null.");
 
-            providers.Add(id, provider);
+            
+            if (!CandidateProviderDescriptors.TryGetValue(id, out var descriptor))
+                throw new InvalidOperationException($"Missing descriptor for candidate provider '{id}'.");
+
+            providers.Add(id, new CandidateProviderSnapshot
+            {
+                Descriptor = descriptor,
+                Provider = provider
+            });
         }
 
         return providers;

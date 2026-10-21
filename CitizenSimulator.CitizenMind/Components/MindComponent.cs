@@ -13,4 +13,6 @@ public sealed class MindComponent : Component<MindComponent>
     public Dictionary<string, ulong> GoalRetryTicks { get; } = [];
     
     public bool IsActive { get; set; } = true;
+    
+    public Dictionary<string, bool> EmergencyActive { get; } = [];
 }

@@ -73,7 +73,7 @@ public class ActionPlanner
 
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
         IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
-        IReadOnlyDictionary<string, IActionCandidateProvider> providers, PlannerOptions options)
+        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options)
     {
         if (options.MaxDepth < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
@@ -148,7 +148,9 @@ public class ActionPlanner
                     };
                 }
                 
-                ValidateCandidates(action, candidates);
+                var providerDescriptor = action.CandidateProvider == null ? null : providers[action.CandidateProvider].Descriptor;
+
+                ValidateCandidates(action, candidates, providerDescriptor);
 
                 foreach (var candidate in candidates.OrderBy(candidate => candidate.Id))
                 {
@@ -219,7 +221,7 @@ public class ActionPlanner
     }
     
     private static IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition action, EvaluationContext state, 
-        IReadOnlyDictionary<string, IActionCandidateProvider> providers)
+        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers)
     {
         if (action.CandidateProvider == null)
         {
@@ -233,16 +235,16 @@ public class ActionPlanner
             ];
         }
 
-        if (!providers.TryGetValue(action.CandidateProvider, out var provider))
+        if (!providers.TryGetValue(action.CandidateProvider, out var snapshot))
             throw new InvalidOperationException($"Unknown candidate provider '{action.CandidateProvider}'.");
 
-        var candidates = provider.GetCandidates(action, state)
+        var candidates = snapshot.Provider.GetCandidates(action, state) 
                          ?? throw new InvalidOperationException($"Provider '{action.CandidateProvider}' returned null.");
-        
+
         return candidates;
     }
     
-    private static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates)
+    private static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates, CandidateProviderDescriptor? descriptor)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
 
@@ -263,6 +265,36 @@ public class ActionPlanner
             if (candidate.Bindings == null)
                 throw new InvalidOperationException($"Candidate '{candidate.Id}': bindings cannot be null.");
 
+            
+            if (descriptor == null)
+            {
+                if (candidate.Bindings.Count != 0)
+                    throw new InvalidOperationException($"Candidate '{candidate.Id}' has bindings without a provider.");
+
+                continue;
+            }
+
+            foreach (var (name, expectedType) in descriptor.BindingTypes)
+            {
+                if (!candidate.Bindings.TryGetValue(name, out var value))
+                    throw new InvalidOperationException($"Candidate '{candidate.Id}' is missing binding '{name}'.");
+
+                if (value == null || !expectedType.IsInstanceOfType(value))
+                    throw new InvalidOperationException($"Candidate '{candidate.Id}' binding '{name}' " + $"must have type '{expectedType.Name}'.");
+
+                if ((value is double number && !double.IsFinite(number)) || (value is float single && !float.IsFinite(single)))
+                {
+                    throw new InvalidOperationException(
+                        $"Candidate '{candidate.Id}' binding '{name}' must be finite.");
+                }
+            }
+
+            foreach (var name in candidate.Bindings.Keys)
+            {
+                if (!descriptor.BindingTypes.ContainsKey(name))
+                    throw new InvalidOperationException($"Candidate '{candidate.Id}' has undeclared binding '{name}'.");
+            }
+            
             foreach (var key in candidate.Bindings.Keys)
             {
                 if (string.IsNullOrWhiteSpace(key))

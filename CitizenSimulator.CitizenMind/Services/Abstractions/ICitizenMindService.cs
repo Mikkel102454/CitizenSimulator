@@ -1,4 +1,5 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Models.Abstractions;
 using CitizenSimulator.CitizenMind.Planning.Abstractions;
@@ -12,5 +13,5 @@ public interface ICitizenMindService
     public void RegisterGoal(GoalDefinition goal);
     public void RegisterAction(ActionDefinition action);
 
-    public void RegisterCandidateProvider(string id, Func<EntityRef, IActionCandidateProvider> factory);
+    public void RegisterCandidateProvider(CandidateProviderDescriptor descriptor, Func<EntityRef, IActionCandidateProvider> factory);
 }

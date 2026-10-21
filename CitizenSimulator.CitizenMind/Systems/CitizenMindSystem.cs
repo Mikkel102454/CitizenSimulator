@@ -4,7 +4,9 @@ using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.CitizenMind.Components;
 using CitizenSimulator.CitizenMind.Configuration;
+using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Executor;
+using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Services;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
@@ -42,7 +44,8 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 mind.Execution = null;
                 mind.CurrentGoal = null;
                 mind.GoalRetryTicks.Clear();
-
+                mind.EmergencyActive.Clear();
+                
                 continue;
             }
             
@@ -50,6 +53,9 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             {
                 if (mind.Execution.Status == PlanExecutionStatus.RUNNING)
                 {
+                    if (TrySwitchToEmergency(entity, mind, time.Tick, retryDelayTicks))
+                        continue;
+                    
                     executor.Update(entity, mind.Execution, gameDelta);
                 }
                 else
@@ -73,11 +79,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
             }
 
-            var state = service.CreateEvaluationContext(entity);
-
-            var relevantActions = ActionDependencyResolver.Resolve(goal, service.Actions);
-            var providers = service.CreateCandidateProviders(entity, relevantActions);
-            var result = ActionPlanner.FindPlan(goal, state, service.Actions, service.FactDescriptors, providers, _plannerOptions);
+            var result = PlanForGoal(entity, goal);
 
             switch (result.Status)
             {
@@ -105,5 +107,73 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                     throw new InvalidOperationException($"Unknown plan status '{result.Status}'.");
             }
         }
+    }
+    
+    private PlanResult PlanForGoal(EntityRef citizen, GoalDefinition goal)
+    {
+        var state = service.CreateEvaluationContext(citizen);
+
+        var relevantActions = ActionDependencyResolver.Resolve(goal, service.Actions);
+
+        var providers = service.CreateCandidateProviders(citizen, relevantActions);
+
+        return ActionPlanner.FindPlan(goal, state, service.Actions, service.FactDescriptors, providers, _plannerOptions);
+    }
+    
+    private bool TrySwitchToEmergency(EntityRef citizen, MindComponent mind, ulong currentTick, ulong retryDelayTicks)
+    {
+        var emergency = goalSelector.SelectGoals(mind, currentTick, emergenciesOnly: true);
+
+        if (emergency == null || emergency.Id == mind.CurrentGoal?.Id)
+            return false;
+
+        var execution = mind.Execution;
+
+        if (execution == null || execution.Status != PlanExecutionStatus.RUNNING)
+            return false;
+
+        // an equally or more urgent running goal keeps its plan.
+        var currentEmergency = mind.CurrentGoal?.Emergency;
+
+        if (currentEmergency != null)
+        {
+            var live = service.CreateEvaluationContext(citizen);
+
+            if (ExpressionEvaluator.Evaluate(live, currentEmergency.When) && currentEmergency.Priority >= emergency.Emergency!.Priority)
+                return false;
+        }
+
+        if (execution.Started)
+        {
+            var action = execution.Plan.PlanSteps[execution.StepIndex].Candidate.Definition;
+
+            if (!action.Execution.Interruptible)
+                return false;
+        }
+
+        var result = PlanForGoal(citizen, emergency);
+
+        if (result.Status == PlanStatus.NO_PATH || result.Status == PlanStatus.BUDGET_EXCEEDED)
+        {
+            mind.GoalRetryTicks[emergency.Id] = checked(currentTick + retryDelayTicks);
+
+            return false;
+        }
+
+        if (result.Status != PlanStatus.FOUND)
+            return false;
+
+        var plan = result.Plan ?? throw new InvalidOperationException("A found emergency result must contain a plan.");
+
+        if (!executor.Cancel(citizen, execution))
+            return false;
+
+        mind.CurrentGoal = emergency;
+        mind.Execution = new PlanExecutionState
+        {
+            Plan = plan
+        };
+
+        return true;
     }
 }
