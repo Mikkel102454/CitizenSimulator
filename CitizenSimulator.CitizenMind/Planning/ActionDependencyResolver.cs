@@ -33,7 +33,7 @@ public class ActionDependencyResolver
             CollectFacts(effect.Value, facts);
 
             // Arithmetic effects also read the fact being changed.
-            if (effect.Op is "add" or "subtract")
+            if (PredictionOperations.ReadsTarget(effect.Op))
                 facts.Add(effect.Fact);
         }
 

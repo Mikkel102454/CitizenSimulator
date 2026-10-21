@@ -29,23 +29,8 @@ public class ActionPlanner
         
         if (durationObject is not (int or float or double or decimal))
             throw new InvalidOperationException("Duration must be numeric.");
-
-        double duration = Convert.ToDouble(durationObject);
-
-        switch (action.Duration.Unit)
-        {
-            case "simulationMinutes":
-                durationMinutes = duration;
-                break;
-            case "simulationHours":
-                durationMinutes = duration * 60;
-                break;
-            case "simulationDays":
-                durationMinutes = duration * 1440;
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown unit: {action.Duration.Unit}. Valid units are 'simulationMinutes', 'simulationHours', 'simulationDays'");
-        }
+        
+        DurationConverter.GetMinutesPerUnit(action.Duration.Unit);
         
         if (!double.IsFinite(durationMinutes))
             throw new InvalidOperationException("Expected a finite number.");

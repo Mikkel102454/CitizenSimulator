@@ -3,6 +3,7 @@ using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.CitizenMind.Configuration;
 using CitizenSimulator.CitizenMind.Executor;
 using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Services;
@@ -13,6 +14,11 @@ namespace CitizenSimulator.CitizenMind.Systems;
 public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, CitizenMindService service, ICalenderService calender, ActionExecutor executor) : GameSystem
 {
     private readonly PlannerOptions _plannerOptions = new();
+    
+    protected override void OnStart(ICommandBuffer commands)
+    {
+        MindDefinitionValidator.Validate(service);
+    }
     
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
     {

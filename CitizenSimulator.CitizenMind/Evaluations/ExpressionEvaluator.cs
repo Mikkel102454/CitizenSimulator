@@ -73,13 +73,11 @@ public class ExpressionEvaluator
             return value;
         }
         
-        string[] validOp = ["add", "subtract", "min", "max", "multiply", "divide", "gt", "gte", "lt", "lte",];
-        
-        if (!validOp.Contains(definition.Op))
-            throw new InvalidOperationException($"Unsupported operator '{definition.Op}'.");
+        int expected = ExpressionOperators.GetArgumentCount(definition.Op);
 
-        if (definition.Args.Count != 2)
-            throw new InvalidOperationException($"Operator '{definition.Op}' requires two arguments.");
+        if (definition.Args.Count != expected)
+            throw new InvalidOperationException(
+                $"Operator '{definition.Op}' requires {expected} arguments.");
 
         // resolve recursively so arguments can contain math.
         var left = Resolve(context, definition.Args[0]);
