@@ -68,15 +68,6 @@ public class MindDefinitionValidator
                     throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' has multiple effects " + $"targeting '{effect.Fact}'.");
             }
             
-            foreach (var (name, value) in action.Parameters)
-            {
-                if (string.IsNullOrWhiteSpace(name))
-                    throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' has a blank parameter name.");
-
-                if (!double.IsFinite(value))
-                    throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' parameter '{name}' must be finite.");
-            }
-            
             DurationConverter.GetMinutesPerUnit(action.Duration.Unit);
         }
         

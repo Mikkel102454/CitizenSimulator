@@ -6,8 +6,13 @@ handler: needs.drink_accessible_safe_water
 # The current C# handler still hardcodes target=0.10 and rate=0.16.
 # It must consume these parameters before this draft can drive execution.
 parameters:
-  targetThirst: 0.25
-  reductionPerMinute: 0.16
+  targetThirst:
+    type: DOUBLE
+    value: "0.25"
+
+  reductionPerMinute:
+    type: DOUBLE
+    value: "0.16"
 
 # This starter action assumes accessible water and includes no travel.
 # home.can_drink is a proposed fact requiring a registered provider.

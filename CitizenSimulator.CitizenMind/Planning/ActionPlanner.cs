@@ -16,7 +16,7 @@ public class ActionPlanner
         var context = new EvaluationContext
         {
             Facts = state.Facts,
-            Parameters = action.Parameters,
+            Parameters = action.ResolvedParameters,
             Calculated = []
         };
 
@@ -31,17 +31,13 @@ public class ActionPlanner
         if (durationObject is not (int or float or double or decimal))
             throw new InvalidOperationException("Duration must be numeric.");
         
-        DurationConverter.GetMinutesPerUnit(action.Duration.Unit);
-        
-        if (!double.IsFinite(durationMinutes))
-            throw new InvalidOperationException("Expected a finite number.");
-        
-        if (durationMinutes < 0)
-            throw new InvalidOperationException("Expected a non-negative number.");
+        double duration = Convert.ToDouble(durationObject);
+
+        durationMinutes = DurationConverter.ToMinutes(duration, action.Duration.Unit);
         
         context.Calculated.Add("durationMinutes", durationMinutes);
         
-        object? costObject = ExpressionEvaluator.Resolve(context, action.Cost.Expression);
+        object? costObject = ExpressionEvaluator.Resolve(context, action.Cost.Expression, ExpressionEvaluationMode.Score);
         
         if (costObject is not (int or float or double or decimal))
             throw new InvalidOperationException("Cost must be numeric.");

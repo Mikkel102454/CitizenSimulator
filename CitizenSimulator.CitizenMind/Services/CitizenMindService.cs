@@ -1,4 +1,5 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.CitizenMind.Configuration;
 using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
@@ -65,6 +66,7 @@ public class CitizenMindService : ICitizenMindService
         if (Actions.Values.Any(x => x.Id == action.Id))
             throw new InvalidOperationException($"[CitizenMind] Duplicate action id '{action.Id}'");
 
+        action.ResolvedParameters = ParameterParser.ParseAll(action.Parameters, action.Id);
         Actions.Add(action.Id, action);
     }
     

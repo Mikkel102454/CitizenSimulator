@@ -1,3 +1,6 @@
+using CitizenSimulator.CitizenMind.Definitions;
+using YamlDotNet.Serialization;
+
 namespace CitizenSimulator.CitizenMind.Models;
 
 public sealed class ActionDefinition
@@ -5,11 +8,15 @@ public sealed class ActionDefinition
     public required string Id { get; init; }
     
     public required string Handler { get; init; }
-    
-    public Dictionary<string, double> Parameters { get; init; } = [];
+
+    public Dictionary<string, ParameterDefinition> Parameters { get; init; } = [];
     
     public List<ExpressionDefinition> Preconditions { get; init; } = [];
-    
+
+    // so yaml parser dosnt try to put things in here
+    [YamlIgnore]
+    public IReadOnlyDictionary<string, object?> ResolvedParameters
+    { get; internal set; } = new Dictionary<string, object?>();
     public required DurationDefinition Duration { get; init; }
     
     public required List<PredictionEffectDefinition> Prediction { get; init; }

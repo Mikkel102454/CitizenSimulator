@@ -36,7 +36,7 @@ public class ExpressionEvaluator
     /// <returns>Resolved value</returns>
     /// <exception cref="InvalidOperationException">The operation keyword was unknown</exception>
     /// <exception cref="DivideByZeroException">There was division by 0 in math equation</exception>
-    public static object? Resolve(EvaluationContext context, ExpressionDefinition definition)
+    public static object? Resolve(EvaluationContext context, ExpressionDefinition definition, ExpressionEvaluationMode mode = ExpressionEvaluationMode.Standard)
     {
         if (definition.Fact != null)
         {
@@ -80,13 +80,13 @@ public class ExpressionEvaluator
                 $"Operator '{definition.Op}' requires {expected} arguments.");
 
         // resolve recursively so arguments can contain math.
-        var left = Resolve(context, definition.Args[0]);
-        var right = Resolve(context, definition.Args[1]);
+        var left = Resolve(context, definition.Args[0], mode);
+        var right = Resolve(context, definition.Args[1], mode);
 
         if (left == null || right == null)
             return null;
 
-        if (left is decimal || right is decimal)
+        if (mode == ExpressionEvaluationMode.Standard && (left is decimal || right is decimal))
             return ResolveDecimalOperation(definition.Op!, left, right);
 
         double a = ToNumber(left);

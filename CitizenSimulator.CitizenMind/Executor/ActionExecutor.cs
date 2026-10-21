@@ -28,7 +28,7 @@ public class ActionExecutor(CitizenMindService service)
         var context = new EvaluationContext
         {
             Facts = live.Facts,
-            Parameters = action.Parameters
+            Parameters = action.ResolvedParameters
         };
 
         foreach (var precondition in action.Preconditions)
@@ -44,7 +44,7 @@ public class ActionExecutor(CitizenMindService service)
 
         var actionContext = new ActionContext(citizen, TimeSpan.Zero, TimeSpan.Zero)
         {
-            Parameters = action.Parameters
+            Parameters = action.ResolvedParameters
         };
 
         return handler.Start(actionContext);
@@ -59,7 +59,7 @@ public class ActionExecutor(CitizenMindService service)
         {
             Facts = live.Facts,
             Before = execution.Before,
-            Parameters = step.Action.Parameters,
+            Parameters = step.Action.ResolvedParameters,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = step.DurationMinutes
@@ -137,7 +137,7 @@ public class ActionExecutor(CitizenMindService service)
 
         var context = new ActionContext(citizen, execution.Elapsed, gameDelta)
         {
-            Parameters = action.Parameters
+            Parameters = action.ResolvedParameters
         };
 
         var result = handler.Tick(context);
@@ -165,7 +165,7 @@ public class ActionExecutor(CitizenMindService service)
 
         var context = new ActionContext(citizen, execution.Elapsed, TimeSpan.Zero)
         {
-            Parameters = action.Parameters
+            Parameters = action.ResolvedParameters
         };
 
         execution.Status = PlanExecutionStatus.CANCELLED;

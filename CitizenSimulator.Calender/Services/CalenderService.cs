@@ -9,7 +9,7 @@ public class CalenderService : ICalenderService
     internal ulong TickOfDay;
     public ulong GetTicksPerDay()
     {
-        return 30 * 10; // 10 seconds
+        return 24 * 60; // each tick is 1 minute
     }
 
     public ulong GetTickOfDay()

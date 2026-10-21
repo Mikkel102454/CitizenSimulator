@@ -15,7 +15,7 @@ public class ActionPredictor
         var context = new EvaluationContext
         {
             Facts = state.Facts,
-            Parameters = action.Parameters,
+            Parameters = action.ResolvedParameters,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = durationMinutes

@@ -19,9 +19,9 @@ public sealed class DrinkWaterHandler(IEntityStore store, INeedsService needs) :
 
         if (component is null)
             return ActionResult.FAILED;
-
-        double target = context.Parameters["targetThirst"];
-        double reductionPerMinute = context.Parameters["reductionPerMinute"];
+        
+        double target = context.GetParameter<double>("targetThirst");
+        double reductionPerMinute = context.GetParameter<double>("reductionPerMinute");
         
         double reduction = reductionPerMinute * context.Delta.TotalMinutes;
 
