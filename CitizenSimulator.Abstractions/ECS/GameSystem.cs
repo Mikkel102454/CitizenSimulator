@@ -43,7 +43,36 @@ public abstract class GameSystem(int priority = 0)
         }
     }
     
+    public void Remove(EntityRef entity, IComponent component)
+    {
+        ArgumentNullException.ThrowIfNull(component);
+
+        OnRemove(entity, component);
+    }
+    
+    /// <summary>
+    /// Called once before the first game tick.
+    /// </summary>
+    /// <param name="commands">The current active command buffer</param>
     protected virtual void OnStart(ICommandBuffer commands) { }
+    
+    /// <summary>
+    /// Called every tick
+    /// </summary>
+    /// <param name="time">Information about the simulation time</param>
+    /// <param name="commands">The current active command buffer</param>
     protected virtual void OnUpdate(SimulationTime time, ICommandBuffer commands) { }
+    
+    /// <summary>
+    /// Called once when the engine shuts down.
+    /// </summary>
+    /// <param name="commands">The current active command buffer</param>
     protected virtual void OnStop(ICommandBuffer commands) { }
+    
+    /// <summary>
+    /// Called once when a component is getting removed
+    /// </summary>
+    /// <param name="entity">The entity the component is getting removed from</param>
+    /// <param name="component">The component getting removed</param>
+    protected virtual void OnRemove(EntityRef entity, IComponent component) { }
 }

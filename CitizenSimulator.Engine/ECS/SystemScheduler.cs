@@ -44,6 +44,8 @@ public sealed class SystemScheduler
         }
 
         _store = store;
+        _store.SetComponentRemovalCallback(NotifyComponentRemoval);
+        
         _state = SchedulerState.Starting;
 
         GameSystem? startingSystem = null;
@@ -167,8 +169,10 @@ public sealed class SystemScheduler
         try
         {
             //reversed to shutdown correctly
-            foreach (var system in _startedSystems.AsEnumerable().Reverse())
+            foreach (var system in _startedSystems.ToArray().Reverse())
             {
+                _startedSystems.Remove(system);
+                
                 try
                 {
                     ExecuteCallback(buffer => system.Stop(buffer));
@@ -181,6 +185,7 @@ public sealed class SystemScheduler
         }
         finally
         {
+            _store.SetComponentRemovalCallback(null);
             _startedSystems.Clear();
             _state = SchedulerState.Stopped;
         }
@@ -228,5 +233,34 @@ public sealed class SystemScheduler
         {
             commands.Discard();
         }
+    }
+    
+    private void NotifyComponentRemoval(EntityRef entity, IComponent component)
+    {
+        var errors = new List<Exception>();
+
+        _store.BeginSystemExecution();
+
+        try
+        {
+            foreach (var system in _startedSystems.ToArray())
+            {
+                try
+                {
+                    system.Remove(entity, component);
+                }
+                catch (Exception exception)
+                {
+                    errors.Add(new InvalidOperationException($"System '{system.Name}' failed during component removal.", exception));
+                }
+            }
+        }
+        finally
+        {
+            _store.EndSystemExecution();
+        }
+
+        if (errors.Count > 0)
+            throw new AggregateException("Component removal cleanup failed.", errors);
     }
 }

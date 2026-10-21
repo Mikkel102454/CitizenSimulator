@@ -64,6 +64,7 @@ cost:
 # Proposed executor policy. The handler owns cleanup when cancelled.
 execution:
   interruptible: true
+  timeoutMinutes: 10
 # Required validation for this definition:
 # - finite targetThirst in [0, 1]; finite reductionPerMinute > 0
 # - finite nonnegative duration and cost

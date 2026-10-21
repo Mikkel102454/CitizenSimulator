@@ -38,14 +38,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             
             if (!mind.IsActive)
             {
-                if (mind.Execution?.Status == PlanExecutionStatus.RUNNING)
-                    executor.Cancel(entity, mind.Execution, force: true);
-
-                mind.Execution = null;
-                mind.CurrentGoal = null;
-                mind.GoalRetryTicks.Clear();
-                mind.EmergencyActive.Clear();
-                
+                CleanupMind(entity, mind);
                 continue;
             }
             
@@ -109,6 +102,42 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         }
     }
     
+    protected override void OnStop(ICommandBuffer commands)
+    {
+        var errors = new List<Exception>();
+
+        var citizens = Store.Query(
+            MindComponent.GetComponentType()).ToArray();
+
+        foreach (var citizen in citizens)
+        {
+            try
+            {
+                var mind = Store.GetComponent<MindComponent>(citizen);
+
+                if (mind != null)
+                    CleanupMind(citizen, mind);
+            }
+            catch (Exception exception)
+            {
+                errors.Add(new InvalidOperationException(
+                    $"Failed to clean up citizen '{citizen}'.",
+                    exception));
+            }
+        }
+
+        if (errors.Count > 0)
+            throw new AggregateException(
+                "CitizenMind shutdown cleanup failed.",
+                errors);
+    }
+
+    protected override void OnRemove(EntityRef entity, IComponent component)
+    {
+        if (component is MindComponent mind)
+            CleanupMind(entity, mind);
+    }
+
     private PlanResult PlanForGoal(EntityRef citizen, GoalDefinition goal)
     {
         var state = service.CreateEvaluationContext(citizen);
@@ -175,5 +204,21 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         };
 
         return true;
+    }
+    
+    private void CleanupMind(EntityRef citizen, MindComponent mind)
+    {
+        try
+        {
+            if (mind.Execution?.Status == PlanExecutionStatus.RUNNING)
+                executor.Cancel(citizen, mind.Execution, force: true);
+        }
+        finally
+        {
+            mind.Execution = null;
+            mind.CurrentGoal = null;
+            mind.GoalRetryTicks.Clear();
+            mind.EmergencyActive.Clear();
+        }
     }
 }

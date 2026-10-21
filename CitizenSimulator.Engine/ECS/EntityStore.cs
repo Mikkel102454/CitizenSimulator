@@ -19,6 +19,13 @@ public sealed class EntityStore : IEntityStore
     
     private bool _isExecutingSystem; // if the schedule system is executing
     
+    private Action<EntityRef, IComponent>? _componentRemovalCallback;
+    
+    internal void SetComponentRemovalCallback(Action<EntityRef, IComponent>? callback)
+    {
+        _componentRemovalCallback = callback;
+    }
+    
     public EntityRef CreateEntity()
     {
         EnsureStructuralChangesAllowed();
@@ -96,10 +103,15 @@ public sealed class EntityStore : IEntityStore
     {
         EnsureStructuralChangesAllowed();
         Validate(entity);
-        foreach (var component in _entities[entity.Id].Values)
-        {
+
+        var components = _entities[entity.Id].Values.ToArray();
+
+        foreach (var component in components)
+            _componentRemovalCallback?.Invoke(entity, component);
+
+        foreach (var component in components)
             component.Parent = default;
-        }
+
         _entities.Remove(entity.Id);
     }
 
@@ -164,10 +176,18 @@ public sealed class EntityStore : IEntityStore
     {
         EnsureStructuralChangesAllowed();
         Validate(entity);
-        if (_entities[entity.Id].Remove(typeof(T), out var component) && !ContainsComponent(component))
+
+        if (!_entities[entity.Id].TryGetValue(typeof(T), out var component))
         {
-            component.Parent = default;
+            return;
         }
+
+        _componentRemovalCallback?.Invoke(entity, component);
+
+        _entities[entity.Id].Remove(typeof(T));
+
+        if (!ContainsComponent(component))
+            component.Parent = default;
     }
     
     // query for an entity with specific components

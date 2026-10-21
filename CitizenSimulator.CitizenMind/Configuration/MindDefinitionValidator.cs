@@ -27,6 +27,9 @@ public class MindDefinitionValidator
             if (action.Execution == null)
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': execution cannot be null.");
             
+            if (action.Execution.TimeoutMinutes is double timeout)
+                DurationConverter.ToPositiveTimeSpan(timeout);
+            
             if (action.CandidateProvider != null && !service.CandidateProviderFactories.ContainsKey(action.CandidateProvider))
             {
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': references unknown candidate provider " + $"'{action.CandidateProvider}'.");

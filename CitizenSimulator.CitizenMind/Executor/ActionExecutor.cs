@@ -89,13 +89,13 @@ public class ActionExecutor(CitizenMindService service)
                 return;
 
             case ActionResult.FAILED:
-                execution.Status = PlanExecutionStatus.FAILED;
+                FailExecution(citizen, execution);
                 return;
 
             case ActionResult.SUCCEEDED:
                 if (!IsStepComplete(citizen, execution))
                 {
-                    execution.Status = PlanExecutionStatus.FAILED;
+                    FailExecution(citizen, execution);
                     return;
                 }
 
@@ -142,15 +142,45 @@ public class ActionExecutor(CitizenMindService service)
         if (!service.Handler.TryGetValue(action.Handler, out var handler))
             throw new InvalidOperationException($"Unknown action handler '{action.Handler}'.");
 
-        execution.Elapsed += gameDelta;
+        TimeSpan stepDelta = gameDelta;
+        bool timeoutReached = false;
 
-        var context = new ActionContext(citizen, execution.Elapsed, gameDelta)
+        if (action.Execution.TimeoutMinutes is double timeoutMinutes)
+        {
+            TimeSpan limit =
+                DurationConverter.ToPositiveTimeSpan(timeoutMinutes);
+
+            TimeSpan remaining = limit - execution.Elapsed;
+
+            if (remaining <= TimeSpan.Zero)
+            {
+                FailExecution(citizen, execution);
+                return;
+            }
+
+            if (stepDelta >= remaining)
+            {
+                stepDelta = remaining;
+                timeoutReached = true;
+            }
+        }
+
+        execution.Elapsed += stepDelta;
+
+        var context = new ActionContext(citizen, execution.Elapsed, stepDelta)
         {
             Parameters = action.ResolvedParameters,
-            Bindings = candidate.Bindings,
+            Bindings = candidate.Bindings
         };
 
         var result = handler.Tick(context);
+
+        if (result == ActionResult.RUNNING && timeoutReached)
+        {
+            FailExecution(citizen, execution);
+            return;
+        }
+
         HandleResult(citizen, execution, result);
     }
     
@@ -193,5 +223,17 @@ public class ActionExecutor(CitizenMindService service)
         }
 
         return true;
+    }
+    
+    private void FailExecution(EntityRef citizen, PlanExecutionState execution)
+    {
+        try
+        {
+            Cancel(citizen, execution, force: true);
+        }
+        finally
+        {
+            execution.Status = PlanExecutionStatus.FAILED;
+        }
     }
 }

@@ -23,4 +23,26 @@ internal static class DurationConverter
 
         return minutes;
     }
+    
+    public static TimeSpan ToPositiveTimeSpan(double minutes)
+    {
+        if (!double.IsFinite(minutes) || minutes <= 0)
+            throw new InvalidOperationException("Timeout must be finite and greater than zero.");
+
+        TimeSpan duration;
+
+        try
+        {
+            duration = TimeSpan.FromMinutes(minutes);
+        }
+        catch (OverflowException exception)
+        {
+            throw new InvalidOperationException("Timeout exceeds the supported time range.", exception);
+        }
+
+        if (duration <= TimeSpan.Zero)
+            throw new InvalidOperationException("Timeout is smaller than the supported time resolution.");
+
+        return duration;
+    }
 }

@@ -98,11 +98,14 @@ public class ActionPlanner
             State = state,
             TotalCost = 0
         };
+        
+        var known = new List<SearchNode> { start };
 
         // we use this to always check the lowest cost path first
         var frontier = new PriorityQueue<SearchNode, (double Cost, long Order)>();
         
         long order = 0;
+        
         frontier.Enqueue(start, (start.TotalCost, order++));
         
         int expansions = 0;
@@ -110,6 +113,9 @@ public class ActionPlanner
         
         while (frontier.TryDequeue(out var current, out _))
         {
+            if (!known.Contains(current))
+                continue;
+            
             if (IsGoalSatisfied(goal, current.State))
             {
                 return new PlanResult
@@ -164,6 +170,9 @@ public class ActionPlanner
 
                     var predicted = ActionPredictor.Predict(candidate, current.State, duration, descriptors);
 
+                    if (HaveSameFacts(current.State.Facts, predicted.Facts))
+                        continue;
+                    
                     var child = new SearchNode
                     {
                         State = predicted,
@@ -174,6 +183,9 @@ public class ActionPlanner
                         Depth = current.Depth + 1
                     };
 
+                    if (!TryRememberNode(child, known))
+                        continue;
+                    
                     frontier.Enqueue(child, (child.TotalCost, order++));
                 }
             }
@@ -301,5 +313,39 @@ public class ActionPlanner
                     throw new InvalidOperationException($"Candidate '{candidate.Id}': binding key cannot be blank.");
             }
         }
+    }
+    
+    private static bool HaveSameFacts(IReadOnlyDictionary<string, object?> first, IReadOnlyDictionary<string, object?> second)
+    {
+        if (first.Count != second.Count)
+            return false;
+
+        foreach (var (name, value) in first)
+        {
+            if (!second.TryGetValue(name, out var other) || !Equals(value, other))
+                return false;
+        }
+
+        return true;
+    }
+    
+    private static bool TryRememberNode(SearchNode candidate, List<SearchNode> known)
+    {
+        foreach (var existing in known)
+        {
+            if (existing.TotalCost <= candidate.TotalCost && existing.Depth <= candidate.Depth && 
+                HaveSameFacts(existing.State.Facts, candidate.State.Facts))
+            {
+                return false;
+            }
+        }
+
+        known.RemoveAll(existing =>
+            candidate.TotalCost <= existing.TotalCost &&
+            candidate.Depth <= existing.Depth &&
+            HaveSameFacts(candidate.State.Facts, existing.State.Facts));
+
+        known.Add(candidate);
+        return true;
     }
 }
