@@ -11,4 +11,4 @@ utility:
     - input: {fact: needs.thirst}
       weight: 1
       curve: [[0, 0], [0.35, 0.15], [0.70, 0.75], [1, 1]]
-  actions: [citizen_brain.core.drink_safe_water]
+goalActions: [citizen_brain.core.drink_safe_water]

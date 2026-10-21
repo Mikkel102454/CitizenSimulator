@@ -1,4 +1,5 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Models.Abstractions;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
@@ -10,7 +11,10 @@ public class CitizenMindService : ICitizenMindService
     internal readonly Dictionary<string, Delegate> Facts = new(StringComparer.Ordinal);
 
     internal readonly Dictionary<string, IMindActionHandler> Handler = new(StringComparer.Ordinal);
-    internal readonly List<GoalDefinition> Goals = [];
+    
+    internal readonly Dictionary<string, GoalDefinition> Goals = [];
+    
+    internal readonly Dictionary<string, ActionDefinition> Actions = [];
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
@@ -34,9 +38,35 @@ public class CitizenMindService : ICitizenMindService
         ArgumentNullException.ThrowIfNull(goal);
         ArgumentException.ThrowIfNullOrWhiteSpace(goal.Id);
 
-        if (Goals.Any(x => x.Id == goal.Id))
+        if (Goals.Values.Any(x => x.Id == goal.Id))
             throw new InvalidOperationException($"[CitizenMind] Duplicate goal id '{goal.Id}'");
 
-        Goals.Add(goal);
+        Goals.Add(goal.Id, goal);
+    }
+    
+    public void RegisterAction(ActionDefinition action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        ArgumentException.ThrowIfNullOrWhiteSpace(action.Id);
+
+        if (Actions.Values.Any(x => x.Id == action.Id))
+            throw new InvalidOperationException($"[CitizenMind] Duplicate action id '{action.Id}'");
+
+        Actions.Add(action.Id, action);
+    }
+    
+    public EvaluationContext CreateEvaluationContext(EntityRef citizen)
+    {
+        var facts = new Dictionary<string, object?>(StringComparer.Ordinal);
+
+        foreach (var (id, provider) in Facts)
+        {
+            facts.Add(id, provider.DynamicInvoke(citizen));
+        }
+
+        return new EvaluationContext
+        {
+            Facts = facts
+        };
     }
 }

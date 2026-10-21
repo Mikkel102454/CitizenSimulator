@@ -12,4 +12,6 @@ public sealed class GoalDefinition
     public required List<ExpressionDefinition> Desired { get; init; }
 
     public required UtilityDefinition Utility { get; init; }
+    
+    public required List<string> GoalActions { get; init; }
 }

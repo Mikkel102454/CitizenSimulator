@@ -1,0 +1,41 @@
+id: test.eat_food
+handler: test.consume_food
+
+parameters:
+  portions: 1
+  targetHunger: 0.25
+  durationMinutes: 1
+
+preconditions:
+  - op: gte
+    args:
+      - {fact: inventory.food_count}
+      - {parameter: portions}
+  - op: gt
+    args:
+      - {fact: needs.hunger}
+      - {parameter: targetHunger}
+
+duration:
+  unit: simulationMinutes
+  estimate: {parameter: durationMinutes}
+
+prediction:
+  - fact: inventory.food_count
+    op: subtract
+    value: {parameter: portions}
+  - fact: needs.hunger
+    op: set
+    value: {parameter: targetHunger}
+
+completion:
+  - op: lte
+    args:
+      - {fact: needs.hunger}
+      - {parameter: targetHunger}
+
+cost:
+  expression: {calculated: durationMinutes}
+
+execution:
+  interruptible: true

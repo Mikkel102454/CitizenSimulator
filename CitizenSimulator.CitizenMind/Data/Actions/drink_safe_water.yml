@@ -1,1 +1,68 @@
 id: citizen_brain.core.drink_safe_water
+handler: citizen_brain.core.drink_safe_water
+
+# Configuration passed to the handler and shared with the planner.
+# All times below are simulation minutes; thirst is normalized to [0, 1].
+# The current C# handler still hardcodes target=0.10 and rate=0.16.
+# It must consume these parameters before this draft can drive execution.
+parameters:
+  targetThirst: 0.25
+  reductionPerMinute: 0.16
+
+# This starter action assumes accessible water and includes no travel.
+# home.can_drink is a proposed fact requiring a registered provider.
+# A future source binding can supply a particular water source and travel time.
+preconditions:
+  - {fact: home.can_drink}
+  - op: gt
+    args:
+      - {fact: needs.thirst}
+      - {parameter: targetThirst}
+
+# Estimated active drinking time, evaluated in the current SEARCH STATE.
+# max(0, (currentThirst - targetThirst) / reductionPerMinute)
+# max and parameter references are proposed expression extensions.
+duration:
+  unit: simulationMinutes
+  estimate:
+    op: max
+    args:
+      - {literal: 0}
+      - op: divide
+        args:
+          - op: subtract
+            args:
+              - {fact: needs.thirst}
+              - {parameter: targetThirst}
+          - {parameter: reductionPerMinute}
+
+# Predicted completion effects change only the planner's copied state.
+# Actual effects are applied gradually by the handler through INeedsService.
+prediction:
+  - fact: needs.thirst
+    op: set
+    value: {parameter: targetThirst}
+
+# Check real observations after handler success before advancing the plan.
+completion:
+  - op: lte
+    args:
+      - {fact: needs.thirst}
+      - {parameter: targetThirst}
+
+# Dimensionless nonnegative search cost. Here, one minute costs one point.
+# durationMinutes refers to this action's evaluated duration estimate.
+# Other actions can add spending, effort or risk to this expression.
+cost:
+  expression: {calculated: durationMinutes}
+
+# Proposed executor policy. The handler owns cleanup when cancelled.
+execution:
+  interruptible: true
+# Required validation for this definition:
+# - finite targetThirst in [0, 1]; finite reductionPerMinute > 0
+# - finite nonnegative duration and cost
+# - registered handler/facts; supported expressions and prediction operations
+# - predicted completion must agree with the handler's configured target
+# Planner-wide depth/expansion/time budgets belong in planner configuration,
+# not in this action definition.

@@ -1,42 +1,38 @@
 using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Services;
 
-namespace CitizenSimulator.CitizenMind.Models;
+namespace CitizenSimulator.CitizenMind.Evaluations;
 
-public sealed class ConsiderationDefinition
+public class ConsiderationEvaluator
 {
-    public required ExpressionDefinition Input { get; init; }
-
-    public double Weight { get; init; } = 1.0;
-    public required List<double[]> Curve { get; init; }
-    
-    public double Evaluate(CitizenMindService service, MindComponent mind)
+    public static double Evaluate(EvaluationContext context, ConsiderationDefinition definition)
     {
-        object? value = Input?.Resolve(service, mind);
+        object? value = ExpressionEvaluator.Resolve(context, definition.Input);
         
         if (value is not (int or float or double or decimal))
             throw new InvalidOperationException("Consideration input must be numeric.");
 
         double input = Convert.ToDouble(value);
         
-        return CalculateCurve(input);
+        return CalculateCurve(input, definition);
     }
     
-    private double CalculateCurve(double input)
+    private static double CalculateCurve(double input, ConsiderationDefinition definition)
     {
         if (!double.IsFinite(input))
             throw new ArgumentException("Input must be finite.");
         
-        if (Curve.Count == 0)
+        if (definition.Curve.Count == 0)
             throw new InvalidOperationException("Curve cannot be empty.");
         
-        if (input <= Curve[0][0])
-            return Curve[0][1];
+        if (input <= definition.Curve[0][0])
+            return definition.Curve[0][1];
 
-        for (int i = 1; i < Curve.Count; i++)
+        for (int i = 1; i < definition.Curve.Count; i++)
         {
-            double[] previous = Curve[i - 1];
-            double[] next = Curve[i];
+            double[] previous = definition.Curve[i - 1];
+            double[] next = definition.Curve[i];
 
             if (input <= next[0])
             {
@@ -46,6 +42,6 @@ public sealed class ConsiderationDefinition
             }
         }
 
-        return Curve[^1][1];
+        return definition.Curve[^1][1];
     }
 }

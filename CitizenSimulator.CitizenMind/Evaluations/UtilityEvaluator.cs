@@ -1,26 +1,20 @@
 using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Services;
 
-namespace CitizenSimulator.CitizenMind.Models;
+namespace CitizenSimulator.CitizenMind.Evaluations;
 
-
-public sealed class UtilityDefinition
+public class UtilityEvaluator
 {
-    public double Bias { get; init; } = 1.0;
-
-    public required List<ConsiderationDefinition> Considerations { get; init; }
-
-    public required List<string> Actions { get; init; }
-
-    public double Evaluate(CitizenMindService service, MindComponent mind)
+    public static double Evaluate(EvaluationContext context, UtilityDefinition utility)
     {
-        if (!double.IsFinite(Bias) || Bias < 0)
+        if (!double.IsFinite(utility.Bias) || utility.Bias < 0)
             throw new InvalidOperationException("Bias must be finite and nonnegative.");
 
         double weightedSum = 0;
         double totalWeight = 0;
 
-        foreach (var consideration in Considerations)
+        foreach (var consideration in utility.Considerations)
         {
             double weight = consideration.Weight;
 
@@ -30,7 +24,7 @@ public sealed class UtilityDefinition
             if (weight == 0)
                 continue;
 
-            double score = consideration.Evaluate(service, mind);
+            double score = ConsiderationEvaluator.Evaluate(context, consideration);
 
             weightedSum += score * weight;
             totalWeight += weight;
@@ -39,6 +33,6 @@ public sealed class UtilityDefinition
         if (totalWeight == 0)
             throw new InvalidOperationException("Utility requires at least one positive weight.");
 
-        return Math.Clamp(Bias * (weightedSum / totalWeight), 0, 1);
+        return Math.Clamp(utility.Bias * (weightedSum / totalWeight), 0, 1);
     }
 }

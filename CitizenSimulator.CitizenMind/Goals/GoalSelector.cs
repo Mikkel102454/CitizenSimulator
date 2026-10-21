@@ -1,4 +1,5 @@
 using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 
 namespace CitizenSimulator.CitizenMind.Services;
@@ -9,18 +10,21 @@ public class GoalSelector(CitizenMindService citizenMindService)
     {
         Dictionary<GoalDefinition, double> eligibleGoals = new Dictionary<GoalDefinition, double>();
         Dictionary<GoalDefinition, int> emergencyGoals = new Dictionary<GoalDefinition, int>();
-        foreach (var goal in citizenMindService.Goals)
+        
+        var context = citizenMindService.CreateEvaluationContext(mindComponent.Parent);
+        
+        foreach (var goal in citizenMindService.Goals.Values)
         {
-            if (!goal.Eligible.Evaluate(citizenMindService, mindComponent))
+            if (! ExpressionEvaluator.Evaluate(context, goal.Eligible))
             {
                 continue;
             }
-            if (goal.Emergency != null && goal.Emergency.When.Evaluate(citizenMindService, mindComponent))
+            if (goal.Emergency != null && ExpressionEvaluator.Evaluate(context, goal.Emergency.When))
             {
                 emergencyGoals.Add(goal, goal.Emergency.Priority);
                 continue;
             }
-            eligibleGoals.Add(goal, goal.Utility.Evaluate(citizenMindService, mindComponent));
+            eligibleGoals.Add(goal, UtilityEvaluator.Evaluate(context, goal.Utility));
         }
 
         //always run emergency first
