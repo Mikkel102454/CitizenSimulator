@@ -1,3 +1,4 @@
+using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 
@@ -5,7 +6,8 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 public class ActionPredictor
 {
-    public static EvaluationContext Predict(ActionDefinition action, EvaluationContext state, double durationMinutes)
+    public static EvaluationContext Predict(ActionDefinition action, EvaluationContext state, double durationMinutes,
+        IReadOnlyDictionary<string, FactDescriptor> descriptors)
     {
         // new copy
         Dictionary<string, object?> facts = new(state.Facts, state.Facts.Comparer);
@@ -24,6 +26,12 @@ public class ActionPredictor
 
         foreach (var effect in action.Prediction)
         {
+            if (!descriptors.TryGetValue(effect.Fact, out var descriptor))
+                throw new InvalidOperationException($"Unknown fact descriptor '{effect.Fact}'.");
+
+            if (!descriptor.CanPredict)
+                throw new InvalidOperationException($"Cannot predict changes to read-only fact '{effect.Fact}'.");
+            
             if (!facts.ContainsKey(effect.Fact))
                 throw new InvalidOperationException($"Unknown fact '{effect.Fact}'.");
 
@@ -37,37 +45,51 @@ public class ActionPredictor
             switch (effect.Op)
             {
                 case "set":
-                    if (original is bool)
-                    {
-                        if (value is not bool)
-                            throw new InvalidOperationException($"Prediction for '{effect.Fact}' requires a boolean.");
-
-                        facts[effect.Fact] = value;
-                    }
-                    else
-                    {
-                        RequireNumber(original, effect.Fact);
-                        facts[effect.Fact] = RequireNumber(value, effect.Fact);
-                    }
+                    facts[effect.Fact] = RequireValue(value, descriptor);
                     break;
 
                 case "add":
                 case "subtract":
                 {
-                    double current = RequireNumber(original, effect.Fact);
-                    double amount = RequireNumber(value, effect.Fact);
+                    if (descriptor.ValueType == typeof(int))
+                    {
+                        int currentInt = NumericValues.RequireInteger(original, effect.Fact);
+                        int amountInt = NumericValues.RequireInteger(value, effect.Fact);
+
+                        int resultInt = effect.Op == "add" ? checked(currentInt + amountInt) : checked(currentInt - amountInt);
+
+                        facts[effect.Fact] = resultInt;
+                        break;
+                    }
+                    
+                    if (descriptor.ValueType == typeof(decimal))
+                    {
+                        decimal currentDecimal = NumericValues.RequireDecimal(original, effect.Fact);
+                        decimal amountDecimal = NumericValues.RequireDecimal(value, effect.Fact);
+
+                        decimal resultDecimal = effect.Op == "add" ? currentDecimal + amountDecimal : currentDecimal - amountDecimal;
+
+                        facts[effect.Fact] = resultDecimal;
+                        break;
+                    }
+                    
+                    if (descriptor.ValueType != typeof(double))
+                        throw new InvalidOperationException($"[CitizenMind] Arithmetic prediction requires an int, double or decimal fact: " + $"'{effect.Fact}'.");
+                    
+                    double current = NumericValues.RequireNumber(original, effect.Fact);
+                    double amount = NumericValues.RequireNumber(value, effect.Fact);
 
                     double result = effect.Op == "add" ? current + amount : current - amount;
 
                     if (!double.IsFinite(result))
-                        throw new InvalidOperationException($"Prediction for '{effect.Fact}' produced a nonfinite result.");
+                        throw new InvalidOperationException($"[CitizenMind] Prediction for '{effect.Fact}' produced a nonfinite result.");
 
                     facts[effect.Fact] = result;
                     break;
                 }
 
                 default:
-                    throw new InvalidOperationException($"Unsupported prediction operation '{effect.Op}'. Valid operations are 'set', 'add', 'subtract'.");
+                    throw new InvalidOperationException($"[CitizenMind] Unsupported prediction operation '{effect.Op}'. Valid operations are 'set', 'add', 'subtract'.");
             }
         }
 
@@ -77,17 +99,25 @@ public class ActionPredictor
         };
     }
     
-    
-    private static double RequireNumber(object? value, string fact)
+    private static object RequireValue(object? value, FactDescriptor descriptor)
     {
-        if (value is not (int or float or double or decimal))
-            throw new InvalidOperationException($"Prediction for '{fact}' requires a number.");
+        if (descriptor.ValueType == typeof(bool))
+        {
+            if (value is bool boolean)
+                return boolean;
 
-        double number = Convert.ToDouble(value);
+            throw new InvalidOperationException($"[CitizenMind] Fact '{descriptor.Id}' requires a boolean.");
+        }
 
-        if (!double.IsFinite(number))
-            throw new InvalidOperationException($"Prediction for '{fact}' requires a finite number.");
-
-        return number;
+        if (descriptor.ValueType == typeof(double))
+            return NumericValues.RequireNumber(value, descriptor.Id);
+        
+        if (descriptor.ValueType == typeof(int))
+            return NumericValues.RequireInteger(value, descriptor.Id);
+        
+        if (descriptor.ValueType == typeof(decimal))
+            return NumericValues.RequireDecimal(value, descriptor.Id);
+        
+        throw new InvalidOperationException($"[CitizenMind] Prediction type '{descriptor.ValueType.Name}' " + $"is not supported for fact '{descriptor.Id}'.");
     }
 }

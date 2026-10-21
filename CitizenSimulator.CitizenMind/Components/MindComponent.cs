@@ -10,5 +10,5 @@ public sealed class MindComponent : Component<MindComponent>
     
     public PlanExecutionState? Execution { get; internal set; }
     
-    public Dictionary<string, ulong> GoalRetryTicks { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, ulong> GoalRetryTicks { get; } = [];
 }

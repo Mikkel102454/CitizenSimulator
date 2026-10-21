@@ -15,7 +15,7 @@ public class BusinessSystem(IItemService items) : GameSystem
         Recipe.RecipeList.Clear();
         BusinessDefinition.BusinessList.Clear();
 
-        var itemIds = items.GetItems().Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+        var itemIds = items.GetItems().Select(item => item.Id).ToHashSet();
         if (itemIds.Count == 0)
             throw new InvalidOperationException("Business definitions require the Items catalog to be loaded first.");
 
@@ -27,9 +27,9 @@ public class BusinessSystem(IItemService items) : GameSystem
     {
         Assembly assembly = typeof(BusinessSystem).Assembly;
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var ids = new HashSet<string>();
 
-        foreach (string resourceName in assembly.GetManifestResourceNames().Order(StringComparer.Ordinal))
+        foreach (string resourceName in assembly.GetManifestResourceNames().Order())
         {
             if (!resourceName.StartsWith(prefix, StringComparison.Ordinal) || !resourceName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                 continue;

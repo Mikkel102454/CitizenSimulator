@@ -86,24 +86,28 @@ public class ExpressionEvaluator
         if (left == null || right == null)
             return null;
 
+        if (left is decimal || right is decimal)
+            return ResolveDecimalOperation(definition.Op!, left, right);
+
         double a = ToNumber(left);
         double b = ToNumber(right);
 
         object result = definition.Op switch
         {
-            "add"      => a + b,
+            "add" => a + b,
             "subtract" => a - b,
             "multiply" => a * b,
-            "divide"   => b != 0 ? a / b : throw new DivideByZeroException(),
-            "min"   => Math.Min(a, b),
-            "max"   => Math.Max(a, b),
+            "divide" => b != 0 ? a / b : throw new DivideByZeroException(),
+            "min" => Math.Min(a, b),
+            "max" => Math.Max(a, b),
 
-            "gt"  => a > b,
+            "gt" => a > b,
             "gte" => a >= b,
-            "lt"  => a < b,
+            "lt" => a < b,
             "lte" => a <= b,
 
-            _ => throw new InvalidOperationException()
+            _ => throw new InvalidOperationException(
+                $"Unsupported operator '{definition.Op}'.")
         };
 
         if (result is double number && !double.IsFinite(number))
@@ -123,5 +127,28 @@ public class ExpressionEvaluator
             throw new InvalidOperationException("Expected a finite number.");
 
         return number;
+    }
+    
+    private static object ResolveDecimalOperation(string op, object left, object right)
+    {
+        decimal a = NumericValues.RequireDecimal(left, $"Operator '{op}'");
+        decimal b = NumericValues.RequireDecimal(right, $"Operator '{op}'");
+
+        return op switch
+        {
+            "add" => a + b,
+            "subtract" => a - b,
+            "multiply" => a * b,
+            "divide" => b != 0 ? a / b : throw new DivideByZeroException(),
+            "min" => Math.Min(a, b),
+            "max" => Math.Max(a, b),
+
+            "gt" => a > b,
+            "gte" => a >= b,
+            "lt" => a < b,
+            "lte" => a <= b,
+
+            _ => throw new InvalidOperationException($"Unsupported operator '{op}'.")
+        };
     }
 }

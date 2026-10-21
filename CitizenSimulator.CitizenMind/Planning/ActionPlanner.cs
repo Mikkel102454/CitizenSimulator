@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 
@@ -59,7 +60,8 @@ public class ActionPlanner
     }
 
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
-        IReadOnlyDictionary<string, ActionDefinition> actions, PlannerOptions options)
+        IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
+            PlannerOptions options)
     {
         if (options.MaxDepth < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
@@ -130,7 +132,7 @@ public class ActionPlanner
                 if (!double.IsFinite(totalCost))
                     throw new InvalidOperationException("Total plan cost must be finite.");
 
-                var predicted = ActionPredictor.Predict(action, current.State, duration);
+                var predicted = ActionPredictor.Predict(action, current.State, duration, descriptors);
 
                 var child = new SearchNode
                 {

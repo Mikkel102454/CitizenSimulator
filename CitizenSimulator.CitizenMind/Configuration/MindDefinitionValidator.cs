@@ -46,15 +46,24 @@ public class MindDefinitionValidator
             for (int i = 0; i < action.Completion.Count; i++)
                 ValidateExpression(action.Completion[i], $"Action '{action.Id}' completion[{i}]", service, action, allowBefore: true, allowCalculated: true);
 
-            var targets = new HashSet<string>(StringComparer.Ordinal);
+            var targets = new HashSet<string>();
 
             foreach (var effect in action.Prediction)
             {
                 PredictionOperations.ReadsTarget(effect.Op);
 
-                if (!service.Facts.ContainsKey(effect.Fact))
-                    throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' predicts unknown fact '{effect.Fact}'.");
 
+                if (!service.FactDescriptors.TryGetValue(
+                        effect.Fact, out var descriptor))
+                {
+                    throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' predicts unknown fact '{effect.Fact}'.");
+                }
+
+                if (!descriptor.CanPredict)
+                {
+                    throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' cannot predict changes " + $"to read-only fact '{effect.Fact}'.");
+                }
+                
                 if (!targets.Add(effect.Fact))
                     throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' has multiple effects " + $"targeting '{effect.Fact}'.");
             }

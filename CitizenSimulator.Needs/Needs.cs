@@ -26,13 +26,13 @@ public class Needs : IMod
         {
             var component = context.Store.GetComponent<NeedsComponent>(entity);
             return component?.Thirst;
-        });
+        }, canPredict: true);
         
         citizenMindService.RegisterFact("needs.hunger", (entity) =>
         {
             var component = context.Store.GetComponent<NeedsComponent>(entity);
             return component?.Hunger;
-        });
+        }, canPredict: true);
         
         citizenMindService.RegisterFact("home.can_drink", _ => true);
         

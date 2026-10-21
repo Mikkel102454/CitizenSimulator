@@ -1,4 +1,5 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Models.Abstractions;
@@ -8,20 +9,32 @@ namespace CitizenSimulator.CitizenMind.Services;
 
 public class CitizenMindService : ICitizenMindService
 {
-    internal readonly Dictionary<string, Delegate> Facts = new(StringComparer.Ordinal);
+    internal readonly Dictionary<string, Delegate> Facts = [];
 
-    internal readonly Dictionary<string, IMindActionHandler> Handler = new(StringComparer.Ordinal);
+    internal readonly Dictionary<string, FactDescriptor> FactDescriptors = [];
+    
+    internal readonly Dictionary<string, IMindActionHandler> Handler = [];
     
     internal readonly Dictionary<string, GoalDefinition> Goals = [];
     
     internal readonly Dictionary<string, ActionDefinition> Actions = [];
-    public void RegisterFact<T>(string id, Func<EntityRef, T> provider)
+    public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)
     {
         ArgumentNullException.ThrowIfNull(provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         
-        if(!Facts.TryAdd(id, provider))
-            throw new Exception($"[CitizenMind] Duplicate fact id '{id}'");
+        if (Facts.ContainsKey(id) || FactDescriptors.ContainsKey(id))
+            throw new InvalidOperationException($"[CitizenMind] Duplicate fact id '{id}'.");
+
+        var descriptor = new FactDescriptor
+        {
+            Id = id,
+            ValueType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T),
+            CanPredict = canPredict
+        };
+
+        Facts.Add(id, provider);
+        FactDescriptors.Add(id, descriptor);
     }
 
     public void RegisterHandler(string id, IMindActionHandler handler)
@@ -57,7 +70,7 @@ public class CitizenMindService : ICitizenMindService
     
     public EvaluationContext CreateEvaluationContext(EntityRef citizen)
     {
-        var facts = new Dictionary<string, object?>(StringComparer.Ordinal);
+        var facts = new Dictionary<string, object?>();
 
         foreach (var (id, provider) in Facts)
         {

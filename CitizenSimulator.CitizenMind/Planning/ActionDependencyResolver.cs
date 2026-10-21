@@ -20,7 +20,7 @@ public class ActionDependencyResolver
     
     private static HashSet<string> CollectReadFacts(ActionDefinition action)
     {
-        var facts = new HashSet<string>(StringComparer.Ordinal);
+        var facts = new HashSet<string>();
 
         foreach (var precondition in action.Preconditions)
             CollectFacts(precondition, facts);
@@ -45,14 +45,14 @@ public class ActionDependencyResolver
 
     private static Dictionary<string, List<ActionDefinition>> BuildWriters(IEnumerable<ActionDefinition> actions)
     {
-        var writers = new Dictionary<string, List<ActionDefinition>>(StringComparer.Ordinal);
+        var writers = new Dictionary<string, List<ActionDefinition>>();
 
         foreach (var action in actions.OrderBy(
-                     action => action.Id, StringComparer.Ordinal))
+                     action => action.Id))
         {
             foreach (var fact in action.Prediction
                          .Select(effect => effect.Fact)
-                         .Distinct(StringComparer.Ordinal))
+                         .Distinct())
             {
                 if (!writers.TryGetValue(fact, out var list))
                 {
@@ -71,13 +71,13 @@ public class ActionDependencyResolver
     {
         var writers = BuildWriters(actions.Values);
 
-        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var visited = new HashSet<string>();
         var pending = new Queue<ActionDefinition>();
         var result = new List<ActionDefinition>();
 
         foreach (var id in goal.GoalActions
-                     .Distinct(StringComparer.Ordinal)
-                     .OrderBy(id => id, StringComparer.Ordinal))
+                     .Distinct()
+                     .OrderBy(id => id))
         {
             if (!actions.TryGetValue(id, out var action))
                 throw new InvalidOperationException($"Goal '{goal.Id}' references unknown action '{id}'.");
@@ -91,7 +91,7 @@ public class ActionDependencyResolver
             result.Add(action);
 
             foreach (var fact in CollectReadFacts(action)
-                         .OrderBy(fact => fact, StringComparer.Ordinal))
+                         .OrderBy(fact => fact))
             {
                 if (!writers.TryGetValue(fact, out var candidates))
                     continue;
@@ -104,6 +104,6 @@ public class ActionDependencyResolver
             }
         }
 
-        return result.OrderBy(action => action.Id, StringComparer.Ordinal).ToList();
+        return result.OrderBy(action => action.Id).ToList();
     }
 }
