@@ -1,0 +1,46 @@
+id: test.buy_food
+handler: test.purchase_food
+candidateProvider: test.food_offers
+
+parameters:
+  portions:
+    type: INTEGER
+    value: "1"
+
+preconditions:
+  - op: gte
+    args:
+      - {fact: finance.money}
+      - {binding: offer.price}
+
+duration:
+  unit: simulationMinutes
+  estimate: {binding: offer.durationMinutes}
+
+prediction:
+  - fact: finance.money
+    op: subtract
+    value: {binding: offer.price}
+
+  - fact: inventory.food_count
+    op: add
+    value: {parameter: portions}
+
+completion:
+  - op: gte
+    args:
+      - {fact: inventory.food_count}
+      - op: add
+        args:
+          - {before: inventory.food_count}
+          - {parameter: portions}
+
+cost:
+  expression:
+    op: add
+    args:
+      - {calculated: durationMinutes}
+      - {binding: offer.price}
+
+execution:
+  interruptible: true

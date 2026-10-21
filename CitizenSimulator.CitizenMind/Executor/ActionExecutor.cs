@@ -16,19 +16,21 @@ public class ActionExecutor(CitizenMindService service)
 
         if (execution.Started)
             throw new InvalidOperationException("The step has already started.");
-
+        
         var step = execution.Plan.PlanSteps[execution.StepIndex];
-        var action = step.Action;
+        var candidate = step.Candidate;
+        var action = candidate.Definition;
 
         if (!service.Handler.TryGetValue(action.Handler, out var handler))
             throw new InvalidOperationException($"Unknown action handler '{action.Handler}'.");
 
         var live = service.CreateEvaluationContext(citizen);
-
+        
         var context = new EvaluationContext
         {
             Facts = live.Facts,
-            Parameters = action.ResolvedParameters
+            Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings
         };
 
         foreach (var precondition in action.Preconditions)
@@ -44,7 +46,8 @@ public class ActionExecutor(CitizenMindService service)
 
         var actionContext = new ActionContext(citizen, TimeSpan.Zero, TimeSpan.Zero)
         {
-            Parameters = action.ResolvedParameters
+            Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings,
         };
 
         return handler.Start(actionContext);
@@ -53,20 +56,23 @@ public class ActionExecutor(CitizenMindService service)
     private bool IsStepComplete(EntityRef citizen, PlanExecutionState execution)
     {
         var step = execution.Plan.PlanSteps[execution.StepIndex];
+        var candidate = step.Candidate;
+        var action = candidate.Definition;
         var live = service.CreateEvaluationContext(citizen);
 
         var context = new EvaluationContext
         {
             Facts = live.Facts,
             Before = execution.Before,
-            Parameters = step.Action.ResolvedParameters,
+            Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = step.DurationMinutes
             }
         };
 
-        foreach (var condition in step.Action.Completion)
+        foreach (var condition in action.Completion)
         {
             if (!ExpressionEvaluator.Evaluate(context, condition))
                 return false;
@@ -128,7 +134,10 @@ public class ActionExecutor(CitizenMindService service)
             throw new InvalidOperationException("Invalid execution step index.");
         }
 
-        var action = execution.Plan.PlanSteps[execution.StepIndex].Action;
+        
+        var step = execution.Plan.PlanSteps[execution.StepIndex];
+        var candidate = step.Candidate;
+        var action = candidate.Definition;
 
         if (!service.Handler.TryGetValue(action.Handler, out var handler))
             throw new InvalidOperationException($"Unknown action handler '{action.Handler}'.");
@@ -137,7 +146,8 @@ public class ActionExecutor(CitizenMindService service)
 
         var context = new ActionContext(citizen, execution.Elapsed, gameDelta)
         {
-            Parameters = action.ResolvedParameters
+            Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings,
         };
 
         var result = handler.Tick(context);
@@ -154,8 +164,10 @@ public class ActionExecutor(CitizenMindService service)
             execution.Status = PlanExecutionStatus.CANCELLED;
             return true;
         }
-
-        var action = execution.Plan.PlanSteps[execution.StepIndex].Action;
+        
+        var step = execution.Plan.PlanSteps[execution.StepIndex];
+        var candidate = step.Candidate;
+        var action = candidate.Definition;
 
         if (!force && !action.Execution.Interruptible)
             return false;
@@ -165,7 +177,8 @@ public class ActionExecutor(CitizenMindService service)
 
         var context = new ActionContext(citizen, execution.Elapsed, TimeSpan.Zero)
         {
-            Parameters = action.ResolvedParameters
+            Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings,
         };
 
         execution.Status = PlanExecutionStatus.CANCELLED;

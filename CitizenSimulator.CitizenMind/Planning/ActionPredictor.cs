@@ -6,9 +6,24 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 public class ActionPredictor
 {
+    
     public static EvaluationContext Predict(ActionDefinition action, EvaluationContext state, double durationMinutes,
         IReadOnlyDictionary<string, FactDescriptor> descriptors)
     {
+        return Predict(
+            new ActionCandidate
+            {
+                Id = action.Id,
+                Definition = action
+            }, 
+            state, durationMinutes, descriptors);
+    }
+    
+    public static EvaluationContext Predict(ActionCandidate candidate, EvaluationContext state, double durationMinutes,
+        IReadOnlyDictionary<string, FactDescriptor> descriptors)
+    {
+        var action = candidate.Definition;
+        
         // new copy
         Dictionary<string, object?> facts = new(state.Facts, state.Facts.Comparer);
         
@@ -16,6 +31,7 @@ public class ActionPredictor
         {
             Facts = state.Facts,
             Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = durationMinutes

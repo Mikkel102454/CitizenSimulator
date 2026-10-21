@@ -8,4 +8,7 @@ public class EvaluationContext
     public Dictionary<string, double> Calculated { get; init; } = [];
 
     public Dictionary<string, object?> Before { get; init; } = [];
+    
+    
+    public IReadOnlyDictionary<string, object?> Bindings { get; init; } = new Dictionary<string, object?>();
 }

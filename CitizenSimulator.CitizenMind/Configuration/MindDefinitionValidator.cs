@@ -27,6 +27,11 @@ public class MindDefinitionValidator
             if (action.Execution == null)
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': execution cannot be null.");
             
+            if (action.CandidateProvider != null && !service.CandidateProviderFactories.ContainsKey(action.CandidateProvider))
+            {
+                throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': references unknown candidate provider " + $"'{action.CandidateProvider}'.");
+            }
+            
             if(!service.Handler.ContainsKey(action.Handler))
                 throw new Exception($"[CtitizenMind] Handler {action.Handler} not found.");
             
@@ -154,7 +159,13 @@ public class MindDefinitionValidator
             throw new InvalidOperationException($"[CitizenMind] {location}: an expression must specify exactly one form.");
 
         if (expression.Binding != null)
-            throw new InvalidOperationException($"[CitizenMind] {location}: binding expressions are not supported yet.");
+        {
+            if (string.IsNullOrWhiteSpace(expression.Binding))
+                throw new InvalidOperationException($"[CitizenMind] {location}: binding name cannot be blank.");
+
+            if (action?.CandidateProvider == null)
+                throw new InvalidOperationException($"[CitizenMind] {location}: binding expressions require an action " + "with a candidate provider.");
+        }
 
         if (expression.Op == null && expression.Args.Count != 0)
             throw new InvalidOperationException($"[CitizenMind] {location}: only operator expressions may have arguments.");

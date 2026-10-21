@@ -1,10 +1,8 @@
 ﻿using System.Reflection;
 using CitizenSimulator.Abstractions.Modding;
 using CitizenSimulator.Calender.Services.Abstractions;
-using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Executor;
 using CitizenSimulator.CitizenMind.Models;
-using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Services;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
 using CitizenSimulator.CitizenMind.Systems;

@@ -63,7 +63,9 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
             var state = service.CreateEvaluationContext(entity);
 
-            var result = ActionPlanner.FindPlan(goal, state, service.Actions, service.FactDescriptors, _plannerOptions);
+            var relevantActions = ActionDependencyResolver.Resolve(goal, service.Actions);
+            var providers = service.CreateCandidateProviders(entity, relevantActions);
+            var result = ActionPlanner.FindPlan(goal, state, service.Actions, service.FactDescriptors, providers, _plannerOptions);
 
             switch (result.Status)
             {

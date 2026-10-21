@@ -2,21 +2,37 @@ using System.Runtime.Serialization;
 using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
+using CitizenSimulator.CitizenMind.Planning.Abstractions;
 
 namespace CitizenSimulator.CitizenMind.Planning;
 
 public class ActionPlanner
 {
-    public static bool TryEvaluateAction(ActionDefinition action, EvaluationContext state,
+    public static bool TryEvaluateAction(ActionDefinition action, EvaluationContext state, 
+        out double durationMinutes, out double cost)
+    {
+        return TryEvaluateAction(
+            new ActionCandidate
+            {
+                Id = action.Id,
+                Definition = action
+            },
+            state, out durationMinutes, out cost);
+    }
+    
+    public static bool TryEvaluateAction(ActionCandidate candidate, EvaluationContext state,
         out double durationMinutes, out double cost)
     {
         durationMinutes = 0;
         cost = 0;
         
+        var action = candidate.Definition;
+        
         var context = new EvaluationContext
         {
             Facts = state.Facts,
             Parameters = action.ResolvedParameters,
+            Bindings = candidate.Bindings,
             Calculated = []
         };
 
@@ -57,13 +73,17 @@ public class ActionPlanner
 
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
         IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
-            PlannerOptions options)
+        IReadOnlyDictionary<string, IActionCandidateProvider> providers, PlannerOptions options)
     {
         if (options.MaxDepth < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
 
         if (options.MaxExpansions < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxExpansions));
+        
+        
+        if (options.MaxCandidatesPerAction < 1)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxCandidatesPerAction));
         
         if(IsGoalSatisfied(goal, state))
             return new PlanResult()
@@ -118,29 +138,42 @@ public class ActionPlanner
 
             foreach (var action in allowedActions)
             {
-                if (!TryEvaluateAction(action, current.State, out var duration, out var actionCost))
+                var candidates = GetCandidates(action, current.State, providers);
+                
+                if (candidates.Count > options.MaxCandidatesPerAction)
                 {
-                    continue;
+                    return new PlanResult
+                    {
+                        Status = PlanStatus.BUDGET_EXCEEDED
+                    };
                 }
+                
+                ValidateCandidates(action, candidates);
 
-                double totalCost = current.TotalCost + actionCost;
-
-                if (!double.IsFinite(totalCost))
-                    throw new InvalidOperationException("Total plan cost must be finite.");
-
-                var predicted = ActionPredictor.Predict(action, current.State, duration, descriptors);
-
-                var child = new SearchNode
+                foreach (var candidate in candidates.OrderBy(candidate => candidate.Id))
                 {
-                    State = predicted,
-                    Parent = current,
-                    Action = action,
-                    DurationMinutes = duration,
-                    TotalCost = totalCost,
-                    Depth = current.Depth + 1
-                };
+                    if (!TryEvaluateAction(candidate, current.State, out var duration, out var actionCost))
+                        continue;
 
-                frontier.Enqueue(child, (child.TotalCost, order++));
+                    double totalCost = current.TotalCost + actionCost;
+
+                    if (!double.IsFinite(totalCost))
+                        throw new InvalidOperationException("Total plan cost must be finite.");
+
+                    var predicted = ActionPredictor.Predict(candidate, current.State, duration, descriptors);
+
+                    var child = new SearchNode
+                    {
+                        State = predicted,
+                        Parent = current,
+                        Candidate = candidate,
+                        DurationMinutes = duration,
+                        TotalCost = totalCost,
+                        Depth = current.Depth + 1
+                    };
+
+                    frontier.Enqueue(child, (child.TotalCost, order++));
+                }
             }
         }
         
@@ -169,7 +202,7 @@ public class ActionPlanner
         {
             steps.Add(new PlanStep
             {
-                Action = current.Action ?? throw new InvalidOperationException("A child search node must have an action."),
+                Candidate = current.Candidate ?? throw new InvalidOperationException("A child search node must have a candidate."),
                 DurationMinutes = current.DurationMinutes
             });
 
@@ -183,5 +216,58 @@ public class ActionPlanner
             PlanSteps = steps,
             TotalCost = goalNode.TotalCost
         };
+    }
+    
+    private static IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition action, EvaluationContext state, 
+        IReadOnlyDictionary<string, IActionCandidateProvider> providers)
+    {
+        if (action.CandidateProvider == null)
+        {
+            return
+            [
+                new ActionCandidate
+                {
+                    Id = action.Id,
+                    Definition = action
+                }
+            ];
+        }
+
+        if (!providers.TryGetValue(action.CandidateProvider, out var provider))
+            throw new InvalidOperationException($"Unknown candidate provider '{action.CandidateProvider}'.");
+
+        var candidates = provider.GetCandidates(action, state)
+                         ?? throw new InvalidOperationException($"Provider '{action.CandidateProvider}' returned null.");
+        
+        return candidates;
+    }
+    
+    private static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var candidate in candidates)
+        {
+            if (candidate == null)
+                throw new InvalidOperationException($"Action '{action.Id}': provider returned a null candidate.");
+
+            if (string.IsNullOrWhiteSpace(candidate.Id))
+                throw new InvalidOperationException($"Action '{action.Id}': candidate ID cannot be blank.");
+
+            if (!ids.Add(candidate.Id))
+                throw new InvalidOperationException($"Action '{action.Id}': duplicate candidate '{candidate.Id}'.");
+
+            if (!ReferenceEquals(candidate.Definition, action))
+                throw new InvalidOperationException($"Candidate '{candidate.Id}' references the wrong definition.");
+
+            if (candidate.Bindings == null)
+                throw new InvalidOperationException($"Candidate '{candidate.Id}': bindings cannot be null.");
+
+            foreach (var key in candidate.Bindings.Keys)
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                    throw new InvalidOperationException($"Candidate '{candidate.Id}': binding key cannot be blank.");
+            }
+        }
     }
 }

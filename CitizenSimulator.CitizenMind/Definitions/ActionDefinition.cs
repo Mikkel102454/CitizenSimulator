@@ -26,4 +26,6 @@ public sealed class ActionDefinition
     public required CostDefinition Cost { get; init; }
     
     public ExecutionDefinition Execution { get; init; } = new ExecutionDefinition();
+    
+    public string? CandidateProvider { get; init; }
 }

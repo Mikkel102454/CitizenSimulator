@@ -4,7 +4,7 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 public sealed class PlanStep
 {
-    public required ActionDefinition Action { get; init; }
+    public required ActionCandidate Candidate { get; init; }
     
     public double DurationMinutes { get; init; }
 }

@@ -72,12 +72,20 @@ public class ExpressionEvaluator
 
             return value;
         }
+
+        if (definition.Binding != null)
+        {
+            if (!context.Bindings.TryGetValue(definition.Binding, out var value))
+                throw new InvalidOperationException(
+                    $"Unknown binding '{definition.Binding}'.");
+
+            return value;
+        }
         
         int expected = ExpressionOperators.GetArgumentCount(definition.Op);
 
         if (definition.Args.Count != expected)
-            throw new InvalidOperationException(
-                $"Operator '{definition.Op}' requires {expected} arguments.");
+            throw new InvalidOperationException($"Operator '{definition.Op}' requires {expected} arguments.");
 
         // resolve recursively so arguments can contain math.
         var left = Resolve(context, definition.Args[0], mode);

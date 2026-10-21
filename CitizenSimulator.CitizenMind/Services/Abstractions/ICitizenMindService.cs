@@ -1,13 +1,16 @@
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Models.Abstractions;
+using CitizenSimulator.CitizenMind.Planning.Abstractions;
 
 namespace CitizenSimulator.CitizenMind.Services.Abstractions;
 
 public interface ICitizenMindService
 {
-    void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false);
-    void RegisterHandler(string id, IMindActionHandler handler);
-    void RegisterGoal(GoalDefinition goal);
-    void RegisterAction(ActionDefinition action);
+    public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false);
+    public void RegisterHandler(string id, IMindActionHandler handler);
+    public void RegisterGoal(GoalDefinition goal);
+    public void RegisterAction(ActionDefinition action);
+
+    public void RegisterCandidateProvider(string id, Func<EntityRef, IActionCandidateProvider> factory);
 }

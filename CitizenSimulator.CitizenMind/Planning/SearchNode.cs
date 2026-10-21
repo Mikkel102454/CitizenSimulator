@@ -9,7 +9,7 @@ internal sealed class SearchNode
     
     public SearchNode? Parent { get; init; }
     
-    public ActionDefinition? Action { get; init; }
+    public ActionCandidate? Candidate { get; init; }
     
     public double DurationMinutes { get; init; }
     

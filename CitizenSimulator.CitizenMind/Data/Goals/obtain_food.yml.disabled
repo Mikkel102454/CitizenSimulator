@@ -1,0 +1,23 @@
+id: test.obtain_food
+
+eligible:
+  op: lt
+  args:
+    - {fact: inventory.food_count}
+    - {literal: 1}
+
+desired:
+  - op: gte
+    args:
+      - {fact: inventory.food_count}
+      - {literal: 1}
+
+utility:
+  bias: 1
+  considerations:
+    - input: {fact: inventory.food_count}
+      weight: 1
+      curve: [[0, 1], [1, 0]]
+
+goalActions:
+  - test.buy_food

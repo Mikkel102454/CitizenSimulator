@@ -4,6 +4,7 @@ using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Models.Abstractions;
+using CitizenSimulator.CitizenMind.Planning.Abstractions;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
 
 namespace CitizenSimulator.CitizenMind.Services;
@@ -19,6 +20,8 @@ public class CitizenMindService : ICitizenMindService
     internal readonly Dictionary<string, GoalDefinition> Goals = [];
     
     internal readonly Dictionary<string, ActionDefinition> Actions = [];
+    
+    internal readonly Dictionary<string, Func<EntityRef, IActionCandidateProvider>> CandidateProviderFactories = [];
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)
     {
         ArgumentNullException.ThrowIfNull(provider);
@@ -83,5 +86,34 @@ public class CitizenMindService : ICitizenMindService
         {
             Facts = facts
         };
+    }
+    
+    public void RegisterCandidateProvider(string id, Func<EntityRef, IActionCandidateProvider> factory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(factory);
+
+        if (!CandidateProviderFactories.TryAdd(id, factory))
+            throw new InvalidOperationException($"[CitizenMind] Duplicate candidate provider '{id}'.");
+    }
+    
+    public IReadOnlyDictionary<string, IActionCandidateProvider> CreateCandidateProviders(EntityRef citizen, IEnumerable<ActionDefinition> definitions)
+    {
+        var providers = new Dictionary<string, IActionCandidateProvider>();
+
+        var ids = definitions.Select(action => action.CandidateProvider).OfType<string>()
+            .Distinct().OrderBy(id => id, StringComparer.Ordinal);
+
+        foreach (var id in ids)
+        {
+            if (!CandidateProviderFactories.TryGetValue(id, out var factory))
+                throw new InvalidOperationException($"Unknown candidate provider '{id}'.");
+
+            var provider = factory(citizen) ?? throw new InvalidOperationException($"Candidate provider factory '{id}' returned null.");
+
+            providers.Add(id, provider);
+        }
+
+        return providers;
     }
 }

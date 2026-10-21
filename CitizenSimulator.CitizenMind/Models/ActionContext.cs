@@ -7,6 +7,7 @@ public sealed record ActionContext(EntityRef Citizen, TimeSpan Elapsed, TimeSpan
     
     public IReadOnlyDictionary<string, object?> Parameters { get; init; } = new Dictionary<string, object?>();
     
+    public IReadOnlyDictionary<string, object?> Bindings { get; init; } = new Dictionary<string, object?>();
     public T GetParameter<T>(string name)
     {
         if (!Parameters.TryGetValue(name, out var value) || value is not T typed)
