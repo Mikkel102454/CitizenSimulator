@@ -5,5 +5,13 @@ namespace CitizenSimulator.Market.Services.Abstractions;
 
 public interface IMarketService
 {
-    bool TryBuy(InventoryComponent receiveInventory, VaultComponent.Account paymentAccount, String itemId, int amount);
+    enum BuyStatus
+    {
+        SUCCESS,
+        INSUFFICIENT_FUNDS,
+        OUT_OF_STOCK,
+        CLOSED_SELLER,
+        INVALID_QUANTITY
+    }
+    BuyStatus TryBuy(InventoryComponent receiveInventory, BankAccountComponent paymentAccount, String itemId, int amount);
 }

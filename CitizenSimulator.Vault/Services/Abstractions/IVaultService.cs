@@ -7,12 +7,12 @@ public interface IVaultService
 {
     bool CreateVault(ICommandBuffer commands, EntityRef entityRef, string name, out VaultComponent? outVault);
     bool DeleteVault(ICommandBuffer commands, VaultComponent vault);
-    bool AddBankAccount(VaultComponent vault, out VaultComponent.Account outAccount);
-    bool RemoveBankAccount(VaultComponent vault, VaultComponent.Account account);
+    bool AddBankAccount(VaultComponent vault, out BankAccountComponent outAccount);
+    bool RemoveBankAccount(ICommandBuffer commands, BankAccountComponent account);
     
-    bool AddBalance(VaultComponent.Account account, decimal amount);
-    bool RemoveBalance(VaultComponent.Account account, decimal amount);
-    bool TransferBalance(VaultComponent.Account senderAccount, VaultComponent.Account receiverAccount, decimal amount);
-    bool SetBalance(VaultComponent.Account account, decimal amount);
+    bool AddBalance(BankAccountComponent account, decimal amount);
+    bool RemoveBalance(BankAccountComponent account, decimal amount);
+    bool TransferBalance(BankAccountComponent senderAccount, BankAccountComponent receiverAccount, decimal amount);
+    bool SetBalance(BankAccountComponent account, decimal amount);
     
 }

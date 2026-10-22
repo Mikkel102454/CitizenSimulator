@@ -27,35 +27,46 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
         return true;
     }
 
-    public bool AddBankAccount(VaultComponent vault, out VaultComponent.Account outAccount)
+    public bool AddBankAccount(VaultComponent vault, out BankAccountComponent outAccount)
     {
-        outAccount = new VaultComponent.Account();
+        outAccount = new BankAccountComponent()
+        {
+            Vault = vault
+        };
+        
         outAccount.Balance = 0;
         vault.Accounts.Add(outAccount);
         return true;
     }
 
-    public bool RemoveBankAccount(VaultComponent vault, VaultComponent.Account account)
+    public bool RemoveBankAccount(ICommandBuffer commands, BankAccountComponent account)
     {
-        vault.Accounts.Remove(account);
+        account.Vault.Accounts.Remove(account);
+        commands.RemoveComponent<BankAccountComponent>(account.Parent);
         return true;
     }
 
-    public bool AddBalance(VaultComponent.Account account, decimal amount)
+    public bool AddBalance(BankAccountComponent account, decimal amount)
     {
+        if(amount <= 0)
+            throw new ArgumentException("Amount must be greater than zero");
+        
         account.Balance += amount;
         
         return true;
     }
 
-    public bool RemoveBalance(VaultComponent.Account account, decimal amount)
+    public bool RemoveBalance(BankAccountComponent account, decimal amount)
     {
+        if(amount >= 0)
+            throw new ArgumentException("Amount must be greater than zero");
+        
         account.Balance -= amount;
         
         return true;
     }
 
-    public bool TransferBalance(VaultComponent.Account senderAccount, VaultComponent.Account receiverAccount, decimal amount)
+    public bool TransferBalance(BankAccountComponent senderAccount, BankAccountComponent receiverAccount, decimal amount)
     {
         if(senderAccount.Balance < amount)
             return false;
@@ -65,7 +76,7 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
         return true;
     }
 
-    public bool SetBalance(VaultComponent.Account account, decimal amount)
+    public bool SetBalance(BankAccountComponent account, decimal amount)
     {
         account.Balance = amount;
         

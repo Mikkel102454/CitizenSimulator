@@ -5,13 +5,13 @@ using CitizenSimulator.Vault.Systems;
 
 namespace CitizenSimulator.Vault;
 
-[Mod("vault", "Vault", "1.0.0")]
+[Mod("vault", "Vault", "1.0.0", Dependencies = new[] { "citizen" })]
 public class Vault : IMod
 {
     public void OnLoad(IModContext context)
     {
         context.Services.Register<IVaultService>(new VaultService(context.Store, context.Events));
         context.Services.Register<IWalletService>(new WalletService(context.Store, context.Events));
-        context.Systems.Register(new VaultSystem(context.Events));
+        context.Systems.Register(new VaultSystem(context.Events, context.Services.Get<IVaultService>(), context.Services.Get<IWalletService>()));
     }
 }

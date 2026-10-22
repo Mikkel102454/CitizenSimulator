@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Citizen\CitizenSimulator.Citizen.csproj" />
     </ItemGroup>
 
     <Target Name="CopyModToHost"

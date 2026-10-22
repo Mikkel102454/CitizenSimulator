@@ -16,7 +16,7 @@ public sealed class BusinessComponent : Component<BusinessComponent>
 
     public PropertyComponent Property { get; internal set; }
     public InventoryComponent Inventory { get; internal set; }
-    public VaultComponent.Account PaymentAccount { get; internal set; }
+    public BankAccountComponent PaymentAccount { get; internal set; }
 
     public bool IsOperating { get; internal set; } = false;
 }

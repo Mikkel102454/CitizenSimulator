@@ -10,8 +10,11 @@ namespace CitizenSimulator.Market.Services;
 
 public class MarketService(IEntityStore store, IEventBus events, IVaultService vaultService) : IMarketService
 {
-    public bool TryBuy(InventoryComponent receiveInventory, VaultComponent.Account paymentAccount, string itemId, int amount)
+    public IMarketService.BuyStatus TryBuy(InventoryComponent receiveInventory, BankAccountComponent paymentAccount, string itemId, int amount)
     {
+        if(amount <= 0)
+            return IMarketService.BuyStatus.INVALID_QUANTITY;
+        
         foreach (var seller in store.Query(BusinessComponent.GetComponentType()))
         {
             var business = store.GetComponent<BusinessComponent>(seller);
@@ -32,14 +35,22 @@ public class MarketService(IEntityStore store, IEventBus events, IVaultService v
             if(!salesPolicy.SellItems.TryGetValue(itemId, out var price))
                 continue;
             
-            vaultService.TransferBalance(paymentAccount, business.PaymentAccount, price * amount);
-            
-            receiveInventory.Inventory[itemId] += amount;
+            if(!vaultService.TransferBalance(paymentAccount, business.PaymentAccount, price * amount)) 
+                continue;
+
+            if (receiveInventory.Inventory.ContainsKey(itemId))
+            {
+                receiveInventory.Inventory[itemId] += amount;
+            }
+            else
+            {
+                receiveInventory.Inventory.Add(itemId, amount);
+            }
             businessInventory.Inventory[itemId] -= amount;
             
-            return true;
+            return IMarketService.BuyStatus.SUCCESS;
         }
 
-        return false;
+        return IMarketService.BuyStatus.OUT_OF_STOCK;
     }
 }
