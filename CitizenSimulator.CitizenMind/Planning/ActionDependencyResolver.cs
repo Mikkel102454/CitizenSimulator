@@ -4,20 +4,20 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 public class ActionDependencyResolver
 {
-    
+
     private static void CollectFacts(ExpressionDefinition expression, HashSet<string> facts)
     {
-        
+
         if (expression.Before != null)
             facts.Add(expression.Before);
-        
+
         if (expression.Fact != null)
             facts.Add(expression.Fact);
 
         foreach (var argument in expression.Args)
             CollectFacts(argument, facts);
     }
-    
+
     private static HashSet<string> CollectReadFacts(ActionDefinition action)
     {
         var facts = new HashSet<string>();
@@ -32,7 +32,7 @@ public class ActionDependencyResolver
         {
             CollectFacts(effect.Value, facts);
 
-            // Arithmetic effects also read the fact being changed.
+            // arithmetic effects also read the fact being changed.
             if (PredictionOperations.ReadsTarget(effect.Op))
                 facts.Add(effect.Fact);
         }
@@ -66,7 +66,7 @@ public class ActionDependencyResolver
 
         return writers;
     }
-    
+
     public static IReadOnlyList<ActionDefinition> Resolve(GoalDefinition goal, IReadOnlyDictionary<string, ActionDefinition> actions)
     {
         var writers = BuildWriters(actions.Values);
@@ -75,9 +75,7 @@ public class ActionDependencyResolver
         var pending = new Queue<ActionDefinition>();
         var result = new List<ActionDefinition>();
 
-        foreach (var id in goal.GoalActions
-                     .Distinct()
-                     .OrderBy(id => id))
+        foreach (var id in goal.GoalActions.Distinct().OrderBy(id => id))
         {
             if (!actions.TryGetValue(id, out var action))
                 throw new InvalidOperationException($"Goal '{goal.Id}' references unknown action '{id}'.");
@@ -90,15 +88,14 @@ public class ActionDependencyResolver
         {
             result.Add(action);
 
-            foreach (var fact in CollectReadFacts(action)
-                         .OrderBy(fact => fact))
+            foreach (var fact in CollectReadFacts(action).OrderBy(fact => fact))
             {
                 if (!writers.TryGetValue(fact, out var candidates))
                     continue;
 
                 foreach (var candidate in candidates)
                 {
-                    if (visited.Add(candidate.Id)) 
+                    if (visited.Add(candidate.Id))
                         pending.Enqueue(candidate);
                 }
             }

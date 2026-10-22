@@ -31,7 +31,7 @@ public class NeedsSystem(IEventBus events, ICalenderService calenderService, ICi
         {
             var citizen = Store.GetComponent<CitizenComponent>(entity);
             if (!citizen.Alive) continue;
-            
+
             NeedsComponent needs = Store.GetComponent<NeedsComponent>(entity);
             needs.Energy = NeedsDynamics.Advance(needs.Energy, NeedsDynamics.EnergyChangePerDay, elapsed);
             needs.Hunger = NeedsDynamics.Advance(needs.Hunger, NeedsDynamics.HungerChangePerDay, elapsed);
@@ -42,9 +42,9 @@ public class NeedsSystem(IEventBus events, ICalenderService calenderService, ICi
                 citizenService.KillCitizen(citizen);
             }
         }
-        
+
     }
-    
+
     private void OnCitizenCreated(OnCitizenCreated eventData, SimulationTime time, ICommandBuffer commands)
     {
         if (Store.IsAlive(eventData.Citizen.Parent) && eventData.Citizen.Alive &&

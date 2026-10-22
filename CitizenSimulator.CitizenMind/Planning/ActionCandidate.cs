@@ -10,22 +10,19 @@ public sealed class ActionCandidate
     public required ActionDefinition Definition { get; init; }
 
     public IReadOnlyDictionary<string, object?> Bindings { get; init; } = new Dictionary<string, object?>();
-    
+
     public IReadOnlyList<TimeWindow>? Availability { get; init; }
-    
+
     public IReadOnlyList<DailyTimeWindow>? DailyAvailability { get; init; }
 
     public bool IsAvailable(TimeSpan start, TimeSpan duration)
     {
-        bool absoluteAllowed = Availability == null ||
-                               Availability.Any(window => window.CanFit(start, duration));
-
-        bool dailyAllowed = DailyAvailability == null ||
-                            DailyAvailability.Any(window => window.CanFit(start, duration));
+        bool absoluteAllowed = Availability == null || Availability.Any(window => window.CanFit(start, duration));
+        bool dailyAllowed = DailyAvailability == null || DailyAvailability.Any(window => window.CanFit(start, duration));
 
         return absoluteAllowed && dailyAllowed;
     }
-    
+
     public IReadOnlyList<TimeSpan> GetUpcomingOpeningTimes(TimeSpan now)
     {
         var times = new List<TimeSpan>();
@@ -34,7 +31,7 @@ public sealed class ActionCandidate
         {
             foreach (var window in Availability)
             {
-                if (window.Start > now) 
+                if (window.Start > now)
                     times.Add(window.Start);
             }
         }

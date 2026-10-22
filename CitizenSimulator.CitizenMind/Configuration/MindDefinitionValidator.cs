@@ -14,10 +14,10 @@ public class MindDefinitionValidator
             RequireItems(action.Preconditions, $"Action '{action.Id}' preconditions");
             RequireItems(action.Prediction, $"Action '{action.Id}' prediction");
             RequireItems(action.Completion, $"Action '{action.Id}' completion");
-            
+
             if (action.Parameters == null)
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': parameters cannot be null.");
-            
+
             if (action.Duration == null)
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': duration is required.");
 
@@ -26,23 +26,23 @@ public class MindDefinitionValidator
 
             if (action.Execution == null)
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': execution cannot be null.");
-            
+
             if (action.Execution.TimeoutMinutes is double timeout)
                 DurationConverter.ToPositiveTimeSpan(timeout);
-            
+
             if (action.CandidateProvider != null && !service.CandidateProviderFactories.ContainsKey(action.CandidateProvider))
             {
                 throw new InvalidOperationException($"[CtitizenMind] Action '{action.Id}': references unknown candidate provider " + $"'{action.CandidateProvider}'.");
             }
-            
+
             if(!service.Handler.ContainsKey(action.Handler))
                 throw new Exception($"[CtitizenMind] Handler {action.Handler} not found.");
-            
+
             for (int i = 0; i < action.Preconditions.Count; i++)
                 ValidateExpression(action.Preconditions[i], $"Action '{action.Id}' preconditions[{i}]", service, action);
 
-            
-            
+
+
             ValidateExpression(action.Duration.Estimate, $"Action '{action.Id}' duration", service, action);
 
             ValidateExpression(action.Cost.Expression, $"Action '{action.Id}' cost", service, action, allowCalculated: true);
@@ -61,8 +61,7 @@ public class MindDefinitionValidator
                 PredictionOperations.ReadsTarget(effect.Op);
 
 
-                if (!service.FactDescriptors.TryGetValue(
-                        effect.Fact, out var descriptor))
+                if (!service.FactDescriptors.TryGetValue(effect.Fact, out var descriptor))
                 {
                     throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' predicts unknown fact '{effect.Fact}'.");
                 }
@@ -71,14 +70,14 @@ public class MindDefinitionValidator
                 {
                     throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' cannot predict changes " + $"to read-only fact '{effect.Fact}'.");
                 }
-                
+
                 if (!targets.Add(effect.Fact))
                     throw new InvalidOperationException($"[CitizenMind] Action '{action.Id}' has multiple effects " + $"targeting '{effect.Fact}'.");
             }
-            
+
             DurationConverter.GetMinutesPerUnit(action.Duration.Unit);
         }
-        
+
         foreach (var goal in service.Goals.Values)
         {
             RequireItems(goal.Desired, $"Goal '{goal.Id}' desired");
@@ -88,13 +87,13 @@ public class MindDefinitionValidator
                 throw new InvalidOperationException($"[CtitizenMind] Goal '{goal.Id}': utility is required.");
 
             RequireItems(goal.Utility.Considerations, $"Goal '{goal.Id}' considerations");
-            
+
             foreach (var action in goal.GoalActions)
             {
-                if(!service.Actions.ContainsKey(action)) 
+                if(!service.Actions.ContainsKey(action))
                     throw new Exception($"[CtitizenMind] Action {action} not found.");
             }
-            
+
             ValidateExpression(goal.Eligible, $"Goal '{goal.Id}' eligible", service);
 
             if (goal.Emergency != null)
@@ -113,17 +112,17 @@ public class MindDefinitionValidator
                 ValidateExpression(consideration.Input, $"{location}.input", service);
                 ValidateCurve(consideration, location);
             }
-            
+
             if (goal.Desired.Count == 0)
                 throw new InvalidOperationException($"[CitizenMind] Goal '{goal.Id}' must have at least one desired condition.");
 
             if (goal.GoalActions.Count == 0)
                 throw new InvalidOperationException($"[CitizenMind] Goal '{goal.Id}' must specify at least one goal action.");
-            
+
             ValidateUtility(goal.Utility, $"Goal '{goal.Id}' utility");
         }
     }
-    
+
     private static void ValidateExpression(ExpressionDefinition? expression, string location, CitizenMindService service,
         ActionDefinition? action = null, bool allowBefore = false, bool allowCalculated = false)
     {
@@ -132,7 +131,7 @@ public class MindDefinitionValidator
 
         if (expression.Args == null)
             throw new InvalidOperationException($"[CtitizenMind] {location}: args cannot be null.");
-        
+
         if (expression.Parameter != null && (action == null || !action.Parameters.ContainsKey(expression.Parameter)))
             throw new InvalidOperationException($"[CtitizenMind] {location}: unknown parameter '{expression.Parameter}'.");
 
@@ -147,7 +146,7 @@ public class MindDefinitionValidator
                 throw new InvalidOperationException($"[CtitizenMind] {location}: calculated value " + $"'{expression.Calculated}' is unavailable here.");
 
         }
-        
+
         int forms = 0;
 
         if (expression.Fact != null) forms++;
@@ -158,7 +157,7 @@ public class MindDefinitionValidator
         if (expression.Op != null) forms++;
         if (expression.Binding != null) forms++;
         if (expression.Time != null) forms++;
-        
+
         if (forms != 1)
             throw new InvalidOperationException($"[CitizenMind] {location}: an expression must specify exactly one form.");
 
@@ -188,7 +187,7 @@ public class MindDefinitionValidator
             if (expression.Args.Count != expected)
                 throw new InvalidOperationException($"[CtitizenMind] {location}: operator '{expression.Op}' requires " + $"{expected} arguments.");
         }
-        
+
         if (expression.Fact != null && !service.Facts.ContainsKey(expression.Fact))
             throw new InvalidOperationException($"[CtitizenMind] {location}: unknown fact '{expression.Fact}'.");
 
@@ -198,15 +197,15 @@ public class MindDefinitionValidator
 
         if (expression.Time != null && expression.Time is not ("totalMinutes" or "minuteOfDay"))
             throw new InvalidOperationException($"[CitizenMind] {location}: unknown time value " + $"'{expression.Time}'.");
-        
+
         for (int i = 0; i < expression.Args.Count; i++)
             ValidateExpression(expression.Args[i], $"{location}.args[{i}]", service, action, allowBefore, allowCalculated);
     }
-    
+
     private static void ValidateCurve(ConsiderationDefinition consideration, string location)
     {
         RequireItems(consideration.Curve, $"{location}.curve");
-        
+
         if (consideration.Curve.Count == 0)
             throw new InvalidOperationException($"[CtitizenMind] {location}: curve must contain at least one point.");
 
@@ -232,7 +231,7 @@ public class MindDefinitionValidator
             previousX = x;
         }
     }
-    
+
     private static void ValidateUtility(UtilityDefinition utility, string location)
     {
         if (!double.IsFinite(utility.Bias) || utility.Bias < 0)
@@ -253,7 +252,7 @@ public class MindDefinitionValidator
         if (!double.IsFinite(totalWeight) || totalWeight <= 0)
             throw new InvalidOperationException($"[CitizenMind] {location}: total consideration weight " + "must be finite and greater than zero.");
     }
-    
+
     private static void RequireItems<T>(IEnumerable<T>? items, string location) where T : class
     {
         if (items == null)

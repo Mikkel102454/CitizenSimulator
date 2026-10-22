@@ -38,11 +38,20 @@ public sealed class PlanSearch : IPlanningSearch
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options,
         IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors, PlanConstraints? constraints)
     {
-        if (options.MaxDepth < 1) throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
-        if (options.MaxExpansions < 1) throw new ArgumentOutOfRangeException(nameof(options.MaxExpansions));
-        if (options.MaxCandidatesPerAction < 1) throw new ArgumentOutOfRangeException(nameof(options.MaxCandidatesPerAction));
-        if (options.MaxPlanDuration <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.MaxPlanDuration));
-        if (options.MaxScheduleChecks < 1) throw new ArgumentOutOfRangeException(nameof(options.MaxScheduleChecks));
+        if (options.MaxDepth < 1)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
+
+        if (options.MaxExpansions < 1)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxExpansions));
+
+        if (options.MaxCandidatesPerAction < 1)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxCandidatesPerAction));
+
+        if (options.MaxPlanDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxPlanDuration));
+
+        if (options.MaxScheduleChecks < 1)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxScheduleChecks));
 
         _goal = goal;
         _state = state;

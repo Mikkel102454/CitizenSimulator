@@ -17,7 +17,7 @@ public class ActionExecutor(CitizenMindService service)
 
         if (execution.Started)
             throw new InvalidOperationException("The step has already started.");
-        
+
         var step = execution.Plan.PlanSteps[execution.StepIndex];
         var candidate = step.Candidate;
         var action = candidate.Definition;
@@ -26,7 +26,7 @@ public class ActionExecutor(CitizenMindService service)
             throw new InvalidOperationException($"Unknown action handler '{action.Handler}'.");
 
         var live = service.CreateEvaluationContext(citizen, gameTime);
-        
+
         if (!ActionPlanner.TryEvaluateAction(candidate, live, out _, out _))
             return ActionResult.FAILED;
 
@@ -44,7 +44,7 @@ public class ActionExecutor(CitizenMindService service)
 
         return handler.Start(actionContext);
     }
-    
+
     private bool IsStepComplete(EntityRef citizen, PlanExecutionState execution, TimeSpan gameTime)
     {
         var step = execution.Plan.PlanSteps[execution.StepIndex];
@@ -73,7 +73,7 @@ public class ActionExecutor(CitizenMindService service)
 
         return true;
     }
-    
+
     private void HandleResult(EntityRef citizen, PlanExecutionState execution, ActionResult result, TimeSpan gameTime)
     {
         switch (result)
@@ -106,7 +106,7 @@ public class ActionExecutor(CitizenMindService service)
                 throw new InvalidOperationException($"Unknown action result '{result}'.");
         }
     }
-    
+
     public void Update(EntityRef citizen, PlanExecutionState execution, TimeSpan gameDelta, TimeSpan gameTime)
     {
         if (gameDelta < TimeSpan.Zero)
@@ -127,7 +127,7 @@ public class ActionExecutor(CitizenMindService service)
             throw new InvalidOperationException("Invalid execution step index.");
         }
 
-        
+
         var step = execution.Plan.PlanSteps[execution.StepIndex];
         var candidate = step.Candidate;
         var action = candidate.Definition;
@@ -140,8 +140,7 @@ public class ActionExecutor(CitizenMindService service)
 
         if (action.Execution.TimeoutMinutes is double timeoutMinutes)
         {
-            TimeSpan limit =
-                DurationConverter.ToPositiveTimeSpan(timeoutMinutes);
+            TimeSpan limit = DurationConverter.ToPositiveTimeSpan(timeoutMinutes);
 
             TimeSpan remaining = limit - execution.Elapsed;
 
@@ -177,7 +176,7 @@ public class ActionExecutor(CitizenMindService service)
 
         HandleResult(citizen, execution, result, gameTime);
     }
-    
+
     public bool Cancel(EntityRef citizen, PlanExecutionState execution, bool force = false)
     {
         if (execution.Status != PlanExecutionStatus.RUNNING)
@@ -188,7 +187,7 @@ public class ActionExecutor(CitizenMindService service)
             execution.Status = PlanExecutionStatus.CANCELLED;
             return true;
         }
-        
+
         var step = execution.Plan.PlanSteps[execution.StepIndex];
         var candidate = step.Candidate;
         var action = candidate.Definition;
@@ -218,7 +217,7 @@ public class ActionExecutor(CitizenMindService service)
 
         return true;
     }
-    
+
     private void FailExecution(EntityRef citizen, PlanExecutionState execution)
     {
         try

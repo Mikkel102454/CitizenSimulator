@@ -11,16 +11,20 @@ internal sealed class ScheduleForecastSearch(IPlanningSearch inner, ScheduledCom
 
     public void Advance(PlanningBudget budget)
     {
-        if (Result != null) return;
+        if (Result != null)
+            return;
+
         inner.Advance(budget);
-        if (inner.Result is not { } result) return;
+        if (inner.Result is not { } result)
+            return;
+
         if (result.Status is not (PlanStatus.FOUND or PlanStatus.ALREADY_SATISFIED))
         {
             Result = result;
             return;
         }
 
-        var plan = prefixPlan ?? result.Plan ?? new ActionPlan { PlanSteps = [] };
+        ActionPlan plan = prefixPlan ?? result.Plan ?? new ActionPlan { PlanSteps = [] };
         Result = new PlanResult
         {
             Status = PlanStatus.FOUND,

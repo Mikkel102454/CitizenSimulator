@@ -9,8 +9,7 @@ public sealed class ScheduledCommitmentState
     public string? SourceRuleId { get; }
     public long? OccurrenceDay { get; }
 
-    internal ScheduledCommitmentState(ScheduledCommitment commitment,
-        string? sourceRuleId = null, long? occurrenceDay = null)
+    internal ScheduledCommitmentState(ScheduledCommitment commitment, string? sourceRuleId = null, long? occurrenceDay = null)
     {
         Commitment = commitment;
         SourceRuleId = sourceRuleId;

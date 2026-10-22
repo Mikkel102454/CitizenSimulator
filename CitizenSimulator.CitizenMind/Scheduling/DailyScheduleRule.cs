@@ -27,14 +27,15 @@ public sealed class DailyScheduleRule
         init => _weekdays = value?.ToList().AsReadOnly();
     }
 
-    private int WeekdayMask => Weekdays == null ? 127 :
-        Weekdays.Aggregate(0, (mask, day) => mask | (1 << (int)day));
+    private int WeekdayMask => Weekdays?.Aggregate(0, (mask, day) => mask | (1 << (int)day)) ?? 127;
 
     internal bool RunsOn(DayOfWeek day) => (WeekdayMask & (1 << (int)day)) != 0;
 
     internal bool Matches(DailyScheduleRule other)
-        => Id == other.Id && GoalId == other.GoalId &&
-           Window.Start == other.Window.Start && Window.End == other.Window.End &&
-           Priority == other.Priority && PreparationTime == other.PreparationTime &&
-           WeekdayMask == other.WeekdayMask;
+    {
+        return Id == other.Id && GoalId == other.GoalId &&
+               Window.Start == other.Window.Start && Window.End == other.Window.End &&
+               Priority == other.Priority && PreparationTime == other.PreparationTime &&
+               WeekdayMask == other.WeekdayMask;
+    }
 }

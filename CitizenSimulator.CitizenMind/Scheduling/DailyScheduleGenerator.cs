@@ -7,8 +7,7 @@ internal static class DailyScheduleGenerator
 {
     internal const string OccurrenceIdPrefix = "citizen_mind.daily:";
 
-    public static void Refresh(MindComponent mind, TimeSpan gameTime, TimeSpan planningHorizon,
-        ICalenderService calender)
+    public static void Refresh(MindComponent mind, TimeSpan gameTime, TimeSpan planningHorizon, ICalenderService calender)
     {
         if (mind.DailyScheduleRules.Count == 0)
             return;
@@ -52,7 +51,8 @@ internal static class DailyScheduleGenerator
         long revision = checked(mind.ScheduleRevision + 1);
         mind.Schedule.AddRange(additions);
         mind.ScheduleRevision = revision;
-        foreach (var entry in additions)
+
+        foreach (ScheduledCommitmentState entry in additions)
             mind.GoalRetryTicks.Remove(entry.Commitment.GoalId);
     }
 }

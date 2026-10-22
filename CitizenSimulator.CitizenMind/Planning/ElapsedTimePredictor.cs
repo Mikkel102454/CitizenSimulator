@@ -7,9 +7,7 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 internal static class ElapsedTimePredictor
 {
-    public static EvaluationContext Predict(
-        EvaluationContext state,
-        TimeSpan elapsed,
+    public static EvaluationContext Predict(EvaluationContext state, TimeSpan elapsed,
         IReadOnlyDictionary<string, FactDescriptor> descriptors,
         IReadOnlyDictionary<string, IElapsedTimePredictor>? predictors)
     {

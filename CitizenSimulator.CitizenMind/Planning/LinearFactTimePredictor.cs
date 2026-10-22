@@ -16,11 +16,11 @@ public sealed class LinearFactTimePredictor : IElapsedTimePredictor
         ArgumentException.ThrowIfNullOrWhiteSpace(fact);
         if (!double.IsFinite(changePerDay))
             throw new ArgumentOutOfRangeException(nameof(changePerDay));
-        
-        if (double.IsNaN(minimum) || minimum == double.PositiveInfinity)
+
+        if (double.IsNaN(minimum) || double.IsPositiveInfinity(minimum))
             throw new ArgumentOutOfRangeException(nameof(minimum));
-        
-        if (double.IsNaN(maximum) || maximum == double.NegativeInfinity || maximum < minimum)
+
+        if (double.IsNaN(maximum) || double.IsNegativeInfinity(minimum) || maximum < minimum)
             throw new ArgumentOutOfRangeException(nameof(maximum));
 
         _fact = fact;
@@ -33,10 +33,10 @@ public sealed class LinearFactTimePredictor : IElapsedTimePredictor
     {
         if (elapsed < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(elapsed));
-        
+
         if (!facts.TryGetValue(_fact, out var current))
             throw new InvalidOperationException($"Unknown fact '{_fact}'.");
-        
+
         if (current == null || elapsed == TimeSpan.Zero)
             return new Dictionary<string, object?>();
 

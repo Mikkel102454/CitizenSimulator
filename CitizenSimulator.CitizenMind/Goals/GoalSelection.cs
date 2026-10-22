@@ -3,7 +3,4 @@ using CitizenSimulator.CitizenMind.Scheduling;
 
 namespace CitizenSimulator.CitizenMind.Services;
 
-public sealed record GoalSelection(
-    GoalDefinition Goal,
-    ScheduledCommitmentState? Commitment = null,
-    bool IsEmergency = false);
+public sealed record GoalSelection(GoalDefinition Goal, ScheduledCommitmentState? Commitment = null, bool IsEmergency = false);

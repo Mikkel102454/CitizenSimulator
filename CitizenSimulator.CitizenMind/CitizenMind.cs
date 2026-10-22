@@ -17,23 +17,23 @@ public class CitizenMind : IMod
 {
     public void OnLoad(IModContext context)
     {
-        CitizenMindService citizenMindService = new CitizenMindService(context.Store);
+        var citizenMindService = new CitizenMindService(context.Store);
         context.Services.Register<ICitizenMindService>(citizenMindService);
         citizenMindService.RegisterHandler("citizen_mind.wait_until", new WaitUntilHandler());
-        
-        GoalSelector goalSelector = new GoalSelector(citizenMindService);
-        ICalenderService calenderService = context.Services.Get<ICalenderService>();
-        
-        var executor = new ActionExecutor(citizenMindService);
-        
-        context.Systems.Register(new CitizenMindSystem(context.Events, goalSelector, citizenMindService, calenderService, executor));
-        
-        var assembly = typeof(CitizenMind).Assembly;
 
-        var deserializer = new DeserializerBuilder()
+        var goalSelector = new GoalSelector(citizenMindService);
+        ICalenderService calenderService = context.Services.Get<ICalenderService>();
+
+        var executor = new ActionExecutor(citizenMindService);
+
+        context.Systems.Register(new CitizenMindSystem(context.Events, goalSelector, citizenMindService, calenderService, executor));
+
+        Assembly assembly = typeof(CitizenMind).Assembly;
+
+        IDeserializer deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
-        
+
         foreach (string name in assembly.GetManifestResourceNames())
         {
             if (!name.Contains(".Data.Goals.", StringComparison.Ordinal) ||
@@ -42,7 +42,7 @@ public class CitizenMind : IMod
                 continue;
             }
 
-            using var stream = assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException($"Cannot read embedded goal '{name}'.");
+            using Stream stream = assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException($"Cannot read embedded goal '{name}'.");
 
             using var reader = new StreamReader(stream);
 
@@ -50,7 +50,7 @@ public class CitizenMind : IMod
 
             citizenMindService.RegisterGoal(goal);
         }
-        
+
         foreach (string name in assembly.GetManifestResourceNames())
         {
             if (!name.Contains(".Data.Actions.", StringComparison.Ordinal) ||
@@ -59,7 +59,7 @@ public class CitizenMind : IMod
                 continue;
             }
 
-            using var stream = assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException($"Cannot read embedded action '{name}'.");
+            using Stream stream = assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException($"Cannot read embedded action '{name}'.");
 
             using var reader = new StreamReader(stream);
 

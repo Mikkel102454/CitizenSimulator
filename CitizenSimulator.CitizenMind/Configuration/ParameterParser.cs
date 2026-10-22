@@ -9,9 +9,7 @@ internal static class ParameterParser
     public static object Parse(ParameterDefinition definition, string location)
     {
         if (definition == null || string.IsNullOrWhiteSpace(definition.Value))
-        {
             throw new InvalidOperationException($"{location}: parameter value is required.");
-        }
 
         string text = definition.Value;
 
@@ -28,7 +26,7 @@ internal static class ParameterParser
                 break;
 
             case ParameterType.DOUBLE:
-                if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, 
+                if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture,
                         out double number) && double.IsFinite(number))
                     return number;
                 break;
@@ -39,14 +37,12 @@ internal static class ParameterParser
                 break;
 
             default:
-                throw new InvalidOperationException(
-                    $"{location}: unsupported parameter type '{definition.Type}'.");
+                throw new InvalidOperationException($"{location}: unsupported parameter type '{definition.Type}'.");
         }
 
-        throw new InvalidOperationException(
-            $"{location}: '{text}' is not a valid {definition.Type} value.");
+        throw new InvalidOperationException($"{location}: '{text}' is not a valid {definition.Type} value.");
     }
-    
+
     public static IReadOnlyDictionary<string, object?> ParseAll(IReadOnlyDictionary<string, ParameterDefinition> definitions, string actionId)
     {
         if (definitions == null)

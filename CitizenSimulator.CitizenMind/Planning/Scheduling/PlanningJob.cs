@@ -30,11 +30,13 @@ internal sealed class PlanningJob
     public bool IsStale { get; private set; }
 
     public bool Matches(PlanningJob other)
-        => ScheduleRevision == other.ScheduleRevision &&
-           Selection.IsEmergency == other.Selection.IsEmergency && Priority == other.Priority &&
-           ReferenceEquals(Selection.Goal, other.Selection.Goal) &&
-           Selection.Commitment?.Commitment.Id == other.Selection.Commitment?.Commitment.Id &&
-           ReferenceEquals(ExpectedExecution, other.ExpectedExecution) && ExpectedStepIndex == other.ExpectedStepIndex;
+    {
+        return ScheduleRevision == other.ScheduleRevision &&
+               Selection.IsEmergency == other.Selection.IsEmergency && Priority == other.Priority &&
+               ReferenceEquals(Selection.Goal, other.Selection.Goal) &&
+               Selection.Commitment?.Commitment.Id == other.Selection.Commitment?.Commitment.Id &&
+               ReferenceEquals(ExpectedExecution, other.ExpectedExecution) && ExpectedStepIndex == other.ExpectedStepIndex;
+    }
 
     public void AdvanceSearch(PlanningBudget budget, TimeSpan gameTime)
     {
@@ -43,8 +45,10 @@ internal sealed class PlanningJob
             if (!budget.TryConsume()) return;
             Search = CreateSearch(gameTime);
         }
+
         Search.Advance(budget);
         Candidate = Search.Result;
+
         if (Candidate is { Status: not (PlanStatus.FOUND or PlanStatus.ALREADY_SATISFIED) })
         {
             Result = Candidate;
@@ -54,7 +58,9 @@ internal sealed class PlanningJob
 
     public void ValidateCandidate(PlanningBudget budget, TimeSpan gameTime)
     {
-        if (!budget.TryConsume(PlanValidator.WorkCost(Candidate!))) return;
+        if (!budget.TryConsume(PlanValidator.WorkCost(Candidate!)))
+            return;
+
         Result = Validate(Candidate!, gameTime);
         IsStale = Result == null;
         IsCompleted = true;

@@ -38,14 +38,14 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         TimeSpan gameDelta = calender.GetGameTime(1);
         TimeSpan gameTime = calender.GetGameTime(time.Tick);
         ulong retryDelayTicks = Math.Max(1UL, (ulong)Math.Ceiling(ticksPerDay * (5.0 / 1440.0)));
-        var citizens = Store.Query(MindComponent.GetComponentType()).ToArray();
+        EntityRef[] citizens = Store.Query(MindComponent.GetComponentType()).ToArray();
 
         // Gather requests before spending any work, so an emergency encountered
         // later in the entity order can still take priority.
-        foreach (var entity in citizens)
+        foreach (EntityRef entity in citizens)
         {
             if (!Store.IsAlive(entity)) continue;
-            var mind = Store.GetComponent<MindComponent>(entity);
+            MindComponent? mind = Store.GetComponent<MindComponent>(entity);
             if (mind == null) continue;
             if (!mind.IsActive) { CleanupMind(entity, mind); continue; }
 
@@ -63,25 +63,20 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 _planning.Cancel(entity, PlanningJobKind.VALIDATION);
             }
 
-            var wanted = goalSelector.SelectGoal(mind, time.Tick, gameTime);
-            var replacement = ChooseReplacement(entity, mind, wanted, time.Tick, gameTime);
+            GoalSelection? wanted = goalSelector.SelectGoal(mind, time.Tick, gameTime);
+            GoalSelection? replacement = ChooseReplacement(entity, mind, wanted, time.Tick, gameTime);
             if (replacement != null)
                 QueueSearch(entity, mind, replacement);
             else
                 _planning.Cancel(entity, PlanningJobKind.SEARCH);
 
-            if (mind.Execution is { Started: false } execution &&
-                mind.PlanScheduleRevision == mind.ScheduleRevision &&
-                mind.CurrentGoal != null &&
-                mind.Schedule.Any(entry => entry.Status == CommitmentStatus.PENDING) &&
+            if (mind.Execution is { Started: false } execution && mind.PlanScheduleRevision == mind.ScheduleRevision &&
+                mind.CurrentGoal != null && mind.Schedule.Any(entry => entry.Status == CommitmentStatus.PENDING) &&
                 !IsCurrentEmergency(entity, mind, gameTime))
-            {
                 QueueValidation(entity, mind, execution);
-            }
             else
-            {
                 _planning.Cancel(entity, PlanningJobKind.VALIDATION);
-            }
+
         }
 
         _planning.Process(gameTime,
@@ -90,10 +85,13 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         // Executing an existing plan does not wait for an unrelated replacement
         // search. At action boundaries, schedule-sensitive plans require a fresh
         // validation ticket; running non-interruptible actions can finish.
-        foreach (var entity in citizens)
+        foreach (EntityRef entity in citizens)
         {
-            if (!Store.IsAlive(entity)) continue;
-            var mind = Store.GetComponent<MindComponent>(entity);
+            if (!Store.IsAlive(entity))
+                continue;
+
+            MindComponent? mind = Store.GetComponent<MindComponent>(entity);
+
             if (mind is not { IsActive: true, Execution: { Status: PlanExecutionStatus.RUNNING } execution })
                 continue;
 
@@ -104,6 +102,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
 
             executor.Update(entity, execution, gameDelta, gameTime);
+
             if (execution.Status != PlanExecutionStatus.RUNNING)
                 FinishExecution(entity, mind, time.Tick, retryDelayTicks, gameTime);
         }
@@ -116,14 +115,14 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         {
             // Utility score changes must not restart an otherwise relevant search
             // every tick. Emergencies and due commitments can still supersede it.
-            var pending = _planning.Get(citizen, PlanningJobKind.SEARCH);
+            PlanningJob? pending = _planning.Get(citizen, PlanningJobKind.SEARCH);
             if (wanted is { IsEmergency: false, Commitment: null } &&
                 pending is { Selection: { IsEmergency: false, Commitment: null } } &&
                 pending.ScheduleRevision == mind.ScheduleRevision &&
                 (!mind.GoalRetryTicks.TryGetValue(pending.Selection.Goal.Id, out var retryTick) ||
                  currentTick >= retryTick))
             {
-                var context = service.CreateEvaluationContext(citizen, gameTime);
+                EvaluationContext context = service.CreateEvaluationContext(citizen, gameTime);
                 if (!ActionPlanner.IsGoalSatisfied(pending.Selection.Goal, context) &&
                     ExpressionEvaluator.Evaluate(context, pending.Selection.Goal.Eligible))
                     return pending.Selection;
@@ -139,7 +138,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
         if (!currentEmergency && wanted?.Commitment is { } incoming)
         {
-            var current = mind.CurrentCommitment;
+            ScheduledCommitmentState? current = mind.CurrentCommitment;
             if (current == null || current.Status != CommitmentStatus.PENDING ||
                 incoming.Commitment.Priority > current.Commitment.Priority ||
                 (incoming.Commitment.Priority == current.Commitment.Priority &&
@@ -151,7 +150,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         {
             if (mind.CurrentCommitment is { } current)
             {
-                var entry = mind.Schedule.FirstOrDefault(item =>
+                ScheduledCommitmentState? entry = mind.Schedule.FirstOrDefault(item =>
                     item.Status == CommitmentStatus.PENDING &&
                     SameOccurrence(item.Commitment, current.Commitment));
                 return entry == null ? wanted : new GoalSelection(mind.CurrentGoal, entry);
@@ -162,8 +161,10 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     }
 
     private void QueueSearch(EntityRef citizen, MindComponent mind, GoalSelection selection)
-        => _planning.Enqueue(CreateJob(citizen, mind, selection, PlanningJobKind.SEARCH,
+    {
+        _planning.Enqueue(CreateJob(citizen, mind, selection, PlanningJobKind.SEARCH,
             (time, measurement) => CreateSearch(citizen, selection, mind, time, measurement)));
+    }
 
     private void QueueValidation(EntityRef citizen, MindComponent mind, PlanExecutionState execution)
     {
@@ -185,14 +186,15 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         PlanningJobKind kind, Func<TimeSpan, PlanningMeasurement, IPlanningSearch> create, PlanExecutionState? execution = null)
     {
         var measurement = new PlanningMeasurement();
-        var priority = selection.IsEmergency
+        (int, long, long) priority = selection.IsEmergency
             ? (0, -(long)selection.Goal.Emergency!.Priority, long.MinValue)
             : selection.Commitment is { } entry
                 ? (1, -(long)entry.Commitment.Priority, entry.Commitment.Window.End.Ticks)
                 : (2, 0L, long.MaxValue);
 
         bool IsRelevant(PlanningJob job)
-            => Store.IsAlive(citizen) && mind.IsActive &&
+        {
+            return Store.IsAlive(citizen) && mind.IsActive &&
                ReferenceEquals(Store.GetComponent<MindComponent>(citizen), mind) &&
                job.ScheduleRevision == mind.ScheduleRevision &&
                (selection.Commitment == null ||
@@ -201,10 +203,13 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                (kind != PlanningJobKind.VALIDATION ||
                 (ReferenceEquals(mind.Execution, execution) &&
                  execution!.StepIndex == job.ExpectedStepIndex && !execution.Started));
+        }
 
         bool CanApply(PlanningJob job)
-            => kind == PlanningJobKind.VALIDATION || mind.Execution is not { Started: true } active ||
-               active.Plan.PlanSteps[active.StepIndex].Candidate.Definition.Execution.Interruptible;
+        {
+            return kind == PlanningJobKind.VALIDATION || mind.Execution is not { Started: true } active ||
+                active.Plan.PlanSteps[active.StepIndex].Candidate.Definition.Execution.Interruptible;
+        }
 
         return new PlanningJob
         {
@@ -220,11 +225,11 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     private IPlanningSearch CreateSearch(EntityRef citizen, GoalSelection selection,
         MindComponent mind, TimeSpan gameTime, PlanningMeasurement measurement)
     {
-        var state = service.CreateEvaluationContext(citizen, gameTime);
-        var horizon = gameTime + _plannerOptions.MaxPlanDuration;
-        var remaining = GetRemainingCommitments(mind, selection, horizon);
-        var goals = remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal);
-        var providers = CreateProviders(citizen, goals, measurement);
+        EvaluationContext state = service.CreateEvaluationContext(citizen, gameTime);
+        TimeSpan horizon = gameTime + _plannerOptions.MaxPlanDuration;
+        ScheduledCommitment[] remaining = GetRemainingCommitments(mind, selection, horizon);
+        IEnumerable<GoalDefinition> goals = remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal);
+        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers = CreateProviders(citizen, goals, measurement);
         int checks = 0;
 
         IPlanningSearch Forecast(int index, EvaluationContext projected)
@@ -234,8 +239,8 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             if (checks++ >= _plannerOptions.MaxScheduleChecks)
                 return new CompletedPlanningSearch(new PlanResult { Status = PlanStatus.BUDGET_EXCEEDED });
 
-            var commitment = remaining[index];
-            var goal = service.Goals[commitment.GoalId];
+            ScheduledCommitment commitment = remaining[index];
+            GoalDefinition goal = service.Goals[commitment.GoalId];
             if (projected.GameTime > commitment.Window.End)
                 return new CompletedPlanningSearch(new PlanResult { Status = PlanStatus.NO_PATH });
 
@@ -245,7 +250,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                     new ActionPlan { PlanSteps = [] });
             }
 
-            var available = horizon - projected.GameTime;
+            TimeSpan available = horizon - projected.GameTime;
             if (available <= TimeSpan.Zero)
                 return new CompletedPlanningSearch(new PlanResult { Status = PlanStatus.BUDGET_EXCEEDED });
             var options = new PlannerOptions
@@ -256,7 +261,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 MaxPlanDuration = available,
                 MaxScheduleChecks = _plannerOptions.MaxScheduleChecks
             };
-            var search = ActionPlanner.CreateSearch(goal, projected, service.Actions, service.FactDescriptors,
+            PlanSearch search = ActionPlanner.CreateSearch(goal, projected, service.Actions, service.FactDescriptors,
                 providers, options, service.TimePredictors, new PlanConstraints
                 {
                     GoalWindow = commitment.Window,
@@ -273,23 +278,24 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             });
     }
 
-    private ScheduledCommitment[] GetRemainingCommitments(MindComponent mind,
-        GoalSelection selection, TimeSpan horizon)
-        => mind.Schedule.Where(entry => !selection.IsEmergency &&
-                entry.Status == CommitmentStatus.PENDING &&
-                entry.Commitment.Id != selection.Commitment?.Commitment.Id &&
-                entry.Commitment.Window.Start <= horizon &&
-                (selection.Commitment == null ||
-                 entry.Commitment.Priority >= selection.Commitment.Commitment.Priority))
+    private ScheduledCommitment[] GetRemainingCommitments(MindComponent mind, GoalSelection selection, TimeSpan horizon)
+    {
+        return mind.Schedule.Where(entry => !selection.IsEmergency &&
+                                     entry.Status == CommitmentStatus.PENDING &&
+                                     entry.Commitment.Id != selection.Commitment?.Commitment.Id &&
+                                     entry.Commitment.Window.Start <= horizon &&
+                                     (selection.Commitment == null ||
+                                      entry.Commitment.Priority >= selection.Commitment.Commitment.Priority))
             .OrderBy(entry => entry.Commitment.Window.End)
             .ThenByDescending(entry => entry.Commitment.Priority)
             .ThenBy(entry => entry.Commitment.Id)
             .Select(entry => entry.Commitment).ToArray();
+    }
 
     private IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateProviders(
         EntityRef citizen, IEnumerable<GoalDefinition> goals, PlanningMeasurement measurement)
     {
-        var actions = goals.SelectMany(goal => ActionDependencyResolver.Resolve(goal, service.Actions))
+        ActionDefinition[] actions = goals.SelectMany(goal => ActionDependencyResolver.Resolve(goal, service.Actions))
             .DistinctBy(action => action.Id).ToArray();
         return service.CreateCandidateProviders(citizen, actions, measurement);
     }
@@ -297,21 +303,26 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     private PlanResult? ValidateResult(EntityRef citizen, GoalSelection selection,
         MindComponent mind, PlanResult result, TimeSpan gameTime, PlanningMeasurement measurement)
     {
-        var state = service.CreateEvaluationContext(citizen, gameTime);
+        EvaluationContext state = service.CreateEvaluationContext(citizen, gameTime);
+
         if (selection.IsEmergency && (selection.Goal.Emergency == null ||
             !ExpressionEvaluator.Evaluate(state, selection.Goal.Emergency.When)))
             return null;
-        var remaining = GetRemainingCommitments(mind, selection, gameTime + _plannerOptions.MaxPlanDuration);
-        var providers = CreateProviders(citizen,
+
+        ScheduledCommitment[] remaining = GetRemainingCommitments(mind, selection, gameTime + _plannerOptions.MaxPlanDuration);
+        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers = CreateProviders(citizen,
             remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal), measurement);
+
         return PlanValidator.Validate(selection.Goal, result, state, service.FactDescriptors,
             providers, service.TimePredictors, _plannerOptions, selection.Commitment?.Commitment.Window, remaining);
     }
 
     private void CompletePlanning(PlanningJob job, ulong tick, ulong retryDelayTicks, TimeSpan gameTime)
     {
-        if (!job.IsRelevant(job)) return;
-        var mind = Store.GetComponent<MindComponent>(job.Citizen)!;
+        if (!job.IsRelevant(job))
+            return;
+
+        MindComponent mind = Store.GetComponent<MindComponent>(job.Citizen)!;
         if (job.IsStale)
         {
             if (job.Kind == PlanningJobKind.VALIDATION && mind.Execution != null &&
@@ -320,7 +331,8 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             return;
         }
 
-        var result = job.Result!;
+        PlanResult result = job.Result!;
+
         if (result.Status is PlanStatus.NO_PATH or PlanStatus.BUDGET_EXCEEDED)
         {
             mind.GoalRetryTicks[job.Selection.Goal.Id] = checked(tick + retryDelayTicks);
@@ -334,6 +346,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         {
             if (job.Selection.Commitment != null)
                 job.Selection.Commitment.Status = CommitmentStatus.COMPLETED;
+
             if (mind.Execution != null && (job.Kind == PlanningJobKind.VALIDATION ||
                 (mind.CurrentGoal == job.Selection.Goal &&
                  mind.CurrentCommitment?.Commitment.Id == job.Selection.Commitment?.Commitment.Id)) &&
@@ -342,26 +355,34 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             return;
         }
 
-        if (mind.Execution != null && !executor.Cancel(job.Citizen, mind.Execution)) return;
-        if (!job.IsRelevant(job)) return;
+        if (mind.Execution != null && !executor.Cancel(job.Citizen, mind.Execution))
+            return;
+
+        if (!job.IsRelevant(job))
+            return;
+
         StartPlan(mind, job.Selection, result, tick);
         _planning.Cancel(job.Citizen, PlanningJobKind.VALIDATION);
     }
 
     private void RefreshSchedule(EntityRef citizen, MindComponent mind, TimeSpan gameTime)
     {
-        if (!mind.Schedule.Any(entry => entry.Status == CommitmentStatus.PENDING)) return;
-        var context = service.CreateEvaluationContext(citizen, gameTime);
-        foreach (var entry in mind.Schedule.Where(entry => entry.Status == CommitmentStatus.PENDING))
+        if (!mind.Schedule.Any(entry => entry.Status == CommitmentStatus.PENDING))
+            return;
+
+        EvaluationContext context = service.CreateEvaluationContext(citizen, gameTime);
+        foreach (ScheduledCommitmentState entry in mind.Schedule.Where(entry => entry.Status == CommitmentStatus.PENDING))
         {
             if (gameTime > entry.Commitment.Window.End)
             {
                 entry.Status = CommitmentStatus.MISSED;
                 continue;
             }
+
             if (mind.Execution is { Status: PlanExecutionStatus.RUNNING } &&
                 mind.CurrentCommitment?.Commitment.Id == entry.Commitment.Id)
                 continue;
+
             if (gameTime >= entry.Commitment.Window.Start &&
                 ActionPlanner.IsGoalSatisfied(service.Goals[entry.Commitment.GoalId], context))
                 entry.Status = CommitmentStatus.COMPLETED;
@@ -369,12 +390,16 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     }
 
     private bool IsCurrentEmergency(EntityRef citizen, MindComponent mind, TimeSpan gameTime)
-        => mind.CurrentGoal?.Emergency is { } emergency &&
-           ExpressionEvaluator.Evaluate(service.CreateEvaluationContext(citizen, gameTime), emergency.When);
+    {
+        return mind.CurrentGoal?.Emergency is { } emergency &&
+            ExpressionEvaluator.Evaluate(service.CreateEvaluationContext(citizen, gameTime), emergency.When);
+    }
 
     private static bool SameOccurrence(ScheduledCommitment first, ScheduledCommitment second)
-        => first.Id == second.Id && first.GoalId == second.GoalId &&
-           first.Window.Start == second.Window.Start && first.Window.End == second.Window.End;
+    {
+        return first.Id == second.Id && first.GoalId == second.GoalId &&
+               first.Window.Start == second.Window.Start && first.Window.End == second.Window.End;
+    }
 
     private static void StartPlan(MindComponent mind, GoalSelection selection, PlanResult result, ulong tick)
     {
@@ -410,6 +435,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             if (entry is { Status: CommitmentStatus.PENDING })
             {
                 var context = service.CreateEvaluationContext(citizen, gameTime);
+
                 if (gameTime >= entry.Commitment.Window.Start && gameTime <= entry.Commitment.Window.End &&
                     ActionPlanner.IsGoalSatisfied(service.Goals[entry.Commitment.GoalId], context))
                     entry.Status = CommitmentStatus.COMPLETED;
@@ -424,11 +450,11 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     {
         _planning.Clear();
         var errors = new List<Exception>();
-        foreach (var citizen in Store.Query(MindComponent.GetComponentType()).ToArray())
+        foreach (EntityRef citizen in Store.Query(MindComponent.GetComponentType()).ToArray())
         {
             try
             {
-                var mind = Store.GetComponent<MindComponent>(citizen);
+                MindComponent? mind = Store.GetComponent<MindComponent>(citizen);
                 if (mind != null) CleanupMind(citizen, mind);
             }
             catch (Exception exception)

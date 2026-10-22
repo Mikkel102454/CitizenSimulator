@@ -17,27 +17,27 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
     internal readonly Dictionary<string, Delegate> Facts = [];
 
     internal readonly Dictionary<string, FactDescriptor> FactDescriptors = [];
-    
+
     internal readonly Dictionary<string, IMindActionHandler> Handler = [];
-    
+
     internal readonly Dictionary<string, GoalDefinition> Goals = [];
-    
+
     internal readonly Dictionary<string, ActionDefinition> Actions = [];
-    
+
     internal readonly Dictionary<string, Func<EntityRef, IActionCandidateProvider>> CandidateProviderFactories = [];
-    
+
     internal readonly Dictionary<string, CandidateProviderDescriptor> CandidateProviderDescriptors = [];
 
     internal readonly Dictionary<string, IElapsedTimePredictor> TimePredictors = [];
-    
+
     private bool _registrationClosed;
-    
+
     private void EnsureRegistrationOpen()
     {
         if (_registrationClosed)
             throw new InvalidOperationException("CitizenMind registration is closed after simulation has started.");
     }
-    
+
     internal void CloseRegistration()
     {
         _registrationClosed = true;
@@ -59,17 +59,19 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
 
             if (commitment.Window.Start < TimeSpan.Zero || commitment.PreparationTime < TimeSpan.Zero)
                 throw new ArgumentException("Commitment start and preparation time must be nonnegative.");
+
             if (commitment.Id.StartsWith(DailyScheduleGenerator.OccurrenceIdPrefix, StringComparison.Ordinal))
                 throw new ArgumentException("The 'citizen_mind.daily:' commitment ID prefix is reserved.");
+
             if (!ids.Add(commitment.Id))
                 throw new InvalidOperationException($"Duplicate commitment id '{commitment.Id}'.");
+
             if (!Goals.ContainsKey(commitment.GoalId))
                 throw new InvalidOperationException(
                     $"Commitment '{commitment.Id}' references unknown goal '{commitment.GoalId}'.");
 
-            var previous = mind.Schedule.FirstOrDefault(entry =>
-                entry.SourceRuleId == null &&
-                entry.Commitment.Id == commitment.Id &&
+            ScheduledCommitmentState? previous = mind.Schedule.FirstOrDefault(entry =>
+                entry.SourceRuleId == null && entry.Commitment.Id == commitment.Id &&
                 entry.Commitment.GoalId == commitment.GoalId &&
                 entry.Commitment.Window.Start == commitment.Window.Start &&
                 entry.Commitment.Window.End == commitment.Window.End);
@@ -88,11 +90,12 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
     }
 
     public IReadOnlyList<ScheduledCommitmentState> GetSchedule(EntityRef citizen)
-        => GetMind(citizen).Schedule.AsReadOnly();
-
+    {
+        return GetMind(citizen).Schedule.AsReadOnly();
+    }
     public void ClearSchedule(EntityRef citizen)
     {
-        var mind = GetMind(citizen);
+        MindComponent mind = GetMind(citizen);
         long revision = checked(mind.ScheduleRevision + 1);
         mind.Schedule = [];
         mind.DailyScheduleRules = [];
@@ -103,22 +106,26 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
     public void SetDailySchedule(EntityRef citizen, IReadOnlyList<DailyScheduleRule> rules)
     {
         ArgumentNullException.ThrowIfNull(rules);
-        var mind = GetMind(citizen);
+        MindComponent mind = GetMind(citizen);
         var definitions = new List<DailyScheduleRule>();
         var ids = new HashSet<string>();
 
-        foreach (var rule in rules)
+        foreach (DailyScheduleRule rule in rules)
         {
             ArgumentNullException.ThrowIfNull(rule);
             ArgumentException.ThrowIfNullOrWhiteSpace(rule.Id);
             ArgumentException.ThrowIfNullOrWhiteSpace(rule.GoalId);
             ArgumentNullException.ThrowIfNull(rule.Window);
+
             if (rule.PreparationTime < TimeSpan.Zero)
                 throw new ArgumentException("Preparation time must be nonnegative.");
+
             if (rule.Weekdays != null && rule.Weekdays.Any(day => !Enum.IsDefined(day)))
                 throw new ArgumentException($"Daily schedule rule '{rule.Id}' has an invalid weekday.");
+
             if (!ids.Add(rule.Id))
                 throw new InvalidOperationException($"Duplicate daily schedule rule id '{rule.Id}'.");
+
             if (!Goals.ContainsKey(rule.GoalId))
                 throw new InvalidOperationException(
                     $"Daily schedule rule '{rule.Id}' references unknown goal '{rule.GoalId}'.");
@@ -134,6 +141,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         var unchangedIds = definitions.Where(rule =>
                 mind.DailyScheduleRules.Any(existing => existing.Matches(rule)))
             .Select(rule => rule.Id).ToHashSet();
+
         mind.DailyScheduleRules = definitions;
         mind.Schedule = mind.Schedule.Where(entry =>
             entry.SourceRuleId == null || entry.Status != CommitmentStatus.PENDING ||
@@ -143,7 +151,9 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
     }
 
     public IReadOnlyList<DailyScheduleRule> GetDailySchedule(EntityRef citizen)
-        => GetMind(citizen).DailyScheduleRules.AsReadOnly();
+    {
+        return GetMind(citizen).DailyScheduleRules.AsReadOnly();
+    }
 
     public void ClearDailySchedule(EntityRef citizen) => SetDailySchedule(citizen, []);
 
@@ -165,13 +175,13 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         if (!TimePredictors.TryAdd(id, predictor))
             throw new InvalidOperationException($"[CitizenMind] Duplicate time predictor id '{id}'.");
     }
-    
+
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)
     {
         EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        
+
         if (Facts.ContainsKey(id) || FactDescriptors.ContainsKey(id))
             throw new InvalidOperationException($"[CitizenMind] Duplicate fact id '{id}'.");
 
@@ -191,11 +201,11 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(handler);
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        
+
         if(!Handler.TryAdd(id, handler))
             throw new Exception($"[CitizenMind] Duplicate handler id '{id}'");
     }
-    
+
     public void RegisterGoal(GoalDefinition goal)
     {
         EnsureRegistrationOpen();
@@ -207,7 +217,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
 
         Goals.Add(goal.Id, goal);
     }
-    
+
     public void RegisterAction(ActionDefinition action)
     {
         EnsureRegistrationOpen();
@@ -220,12 +230,12 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         action.ResolvedParameters = ParameterParser.ParseAll(action.Parameters, action.Id);
         Actions.Add(action.Id, action);
     }
-    
+
     public EvaluationContext CreateEvaluationContext(EntityRef citizen, TimeSpan gameTime)
     {
         var facts = new Dictionary<string, object?>();
 
-        foreach (var (id, provider) in Facts)
+        foreach ((string id, Delegate provider) in Facts)
         {
             facts.Add(id, provider.DynamicInvoke(citizen));
         }
@@ -236,7 +246,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
             GameTime = gameTime
         };
     }
-    
+
     public void RegisterCandidateProvider(CandidateProviderDescriptor descriptor, Func<EntityRef, IActionCandidateProvider> factory)
     {
         EnsureRegistrationOpen();
@@ -254,7 +264,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
 
         var bindingTypes = new Dictionary<string, Type>();
 
-        foreach (var (name, type) in descriptor.BindingTypes)
+        foreach ((string name, Type type) in descriptor.BindingTypes)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
             ArgumentNullException.ThrowIfNull(type);
@@ -271,24 +281,27 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         CandidateProviderFactories.Add(descriptor.Id, factory);
         CandidateProviderDescriptors.Add(descriptor.Id, registeredDescriptor);
     }
-    
-    public IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateCandidateProviders(EntityRef citizen, IEnumerable<ActionDefinition> definitions)
-        => CreateCandidateProviders(citizen, definitions, null);
+
+    public IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateCandidateProviders(EntityRef citizen,
+        IEnumerable<ActionDefinition> definitions)
+    {
+        return CreateCandidateProviders(citizen, definitions, null);
+    }
 
     internal IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateCandidateProviders(EntityRef citizen,
         IEnumerable<ActionDefinition> definitions, PlanningMeasurement? measurement)
     {
         var providers = new Dictionary<string, CandidateProviderSnapshot>();
 
-        var ids = definitions.Select(action => action.CandidateProvider).OfType<string>()
+        IOrderedEnumerable<string> ids = definitions.Select(action => action.CandidateProvider).OfType<string>()
             .Distinct().OrderBy(id => id, StringComparer.Ordinal);
 
-        foreach (var id in ids)
+        foreach (string id in ids)
         {
             if (!CandidateProviderFactories.TryGetValue(id, out var factory))
                 throw new InvalidOperationException($"Unknown candidate provider '{id}'.");
 
-            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
             IActionCandidateProvider provider;
             try
             {
@@ -299,7 +312,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
                 measurement?.RecordProvider(id, System.Diagnostics.Stopwatch.GetElapsedTime(started), true);
             }
 
-            
+
             if (!CandidateProviderDescriptors.TryGetValue(id, out var descriptor))
                 throw new InvalidOperationException($"Missing descriptor for candidate provider '{id}'.");
 

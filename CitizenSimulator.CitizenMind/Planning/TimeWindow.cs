@@ -16,8 +16,7 @@ public sealed class TimeWindow
 
     public bool CanFit(TimeSpan start, TimeSpan duration)
     {
-        if (duration < TimeSpan.Zero)
-            throw new ArgumentOutOfRangeException(nameof(duration));
+        ArgumentOutOfRangeException.ThrowIfLessThan(duration, TimeSpan.Zero);
 
         return start >= Start && start < End && duration <= End - start;
     }

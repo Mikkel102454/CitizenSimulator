@@ -7,29 +7,29 @@ namespace CitizenSimulator.CitizenMind.Services;
 
 public class GoalSelector(CitizenMindService citizenMindService)
 {
-    public GoalDefinition? SelectGoals(MindComponent mindComponent, ulong currentTick, TimeSpan gameTime, bool emergenciesOnly = false)
-        => SelectGoal(mindComponent, currentTick, gameTime, emergenciesOnly)?.Goal;
+    public GoalDefinition? SelectGoals(MindComponent mindComponent, ulong currentTick, TimeSpan gameTime,
+        bool emergenciesOnly = false)
+    {
+        return SelectGoal(mindComponent, currentTick, gameTime, emergenciesOnly)?.Goal;
+    }
 
     public GoalSelection? SelectGoal(MindComponent mindComponent, ulong currentTick, TimeSpan gameTime, bool emergenciesOnly = false)
     {
         Dictionary<GoalDefinition, double> eligibleGoals = new Dictionary<GoalDefinition, double>();
         Dictionary<GoalDefinition, int> emergencyGoals = new Dictionary<GoalDefinition, int>();
-        
+
         var context = citizenMindService.CreateEvaluationContext(mindComponent.Parent, gameTime);
-        
+
         foreach (var goal in citizenMindService.Goals.Values)
         {
             bool satisfied = goal.Desired.All(condition => ExpressionEvaluator.Evaluate(context, condition));
-
             bool eligible = !satisfied && ExpressionEvaluator.Evaluate(context, goal.Eligible);
-
             bool isEmergency = eligible && goal.Emergency != null && ExpressionEvaluator.Evaluate(context, goal.Emergency.When);
-
             bool wasEmergency = mindComponent.EmergencyActive.TryGetValue(goal.Id, out var previous) && previous;
 
             mindComponent.EmergencyActive[goal.Id] = isEmergency;
-            
-            if (isEmergency && !wasEmergency) 
+
+            if (isEmergency && !wasEmergency)
                 mindComponent.GoalRetryTicks.Remove(goal.Id);
 
             if (mindComponent.GoalRetryTicks.TryGetValue(goal.Id, out var retryTick))
@@ -64,7 +64,7 @@ public class GoalSelector(CitizenMindService citizenMindService)
                 return new GoalSelection(goal.Key, IsEmergency: true);
             }
         }
-        
+
         if (!emergenciesOnly)
         {
             foreach (var entry in mindComponent.Schedule

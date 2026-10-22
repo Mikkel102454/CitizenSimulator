@@ -8,7 +8,7 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 public class ActionPlanner
 {
-    public static bool TryEvaluateAction(ActionDefinition action, EvaluationContext state, 
+    public static bool TryEvaluateAction(ActionDefinition action, EvaluationContext state,
         out double durationMinutes, out double cost)
     {
         return TryEvaluateAction(
@@ -19,15 +19,14 @@ public class ActionPlanner
             },
             state, out durationMinutes, out cost);
     }
-    
-    public static bool TryEvaluateAction(ActionCandidate candidate, EvaluationContext state,
-        out double durationMinutes, out double cost)
+
+    public static bool TryEvaluateAction(ActionCandidate candidate, EvaluationContext state, out double durationMinutes, out double cost)
     {
         durationMinutes = 0;
         cost = 0;
-        
+
         var action = candidate.Definition;
-        
+
         var context = new EvaluationContext
         {
             Facts = state.Facts,
@@ -44,34 +43,34 @@ public class ActionPlanner
         }
 
         object? durationObject = ExpressionEvaluator.Resolve(context, action.Duration.Estimate);
-        
+
         if (durationObject is not (int or float or double or decimal))
             throw new InvalidOperationException("Duration must be numeric.");
-        
+
         double duration = Convert.ToDouble(durationObject);
 
         durationMinutes = DurationConverter.ToMinutes(duration, action.Duration.Unit);
-        
+
         if (!candidate.IsAvailable(state.GameTime, TimeSpan.FromMinutes(durationMinutes)))
             return false;
-        
+
         context.Calculated.Add("durationMinutes", durationMinutes);
-        
+
         object? costObject = ExpressionEvaluator.Resolve(context, action.Cost.Expression, ExpressionEvaluationMode.Score);
-        
+
         if (costObject is not (int or float or double or decimal))
             throw new InvalidOperationException("Cost must be numeric.");
 
         double costDouble = Convert.ToDouble(costObject);
-        
+
         if (!double.IsFinite(costDouble))
             throw new InvalidOperationException("Expected a finite number.");
-        
+
         if (costDouble < 0)
             throw new InvalidOperationException("Expected a non-negative number.");
 
         cost = costDouble;
-        
+
         return true;
     }
 
@@ -82,8 +81,7 @@ public class ActionPlanner
         PlanConstraints? constraints = null)
         => new(goal, state, actions, descriptors, providers, options, timePredictors, constraints);
 
-    // Synchronous adapter for callers outside the tick scheduler. Both APIs use
-    // the same search implementation.
+    // synchronous adapter for callers outside the tick scheduler.
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
         IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options,
@@ -91,8 +89,10 @@ public class ActionPlanner
         PlanConstraints? constraints = null)
     {
         var search = CreateSearch(goal, state, actions, descriptors, providers, options, timePredictors, constraints);
+
         while (search.Result == null)
             search.Advance(new PlanningBudget(int.MaxValue));
+
         return search.Result;
     }
 
@@ -105,7 +105,7 @@ public class ActionPlanner
         }
         return true;
     }
-    
+
     internal static ActionPlan BuildPlan(SearchNode goalNode)
     {
         var steps = new List<PlanStep>();
@@ -130,7 +130,7 @@ public class ActionPlanner
             TotalCost = goalNode.TotalCost
         };
     }
-    
+
     internal static IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition action, EvaluationContext state,
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers)
     {
@@ -161,7 +161,7 @@ public class ActionPlanner
                 System.Diagnostics.Stopwatch.GetElapsedTime(started), false);
         }
     }
-    
+
     internal static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates, CandidateProviderDescriptor? descriptor)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -183,7 +183,7 @@ public class ActionPlanner
             if (candidate.Bindings == null)
                 throw new InvalidOperationException($"Candidate '{candidate.Id}': bindings cannot be null.");
 
-            
+
             if (descriptor == null)
             {
                 if (candidate.Bindings.Count != 0)
@@ -202,8 +202,7 @@ public class ActionPlanner
 
                 if ((value is double number && !double.IsFinite(number)) || (value is float single && !float.IsFinite(single)))
                 {
-                    throw new InvalidOperationException(
-                        $"Candidate '{candidate.Id}' binding '{name}' must be finite.");
+                    throw new InvalidOperationException($"Candidate '{candidate.Id}' binding '{name}' must be finite.");
                 }
             }
 
@@ -212,7 +211,7 @@ public class ActionPlanner
                 if (!descriptor.BindingTypes.ContainsKey(name))
                     throw new InvalidOperationException($"Candidate '{candidate.Id}' has undeclared binding '{name}'.");
             }
-            
+
             foreach (var key in candidate.Bindings.Keys)
             {
                 if (string.IsNullOrWhiteSpace(key))
@@ -220,15 +219,15 @@ public class ActionPlanner
             }
         }
     }
-    
+
     internal static bool HaveSameState(EvaluationContext first, EvaluationContext second)
     {
         return first.GameTime == second.GameTime && HaveSameFacts(first.Facts, second.Facts);
     }
-    
+
     private static bool HaveSameFacts(IReadOnlyDictionary<string, object?> first, IReadOnlyDictionary<string, object?> second)
     {
-        
+
         if (first.Count != second.Count)
             return false;
 
@@ -240,16 +239,15 @@ public class ActionPlanner
 
         return true;
     }
-    
+
     internal static bool TryRememberNode(SearchNode candidate, List<SearchNode> known)
     {
         foreach (var existing in known)
         {
-            if (existing.TotalCost <= candidate.TotalCost && existing.Depth <= candidate.Depth && 
+            if (existing.TotalCost <= candidate.TotalCost && existing.Depth <= candidate.Depth &&
                 HaveSameState(existing.State, candidate.State))
-            {
                 return false;
-            }
+
         }
 
         known.RemoveAll(existing =>
@@ -260,7 +258,7 @@ public class ActionPlanner
         known.Add(candidate);
         return true;
     }
-    
+
     internal static ActionCandidate SnapshotCandidate(ActionCandidate source)
     {
         var bindings = new Dictionary<string, object?>(source.Bindings);
