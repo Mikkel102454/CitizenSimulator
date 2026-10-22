@@ -14,7 +14,7 @@ public class ConsumptionService(IEntityStore store, IEventBus events, INeedsServ
     {
         if (!item.Consumable)
             return false;
-
+        
         foreach (var effect in item.Effects)
         {
             switch (effect.Type)

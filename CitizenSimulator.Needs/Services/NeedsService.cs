@@ -9,7 +9,13 @@ public class NeedsService : INeedsService
 {
     public bool SetHunger(NeedsComponent needsComponent, double hunger)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(needsComponent);
+
+        if (!double.IsFinite(hunger))
+            return false;
+
+        needsComponent.Hunger = Math.Clamp(hunger, 0.0, 1.0);
+        return true;
     }
 
     public bool SetThirst(NeedsComponent needsComponent, double thirst)
@@ -25,12 +31,23 @@ public class NeedsService : INeedsService
 
     public bool SetEnergy(NeedsComponent needsComponent, double energy)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(needsComponent);
+
+        if (!double.IsFinite(energy))
+            return false;
+
+        needsComponent.Energy = Math.Clamp(energy, 0.0, 1.0);
+        return true;
     }
 
     public bool AddHunger(NeedsComponent needsComponent, double hunger)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(needsComponent);
+
+        if (!double.IsFinite(hunger))
+            return false;
+
+        return SetHunger(needsComponent, needsComponent.Hunger + hunger);
     }
 
     public bool AddThirst(NeedsComponent needsComponent, double thirst)
@@ -45,6 +62,11 @@ public class NeedsService : INeedsService
 
     public bool AddEnergy(NeedsComponent needsComponent, double energy)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(needsComponent);
+
+        if (!double.IsFinite(energy))
+            return false;
+
+        return SetEnergy(needsComponent, needsComponent.Energy - energy);
     }
 }
