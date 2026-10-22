@@ -25,6 +25,8 @@ public class CitizenMindService : ICitizenMindService
     internal readonly Dictionary<string, Func<EntityRef, IActionCandidateProvider>> CandidateProviderFactories = [];
     
     internal readonly Dictionary<string, CandidateProviderDescriptor> CandidateProviderDescriptors = [];
+
+    internal readonly Dictionary<string, IElapsedTimePredictor> TimePredictors = [];
     
     private bool _registrationClosed;
     
@@ -37,6 +39,16 @@ public class CitizenMindService : ICitizenMindService
     internal void CloseRegistration()
     {
         _registrationClosed = true;
+    }
+
+    public void RegisterTimePredictor(string id, IElapsedTimePredictor predictor)
+    {
+        EnsureRegistrationOpen();
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(predictor);
+
+        if (!TimePredictors.TryAdd(id, predictor))
+            throw new InvalidOperationException($"[CitizenMind] Duplicate time predictor id '{id}'.");
     }
     
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)

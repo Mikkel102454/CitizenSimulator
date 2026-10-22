@@ -146,7 +146,8 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
         var providers = service.CreateCandidateProviders(citizen, relevantActions);
 
-        return ActionPlanner.FindPlan(goal, state, service.Actions, service.FactDescriptors, providers, _plannerOptions);
+        return ActionPlanner.FindPlan(goal, state, service.Actions, service.FactDescriptors,
+            providers, _plannerOptions, service.TimePredictors);
     }
     
     private bool TrySwitchToEmergency(EntityRef citizen, MindComponent mind, ulong currentTick, ulong retryDelayTicks)

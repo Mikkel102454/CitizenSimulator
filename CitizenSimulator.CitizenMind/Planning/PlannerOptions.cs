@@ -6,4 +6,6 @@ public sealed class PlannerOptions
     public int MaxExpansions { get; init; } = 256;
     
     public int MaxCandidatesPerAction { get; init; } = 32;
+
+    public TimeSpan MaxPlanDuration { get; init; } = TimeSpan.FromDays(1);
 }

@@ -13,5 +13,7 @@ public interface ICitizenMindService
     public void RegisterGoal(GoalDefinition goal);
     public void RegisterAction(ActionDefinition action);
 
+    public void RegisterTimePredictor(string id, IElapsedTimePredictor predictor);
+
     public void RegisterCandidateProvider(CandidateProviderDescriptor descriptor, Func<EntityRef, IActionCandidateProvider> factory);
 }

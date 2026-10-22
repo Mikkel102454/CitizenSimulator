@@ -1,6 +1,7 @@
 using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
+using CitizenSimulator.CitizenMind.Planning.Abstractions;
 
 namespace CitizenSimulator.CitizenMind.Planning;
 
@@ -8,7 +9,8 @@ public class ActionPredictor
 {
     
     public static EvaluationContext Predict(ActionDefinition action, EvaluationContext state, double durationMinutes,
-        IReadOnlyDictionary<string, FactDescriptor> descriptors)
+        IReadOnlyDictionary<string, FactDescriptor> descriptors,
+        IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null)
     {
         return Predict(
             new ActionCandidate
@@ -16,23 +18,30 @@ public class ActionPredictor
                 Id = action.Id,
                 Definition = action
             }, 
-            state, durationMinutes, descriptors);
+            state, durationMinutes, descriptors, timePredictors);
     }
     
     public static EvaluationContext Predict(ActionCandidate candidate, EvaluationContext state, double durationMinutes,
-        IReadOnlyDictionary<string, FactDescriptor> descriptors)
+        IReadOnlyDictionary<string, FactDescriptor> descriptors,
+        IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null)
     {
+        if (!double.IsFinite(durationMinutes) || durationMinutes < 0)
+            throw new ArgumentOutOfRangeException(nameof(durationMinutes));
+
         var action = candidate.Definition;
+
+        var advanced = ElapsedTimePredictor.Predict(
+            state, TimeSpan.FromMinutes(durationMinutes), descriptors, timePredictors);
         
         // new copy
-        Dictionary<string, object?> facts = new(state.Facts, state.Facts.Comparer);
+        Dictionary<string, object?> facts = new(advanced.Facts, advanced.Facts.Comparer);
         
         var context = new EvaluationContext
         {
-            Facts = state.Facts,
+            Facts = advanced.Facts,
             Parameters = action.ResolvedParameters,
             Bindings = candidate.Bindings,
-            GameTime = state.GameTime,
+            GameTime = advanced.GameTime,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = durationMinutes
@@ -57,7 +66,7 @@ public class ActionPredictor
 
             var value = ExpressionEvaluator.Resolve(context, effect.Value);
 
-            var original = state.Facts[effect.Fact];
+            var original = advanced.Facts[effect.Fact];
 
             switch (effect.Op)
             {
@@ -113,11 +122,11 @@ public class ActionPredictor
         return new EvaluationContext
         {
             Facts = facts,
-            GameTime = state.GameTime + TimeSpan.FromMinutes(durationMinutes)
+            GameTime = advanced.GameTime
         };
     }
     
-    private static object RequireValue(object? value, FactDescriptor descriptor)
+    internal static object RequireValue(object? value, FactDescriptor descriptor)
     {
         if (descriptor.ValueType == typeof(bool))
         {

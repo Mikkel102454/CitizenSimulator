@@ -77,7 +77,8 @@ public class ActionPlanner
 
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
         IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
-        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options)
+        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options,
+        IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null)
     {
         if (options.MaxDepth < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
@@ -88,6 +89,11 @@ public class ActionPlanner
         
         if (options.MaxCandidatesPerAction < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxCandidatesPerAction));
+
+        if (options.MaxPlanDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxPlanDuration));
+
+        var latestAllowedTime = state.GameTime + options.MaxPlanDuration;
         
         if(IsGoalSatisfied(goal, state))
             return new PlanResult()
@@ -114,19 +120,28 @@ public class ActionPlanner
         
         int expansions = 0;
         bool depthLimitReached = false;
+        bool timeLimitReached = false;
         
         void ExploreCandidate(SearchNode parent, ActionCandidate candidate)
         {
             if (!TryEvaluateAction(candidate, parent.State, out var duration, out var actionCost))
                 return;
 
+            var actionDuration = TimeSpan.FromMinutes(duration);
+
+            if (actionDuration > latestAllowedTime - parent.State.GameTime)
+            {
+                timeLimitReached = true;
+                return;
+            }
 
             double totalCost = parent.TotalCost + actionCost;
 
             if (!double.IsFinite(totalCost))
                 throw new InvalidOperationException("Total plan cost must be finite.");
 
-            var predicted = ActionPredictor.Predict(candidate, parent.State, duration, descriptors);
+            var predicted = ActionPredictor.Predict(
+                candidate, parent.State, duration, descriptors, timePredictors);
 
             if (HaveSameState(parent.State, predicted))
                 return;
@@ -201,7 +216,15 @@ public class ActionPlanner
                     var candidate = SnapshotCandidate(sourceCandidate);
                     
                     foreach (var opening in candidate.GetUpcomingOpeningTimes(current.State.GameTime))
+                    {
+                        if (opening > latestAllowedTime)
+                        {
+                            timeLimitReached = true;
+                            continue;
+                        }
+
                         waitTargets.Add(opening);
+                    }
                     
                     ExploreCandidate(current, candidate);
                 }
@@ -225,7 +248,7 @@ public class ActionPlanner
         
         return new PlanResult
         {
-            Status = depthLimitReached ? PlanStatus.BUDGET_EXCEEDED : PlanStatus.NO_PATH
+            Status = depthLimitReached || timeLimitReached ? PlanStatus.BUDGET_EXCEEDED : PlanStatus.NO_PATH
         };
     }
 
