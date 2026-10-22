@@ -168,6 +168,7 @@ public partial class BusinessService
         foreach (var (itemId, batchQuantity) in recipe.Outputs)
         {
             decimal target = business.Type.ProductionTargets.GetValueOrDefault(itemId, batchQuantity * 2);
+            target = business.GetStockTarget(itemId, target);
             if (business.Inventory.GetQuantity(itemId) < target)
                 return true;
         }

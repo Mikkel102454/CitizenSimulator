@@ -1,28 +1,38 @@
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Business.Components;
-using CitizenSimulator.Business.Events;
-using CitizenSimulator.Business.Services.Abstractions;
 using CitizenSimulator.Business.Models;
+using CitizenSimulator.Business.Services.Abstractions;
+using CitizenSimulator.Citizen.Components;
+using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Inventory.Components;
 using CitizenSimulator.Inventory.Services.Abstractions;
 using CitizenSimulator.Items.Services.Abstractions;
 using CitizenSimulator.Market.Services.Abstractions;
+using CitizenSimulator.Property.Components;
 using CitizenSimulator.Vault.Components;
 using CitizenSimulator.Vault.Services.Abstractions;
+using BuyStatus = CitizenSimulator.Market.Services.Abstractions.IMarketService.BuyStatus;
 
 namespace CitizenSimulator.Market.Services;
 
-public class MarketService(IEntityStore store,
+public partial class MarketService(IEntityStore store,
     IEventBus events,
     IVaultService vaultService,
     IInventoryService inventoryService,
     IBusinessService businesses,
-    IItemService items) : IMarketService
+    IItemService items,
+    ICalenderService calendar) : IMarketService
 {
     private decimal GetQuantityStep(string itemId)
     {
         return items.GetItems().FirstOrDefault(item => item.Id == itemId)?.QuantityStep ?? 0;
+    }
+
+    private bool IsValidQuantity(string itemId, decimal amount)
+    {
+        decimal step = GetQuantityStep(itemId);
+        return step > 0 && amount > 0 && amount % step == 0;
     }
 
     private static decimal RoundDownToStep(decimal amount, decimal step)
@@ -36,174 +46,141 @@ public class MarketService(IEntityStore store,
             return null;
 
         var business = store.GetComponent<BusinessComponent>(inventory.Parent);
-        if (business == null || !ReferenceEquals(business.Inventory, inventory) || !ReferenceEquals(business.PaymentAccount, account))
-            return null;
-
-        return business;
+        return business != null && ReferenceEquals(business.Inventory, inventory)
+            && ReferenceEquals(business.PaymentAccount, account) ? business : null;
     }
 
-    public IReadOnlyList<MarketOffer> GetOffers(string itemId, bool wholesale = false)
+    private bool IsValidBuyer(InventoryComponent inventory, BankAccountComponent account)
+    {
+        if (!store.IsAlive(inventory.Parent) || inventory.Parent != account.Parent
+            || !ReferenceEquals(store.GetComponent<InventoryComponent>(inventory.Parent), inventory)
+            || !ReferenceEquals(store.GetComponent<BankAccountComponent>(account.Parent), account)
+            || !account.Vault.Accounts.Contains(account))
+            return false;
+
+        var business = GetBuyerBusiness(inventory, account);
+        if (business != null)
+            return business.State is not (BusinessState.Bankrupt or BusinessState.ShutDown)
+                && business.Owner.Alive && !business.Property.Destroyed;
+
+        return store.GetComponent<CitizenComponent>(inventory.Parent) is { Alive: true };
+    }
+
+    private bool IsRegisteredSeller(BusinessComponent seller)
+    {
+        return store.IsAlive(seller.Parent)
+            && ReferenceEquals(store.GetComponent<BusinessComponent>(seller.Parent), seller)
+            && seller.PaymentAccount.Vault.Accounts.Contains(seller.PaymentAccount);
+    }
+
+    private BuyStatus GetSellerStatus(BusinessComponent seller, string itemId, bool wholesale)
     {
         string channel = wholesale ? "wholesale" : "retail";
-        return store.Query(BusinessComponent.GetComponentType())
-            .Select(entity => store.GetComponent<BusinessComponent>(entity)!)
-            .Where(business => business.IsOperating
-                && business.Type.SalesPolicy is { } policy
-                && policy.Channels.Contains(channel)
-                && policy.SellItems.ContainsKey(itemId)
-                && business.Inventory.GetQuantity(itemId) > 0)
-            .Select(business => new MarketOffer(
-                business,
-                itemId,
-                businesses.GetSalePrice(business, itemId),
-                business.Inventory.GetQuantity(itemId)))
-            .OrderBy(offer => offer.UnitPrice)
-            .ThenBy(offer => offer.Seller.Parent.Id)
-            .ToArray();
+        var policy = seller.Type.SalesPolicy;
+        if (policy == null || !policy.Channels.Contains(channel) || !policy.SellItems.ContainsKey(itemId))
+            return BuyStatus.ACCESS_DENIED;
+
+        if (!IsRegisteredSeller(seller) || !seller.IsOperating || seller.Property.Destroyed || !seller.Owner.Alive
+            || !store.IsAlive(seller.Property.Parent)
+            || !ReferenceEquals(store.GetComponent<PropertyComponent>(seller.Property.Parent), seller.Property)
+            || !ReferenceEquals(seller.Property.Owner, seller.Owner)
+            || seller.Property.AreaM2 < seller.Type.Premises.MinimumAreaM2
+            || !seller.Type.Premises.AllowedUses.Contains(seller.Property.Type.ToString(), StringComparer.OrdinalIgnoreCase))
+            return BuyStatus.CLOSED_SELLER;
+
+        if (NeedsCustomerCapacity(seller) && seller.AvailableCustomerCapacity < 1)
+            return BuyStatus.NO_SERVICE_CAPACITY;
+
+        return seller.Inventory.GetQuantity(itemId) > 0 ? BuyStatus.SUCCESS : BuyStatus.OUT_OF_STOCK;
     }
 
-    private IMarketService.BuyStatus CommitPurchase(
-        MarketOffer offer,
-        InventoryComponent receiver,
-        BankAccountComponent account,
-        BusinessComponent? buyer,
-        decimal amount,
-        bool liquidation = false)
+    private static bool NeedsCustomerCapacity(BusinessComponent seller)
     {
-        var seller = offer.Seller;
-        bool isSelfPurchase = ReferenceEquals(seller.Inventory, receiver)
-            || ReferenceEquals(seller.PaymentAccount, account);
-        bool sellerUnavailable = !liquidation && !seller.IsOperating;
-        bool insufficientStock = seller.Inventory.GetQuantity(offer.ItemId) < amount;
-        if (isSelfPurchase || sellerUnavailable || insufficientStock)
-            return IMarketService.BuyStatus.OUT_OF_STOCK;
-
-        if (amount > receiver.FreeCapacity)
-            return IMarketService.BuyStatus.INVENTORY_FULL;
-
-        bool needsCustomer = !liquidation
-            && seller.Type.SalesPolicy!.CustomersServedPerWorkerHour > 0
+        return seller.Type.SalesPolicy?.CustomersServedPerWorkerHour > 0
             && seller.Type.Workforce.Any(requirement => requirement.DesiredCount > 0);
-        if (needsCustomer && seller.AvailableCustomerCapacity < 1)
-            return IMarketService.BuyStatus.NO_SERVICE_CAPACITY;
-
-        decimal unitPrice = liquidation ? offer.UnitPrice : businesses.GetSalePrice(seller, offer.ItemId);
-        decimal price = unitPrice * amount;
-        decimal spendable = Math.Max(0, account.Balance - (buyer?.UnpaidLiabilities ?? 0));
-        if (price > spendable)
-            return IMarketService.BuyStatus.INSUFFICIENT_FUNDS;
-
-        // Precompute ledger arithmetic before committing money or stock.
-        decimal costBasis = seller.Inventory.GetValue(offer.ItemId) * (amount / seller.Inventory.GetQuantity(offer.ItemId));
-        _ = seller.SalesRevenue + price;
-        _ = seller.CostOfGoodsSold + costBasis;
-        _ = receiver.GetQuantity(offer.ItemId) + amount;
-        _ = receiver.GetValue(offer.ItemId) + price;
-        if (buyer != null)
-            _ = buyer.StockPurchases + price;
-
-        decimal buyerBalanceBefore = account.Balance;
-        decimal sellerBalanceBefore = seller.PaymentAccount.Balance;
-        if (price > 0 && !vaultService.TransferBalance(account, seller.PaymentAccount, price))
-            return IMarketService.BuyStatus.INSUFFICIENT_FUNDS;
-
-        if (!inventoryService.TryTransfer(offer.ItemId, seller.Inventory, receiver, amount, price, out var removedValue))
-        {
-            vaultService.SetBalance(account, buyerBalanceBefore);
-            vaultService.SetBalance(seller.PaymentAccount, sellerBalanceBefore);
-            return IMarketService.BuyStatus.INVENTORY_FULL;
-        }
-
-        if (needsCustomer)
-            businesses.TryUseCustomerCapacity(seller);
-
-        businesses.RecordTrade(seller, buyer, price, removedValue);
-        events.Publish(new OnBusinessSale(seller, offer.ItemId, amount, price, buyer));
-        return IMarketService.BuyStatus.SUCCESS;
     }
 
-    public IMarketService.BuyStatus TryBuyLiquidationStock(
-        BusinessComponent seller,
-        InventoryComponent inventory,
-        BankAccountComponent account,
-        string itemId,
-        decimal amount,
-        decimal unitPrice)
+    private static decimal GetSpendableBalance(BankAccountComponent account, BusinessComponent? buyer)
     {
-        decimal step = GetQuantityStep(itemId);
-        if (step <= 0 || amount <= 0 || amount % step != 0 || unitPrice < 0 || !store.IsAlive(seller.Parent)
-            || !ReferenceEquals(store.GetComponent<BusinessComponent>(seller.Parent), seller)
-            || seller.State is not (BusinessState.Bankrupt or BusinessState.ShutDown))
-            return IMarketService.BuyStatus.INVALID_QUANTITY;
-
-        var offer = new MarketOffer(seller, itemId, unitPrice, seller.Inventory.GetQuantity(itemId));
-        var buyer = GetBuyerBusiness(inventory, account);
-        return CommitPurchase(offer, inventory, account, buyer, amount, liquidation: true);
+        return Math.Max(0, account.Balance - (buyer?.UnpaidLiabilities ?? 0));
     }
 
-    public IMarketService.BuyStatus TryBuy(InventoryComponent inventory, BankAccountComponent account, string itemId, decimal amount)
+    public IReadOnlyList<MarketOffer> GetOffers(string itemId, bool wholesale = false, bool includeUnavailable = false)
     {
-        decimal step = GetQuantityStep(itemId);
-        if (step <= 0 || amount <= 0 || amount % step != 0)
-            return IMarketService.BuyStatus.INVALID_QUANTITY;
-
-        var buyer = GetBuyerBusiness(inventory, account);
-        var result = IMarketService.BuyStatus.OUT_OF_STOCK;
-        foreach (var offer in GetOffers(itemId, buyer != null))
+        string channel = wholesale ? "wholesale" : "retail";
+        var offers = new List<MarketOffer>();
+        foreach (var entity in store.Query(BusinessComponent.GetComponentType()))
         {
-            if (offer.AvailableQuantity < amount || ReferenceEquals(offer.Seller.Inventory, inventory))
+            var seller = store.GetComponent<BusinessComponent>(entity)!;
+            var policy = seller.Type.SalesPolicy;
+            if (seller.State is BusinessState.Bankrupt or BusinessState.ShutDown
+                || policy == null || !policy.Channels.Contains(channel) || !policy.SellItems.ContainsKey(itemId))
                 continue;
 
-            result = CommitPurchase(offer, inventory, account, buyer, amount);
-            if (result == IMarketService.BuyStatus.SUCCESS || result == IMarketService.BuyStatus.INVENTORY_FULL)
-                return result;
+            var status = GetSellerStatus(seller, itemId, wholesale);
+            if (!includeUnavailable && status != BuyStatus.SUCCESS)
+                continue;
 
+            var windows = BusinessTime.GetWorkingWindows(seller.Type.OpeningHours, seller.Type.OpeningHours,
+                Now, Now + TimeSpan.FromDays(8), calendar);
+            var nextWindow = windows.Count == 0 ? ((TimeSpan Start, TimeSpan End)?)null : windows[0];
+            offers.Add(new MarketOffer(seller, itemId, businesses.GetSalePrice(seller, itemId),
+                seller.Inventory.GetQuantity(itemId), wholesale, status, nextWindow?.Start, nextWindow?.End));
         }
 
-        return result;
+        return offers.OrderBy(offer => offer.UnitPrice).ThenBy(offer => offer.Seller.Parent.Id).ToArray();
     }
 
-    public PurchaseResult TryBuyUpTo(InventoryComponent inventory, BankAccountComponent account, string itemId, decimal amount)
+    public BuyStatus CheckOffer(MarketOffer offer, InventoryComponent inventory,
+        BankAccountComponent account, decimal amount)
     {
-        decimal step = GetQuantityStep(itemId);
-        if (step <= 0 || amount < step)
-            return new(IMarketService.BuyStatus.INVALID_QUANTITY, 0, 0);
+        if (!IsValidQuantity(offer.ItemId, amount) || offer.UnitPrice < 0)
+            return BuyStatus.INVALID_QUANTITY;
+
+        if (!IsValidBuyer(inventory, account))
+            return BuyStatus.INVALID_BUYER;
 
         var buyer = GetBuyerBusiness(inventory, account);
-        decimal purchasedQuantity = 0;
-        decimal totalSpent = 0;
-        var status = IMarketService.BuyStatus.OUT_OF_STOCK;
-        foreach (var offer in GetOffers(itemId, buyer != null))
-        {
-            if (ReferenceEquals(offer.Seller.Inventory, inventory))
-                continue;
+        var seller = offer.Seller;
+        if (offer.Wholesale != (buyer != null) || ReferenceEquals(seller.Inventory, inventory)
+            || ReferenceEquals(seller.PaymentAccount, account))
+            return BuyStatus.ACCESS_DENIED;
 
-            decimal remainingQuantity = amount - purchasedQuantity;
-            decimal availableQuantity = Math.Min(offer.AvailableQuantity, inventory.FreeCapacity);
-            decimal quantity = Math.Min(remainingQuantity, availableQuantity);
-            if (offer.UnitPrice > 0)
-            {
-                decimal spendableBalance = Math.Max(0, account.Balance - (buyer?.UnpaidLiabilities ?? 0));
-                decimal affordableQuantity = spendableBalance / offer.UnitPrice;
-                quantity = Math.Min(quantity, affordableQuantity);
-            }
+        var status = GetSellerStatus(seller, offer.ItemId, buyer != null);
+        if (status is BuyStatus.ACCESS_DENIED or BuyStatus.CLOSED_SELLER)
+            return status;
 
-            quantity = RoundDownToStep(quantity, step);
-            if (quantity <= 0)
-                continue;
+        decimal currentPrice = businesses.GetSalePrice(seller, offer.ItemId);
+        if (currentPrice > offer.UnitPrice)
+            return BuyStatus.PRICE_CHANGED;
 
-            status = CommitPurchase(offer, inventory, account, buyer, quantity);
-            if (status == IMarketService.BuyStatus.SUCCESS)
-            {
-                purchasedQuantity += quantity;
-                totalSpent += offer.UnitPrice * quantity;
-            }
+        if (currentPrice * amount > GetSpendableBalance(account, buyer))
+            return BuyStatus.INSUFFICIENT_FUNDS;
 
-            if (amount - purchasedQuantity < step || inventory.FreeCapacity < step)
-                break;
+        if (amount > inventory.FreeCapacity)
+            return BuyStatus.INVENTORY_FULL;
 
-        }
+        if (status != BuyStatus.SUCCESS)
+            return status;
 
-        return new(purchasedQuantity > 0 ? IMarketService.BuyStatus.SUCCESS : status, purchasedQuantity, totalSpent);
+        if (seller.Inventory.GetQuantity(offer.ItemId) < amount || offer.AvailableQuantity < amount)
+            return BuyStatus.OUT_OF_STOCK;
+
+        return BuyStatus.SUCCESS;
+    }
+
+    public BuyStatus TryBuyOffer(MarketOffer offer, InventoryComponent inventory,
+        BankAccountComponent account, decimal amount)
+    {
+        if (!IsValidQuantity(offer.ItemId, amount))
+            return BuyStatus.INVALID_QUANTITY;
+
+        if (!IsValidBuyer(inventory, account))
+            return BuyStatus.INVALID_BUYER;
+
+        ObserveDemand(inventory, account, offer.ItemId, amount, offer.Seller);
+        var status = CommitPurchase(offer, inventory, account, amount);
+        SetRequestStatus(inventory, offer.ItemId, status);
+        return status;
     }
 }

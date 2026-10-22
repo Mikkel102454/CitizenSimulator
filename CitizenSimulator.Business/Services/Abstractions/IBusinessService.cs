@@ -46,8 +46,10 @@ public interface IBusinessService
         decimal requested, out decimal transferred);
     bool TryDisposeWaste(BusinessComponent source, BusinessComponent disposalBusiness, string itemId, decimal amount);
     decimal GetDisposalCapacity(BusinessComponent disposalBusiness, string itemId);
-    void RecordTrade(BusinessComponent seller, BusinessComponent? buyer, decimal price, decimal costOfGoods);
+    void RecordTrade(BusinessComponent seller, BusinessComponent? buyer, decimal price, decimal costOfGoods,
+        string? itemId = null, decimal quantity = 0);
     decimal GetSalePrice(BusinessComponent seller, string itemId);
+    bool TrySetMarketAdjustment(BusinessComponent business, string itemId, decimal stockTarget, decimal priceMultiplier);
     bool TryUseCustomerCapacity(BusinessComponent business);
     void AdvanceBusiness(BusinessComponent business, TimeSpan gameTime);
     void BeginTick(ulong tick);

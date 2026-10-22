@@ -21,6 +21,20 @@ public sealed class BusinessComponent : Component<BusinessComponent>
     public OperationalIssue ProductionIssue { get; internal set; }
     public bool IsOperating => State == BusinessState.Open && Issue == OperationalIssue.None;
     public ProductionBatch? ActiveBatch { get; internal set; }
+    internal Dictionary<string, decimal> MarketStockTargets { get; } = [];
+    internal Dictionary<string, decimal> MarketPriceMultipliers { get; } = [];
+    internal Dictionary<string, decimal> LastSoldUnitCosts { get; } = [];
+
+    public decimal GetStockTarget(string itemId, decimal configuredTarget)
+    {
+        return Math.Max(configuredTarget, MarketStockTargets.GetValueOrDefault(itemId));
+    }
+
+    public decimal GetPriceMultiplier(string itemId)
+    {
+        return MarketPriceMultipliers.GetValueOrDefault(itemId, 1);
+    }
+
     internal List<EmploymentContract> Contracts { get; } = [];
     public IReadOnlyList<EmploymentContract> Employees => Contracts.AsReadOnly();
     public decimal SalesRevenue { get; internal set; }

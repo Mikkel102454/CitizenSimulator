@@ -332,11 +332,16 @@ public partial class BusinessService(IEntityStore store, IEventBus events, IVaul
         return true;
     }
 
-    public void RecordTrade(BusinessComponent seller, BusinessComponent? buyer, decimal price, decimal costOfGoods)
+    public void RecordTrade(BusinessComponent seller, BusinessComponent? buyer, decimal price, decimal costOfGoods,
+        string? itemId = null, decimal quantity = 0)
     {
         if (price < 0 || costOfGoods < 0)
             throw new ArgumentOutOfRangeException(nameof(price));
 
+        if (itemId != null && quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity));
+
+        decimal unitCost = itemId == null ? 0 : costOfGoods / quantity;
 
         decimal revenue = seller.SalesRevenue + price;
         decimal cost = seller.CostOfGoodsSold + costOfGoods;
@@ -346,14 +351,31 @@ public partial class BusinessService(IEntityStore store, IEventBus events, IVaul
         if (buyer != null)
             buyer.StockPurchases = purchases;
 
+        if (itemId != null)
+            seller.LastSoldUnitCosts[itemId] = unitCost;
     }
 
     public decimal GetSalePrice(BusinessComponent seller, string itemId)
     {
         decimal configured = seller.Type.SalesPolicy!.SellItems[itemId];
         decimal quantity = seller.Inventory.GetQuantity(itemId);
-        decimal costPrice = quantity > 0 ? seller.Inventory.GetValue(itemId) / quantity : 0;
-        return Math.Max(configured, costPrice * (1 + seller.Type.SalesPolicy.TargetMarkupPercent / 100));
+        decimal costPrice = quantity > 0
+            ? seller.Inventory.GetValue(itemId) / quantity
+            : seller.LastSoldUnitCosts.GetValueOrDefault(itemId);
+        decimal costBasedPrice = costPrice * (1 + seller.Type.SalesPolicy.TargetMarkupPercent / 100);
+        decimal basePrice = Math.Max(configured, costBasedPrice);
+        return basePrice * seller.GetPriceMultiplier(itemId);
+    }
+
+    public bool TrySetMarketAdjustment(BusinessComponent business, string itemId, decimal stockTarget, decimal priceMultiplier)
+    {
+        if (!IsRegistered(business) || stockTarget < 0 || priceMultiplier is < 1 or > 2
+            || !items.GetItems().Any(item => item.Id == itemId))
+            return false;
+
+        business.MarketStockTargets[itemId] = stockTarget;
+        business.MarketPriceMultipliers[itemId] = priceMultiplier;
+        return true;
     }
 
     public bool TryUseCustomerCapacity(BusinessComponent business)

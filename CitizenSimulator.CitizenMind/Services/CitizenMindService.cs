@@ -231,6 +231,24 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         Actions.Add(action.Id, action);
     }
 
+    public void AddGoalActions(string goalId, IEnumerable<string> actionIds)
+    {
+        EnsureRegistrationOpen();
+        ArgumentNullException.ThrowIfNull(actionIds);
+        if (!Goals.TryGetValue(goalId, out var goal))
+            throw new InvalidOperationException($"Unknown goal '{goalId}'.");
+
+        var additions = actionIds.Distinct(StringComparer.Ordinal).ToArray();
+        if (additions.Any(actionId => !Actions.ContainsKey(actionId)))
+            throw new InvalidOperationException($"Goal '{goalId}' references an unregistered action.");
+
+        foreach (string actionId in additions)
+        {
+            if (!goal.GoalActions.Contains(actionId))
+                goal.GoalActions.Add(actionId);
+        }
+    }
+
     public EvaluationContext CreateEvaluationContext(EntityRef citizen, TimeSpan gameTime)
     {
         var facts = new Dictionary<string, object?>();

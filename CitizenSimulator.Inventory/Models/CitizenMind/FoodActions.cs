@@ -12,6 +12,7 @@ namespace CitizenSimulator.Inventory.Models.CitizenMind;
 public static class FoodActions
 {
     public const double EatingMinutes = 5;
+    public const string FreeCapacityFact = "inventory.freeCapacity";
     public static string QuantityFact(string itemId)
     {
         return $"inventory.quantity.{itemId}";
@@ -22,6 +23,9 @@ public static class FoodActions
         var mind = context.Services.Get<ICitizenMindService>();
         var inventoryService = context.Services.Get<IInventoryService>();
         var actions = new List<string>();
+        mind.RegisterFact(FreeCapacityFact,
+            entity => context.Store.GetComponent<InventoryComponent>(entity)?.FreeCapacity ?? 0m,
+            canPredict: true);
         foreach (var item in context.Services.Get<IItemService>().GetConsumableItems()
             .OrderBy(item => item.Id, StringComparer.Ordinal))
         {
@@ -76,6 +80,12 @@ public static class FoodActions
                 Fact = stock,
                 Op = "subtract",
                 Value = Literal(1m)
+            },
+            new()
+            {
+                Fact = FreeCapacityFact,
+                Op = "add",
+                Value = Op("min", Literal(1m), Op("subtract", Literal(decimal.MaxValue), Fact(FreeCapacityFact)))
             }
         };
         void PredictNeed(string fact, double change)

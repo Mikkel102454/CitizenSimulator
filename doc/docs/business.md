@@ -72,9 +72,48 @@ Storage capacity remains on inventories, not properties. It uses abstract quanti
 
 ## Procurement, utilities, and waste
 
-Stock policies compare available plus reserved quantities against ReorderBelow, then replenish toward TargetQuantity. Procurement supports partial fills across suppliers, available cash, and storage. Offers are ordered by price and stable seller entity ID. Business buyers use wholesale channels; citizens use retail. Sellers must be operating and have customer service capacity where configured.
+Stock policies compare available plus reserved quantities against ReorderBelow, then replenish toward the current stock target. Demand can raise that target and its reorder threshold. Recipe inputs without an explicit stock policy receive a two-batch target and a one-batch reorder threshold. Higher output targets proportionally raise input procurement targets. Procurement supports partial fills across suppliers, available cash after unpaid liabilities, and storage. It executes real inventory and bank transfers. Business buyers use wholesale channels; citizens use retail.
 
-Configured selling prices are floors. Known stock costs plus TargetMarkupPercent can raise the price above that floor. This is cost-based pricing, not a demand-auction model.
+GetOffers compares sellers, current prices, quantities, channel, current availability, and opening windows. Its default result contains only immediately available offers. Passing includeUnavailable: true also exposes empty, closed, and service-limited listings so missing supply remains discoverable. These queries do not record demand or mutate inventory. Sellers must be operating and have customer service capacity where configured.
+
+TryBuyOffer executes a particular quoted seller instead of silently choosing a replacement. It rechecks seller identity, item listing, channel, opening/operating state, stock, service capacity, buyer identity, storage, and spendable funds. The payment account and receiving inventory must belong to the same registered citizen or business. If the current price exceeds the quoted price, it returns PRICE_CHANGED; a lower current price is accepted. Stock is not reserved by a quote. TryBuy retains immediate cheapest-first exact purchasing; TryBuyUpTo combines partial orders across sellers. Liquidation sales use their separate explicit API and are excluded from normal demand signals.
+
+The inventory transfer and payment are committed together, with ledger arithmetic checked first and bank balances restored if the inventory transfer fails. Successful purchases immediately update seller revenue, cost of goods sold, buyer acquisition value, and business stock purchases. Notifications do not apply those totals a second time.
+
+## Citizen shopping and demand observation
+
+Market registers a purchase action for each catalog item. Each candidate binds the specific seller EntityRef, quoted unit price, requested quantity, available quantity, and opening window. A purchase takes five game minutes, predicts the inventory increase, bank debit, and storage use, and commits only at successful completion. Cancelling it changes neither money nor stock. Quotes that become invalid cause failure and replanning. The planner checks money and storage across a sequence of purchases; eating predicts the storage that it frees.
+
+Food purchase actions extend the existing hunger goal through ICitizenMindService.AddGoalActions during registration. Citizens can plan buy/eat sequences using the original consumption handlers and needs effects. Other modules can add the generic purchase actions to their own goals. Purchasing does not create goods; an actual stocked supplier is required.
+
+CitizenDemandSystem observes active, living, hungry citizens who have no edible stock. It chooses one food intention, preferring affordable available food and comparing price per hunger relief. When no shop can supply it, it still reports that intention, using unavailable listings or catalog reference prices. This is separate from planning: an empty candidate list must not hide demand. Need resolution or a change of substitute clears the obsolete intention.
+
+ReportDemand and failed purchases track one outstanding quantity per buyer inventory and item. Repeating the same unsatisfied order updates that quantity rather than adding it again every tick. Partial purchases reduce the remainder; fulfillment clears it. A later purchase after fulfillment represents fresh demand. Explicitly reported failures remain in the rolling history after resolution. Insufficient funds, insufficient storage, closed sellers, unavailable service, changed quotes, and stock shortages remain distinct statuses.
+
+## Market measurements and adaptive policy
+
+GetStatistics(itemId, optionalSeller) returns a rolling game-day view:
+
+| Measurement | Meaning |
+|---|---|
+| SoldQuantity / Revenue | Completed normal sales and actual payments |
+| PendingQuantity | Outstanding requests, including currently available goods awaiting purchase |
+| UnmetQuantity | Outstanding requests currently blocked by a failure |
+| ShortageQuantity | Outstanding requests specifically blocked by missing stock |
+| DemandQuantity | Completed sales plus outstanding requests, without double-counting fulfilled shortages |
+| Failures | Historical failed quantities by reason; repeated retries of an outstanding request are deduplicated |
+| StockLevel / AverageStock | Current sellable inventory and the average of hourly stock samples |
+| InventoryTurnover | Sold units divided by sampled average stock; null when the average is zero |
+
+Measurements aggregate retail and wholesale trade. They are trade volumes, not a count of final consumption across a supply chain. Request observations expire after a day without renewal; sales, failures, and stock samples retain a rolling day. Removed sellers' historical sales remain in the global rolling totals until expiry.
+
+MarketSystem runs after BusinessSystem at priority -4; citizen demand observation runs at -3, before CitizenMind. Policy changes occur at most once per game hour. A long time jump applies one bounded adjustment, rather than inventing missed hourly observations.
+
+The adaptive signal includes sales, affordable pending orders, and stock shortages. Unaffordable interest is measured but does not raise the supply signal. Demand is smoothed with 75% of the previous estimate and 25% of the new estimate. Desired stock covers twice that measured daily demand, bounded between the configured baseline and four times the baseline. Each update changes the target by at most 25% of the baseline. Configured definitions are not rewritten.
+
+Production uses these raised output targets, while procurement scales resale stock and recipe inputs. When demand subsides, targets move gradually back toward their configured baseline. Physical labor, funds, inputs, utilities, and storage still constrain production and procurement.
+
+The base selling price is the greater of the configured floor and weighted inventory unit cost plus TargetMarkupPercent. The last sold unit cost is retained when stock runs out, preventing an empty shelf from erasing known cost. Stock pressure and effective demand set a scarcity multiplier between 1 and 2, moving by at most 0.05 per hour. Excess stock reduces the multiplier toward 1. Cost changes can still change the underlying base price; the movement limit applies to the scarcity multiplier.
 
 Electricity and water use separate kWh/litre buffers. Connected businesses buy supply toward UtilityBufferHours (default 24) plus recipe batch needs. Producers must have actual stock and a matching GridSupplyPolicy. Export rates apply across all consumers in a tick: 30 kW allows 2.5 kWh per five-minute tick. Utility output is never treated as free stock or discarded on completion.
 
@@ -123,4 +162,4 @@ dotnet build tests/CitizenSimulator.BusinessChecks --no-restore -m:1
 dotnet run --project tests/CitizenSimulator.BusinessChecks --no-build --no-restore
 ~~~
 
-The integration executable uses real ECS command playback, business ticks, market transactions, game-calendar time, and CitizenMind planning/execution. It covers conservation, readiness, attendance, payroll, blocked outputs, repeated completion/cancellation, crop timing, utilities, disposal units, procurement, lifecycle transitions, competing applications, resignation and arrears, overnight shifts, autonomous job acceptance and travel, and emergency interruption/resumption.
+The integration executable uses real ECS command playback, business ticks, market transactions, game-calendar time, and CitizenMind planning/execution. It covers conservation, readiness, attendance, payroll, blocked outputs, crop timing, utilities, procurement, lifecycle, job acceptance and resignation, overnight shifts, emergencies, seller-bound quotes, access checks, deduplicated shortages, partial fulfillment, demand-driven production and replenishment, bounded prices, and autonomous buy/eat plans with limited funds and storage.

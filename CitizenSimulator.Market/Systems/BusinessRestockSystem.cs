@@ -24,8 +24,8 @@ public sealed class BusinessRestockSystem(IMarketService market,
             if (business.State is not (BusinessState.Open or BusinessState.Closed) || business.Property.Destroyed)
                 continue;
 
-            RestockInventory(business);
             var recipes = businesses.GetRecipes().Where(recipe => business.Type.Recipes.Contains(recipe.Id)).ToArray();
+            RestockInventory(business, recipes);
             if (business.GridConnected)
                 RestockUtilities(business, recipes, allBusinesses);
 
@@ -33,15 +33,29 @@ public sealed class BusinessRestockSystem(IMarketService market,
         }
     }
 
-    private void RestockInventory(BusinessComponent business)
+    private void RestockInventory(BusinessComponent business, Recipe[] recipes)
     {
-        foreach (var policy in business.Type.StockPolicy)
+        var policies = business.Type.StockPolicy.ToDictionary(policy => policy.ItemId);
+        foreach (var recipe in recipes)
+        {
+            foreach (var (itemId, quantity) in recipe.Inputs)
+            {
+                policies.TryAdd(itemId, new StockPolicy { ItemId = itemId, ReorderBelow = quantity, TargetQuantity = quantity * 2 });
+            }
+        }
+
+        foreach (var policy in policies.Values)
         {
             decimal quantity = business.Inventory.GetQuantity(policy.ItemId) + business.Inventory.GetReservedQuantity(policy.ItemId);
-            if (quantity >= policy.ReorderBelow)
+            decimal target = market.GetRestockTarget(business, policy.ItemId, policy.TargetQuantity);
+            decimal reorderBelow = policy.ReorderBelow;
+            if (target > policy.TargetQuantity)
+                reorderBelow = Math.Max(reorderBelow, target / 2);
+
+            if (quantity >= reorderBelow)
                 continue;
 
-            decimal shortage = policy.TargetQuantity - quantity;
+            decimal shortage = target - quantity;
             market.TryBuyUpTo(business.Inventory, business.PaymentAccount, policy.ItemId, shortage);
         }
     }

@@ -13,6 +13,7 @@ public interface ICitizenMindService
     public void RegisterHandler(string id, IMindActionHandler handler);
     public void RegisterGoal(GoalDefinition goal);
     public void RegisterAction(ActionDefinition action);
+    public void AddGoalActions(string goalId, IEnumerable<string> actionIds);
 
     public void RegisterTimePredictor(string id, IElapsedTimePredictor predictor);
 
