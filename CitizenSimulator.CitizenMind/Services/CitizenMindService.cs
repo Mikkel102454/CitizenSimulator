@@ -25,8 +25,23 @@ public class CitizenMindService : ICitizenMindService
     internal readonly Dictionary<string, Func<EntityRef, IActionCandidateProvider>> CandidateProviderFactories = [];
     
     internal readonly Dictionary<string, CandidateProviderDescriptor> CandidateProviderDescriptors = [];
+    
+    private bool _registrationClosed;
+    
+    private void EnsureRegistrationOpen()
+    {
+        if (_registrationClosed)
+            throw new InvalidOperationException("CitizenMind registration is closed after simulation has started.");
+    }
+    
+    internal void CloseRegistration()
+    {
+        _registrationClosed = true;
+    }
+    
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)
     {
+        EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         
@@ -46,6 +61,7 @@ public class CitizenMindService : ICitizenMindService
 
     public void RegisterHandler(string id, IMindActionHandler handler)
     {
+        EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(handler);
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         
@@ -55,6 +71,7 @@ public class CitizenMindService : ICitizenMindService
     
     public void RegisterGoal(GoalDefinition goal)
     {
+        EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(goal);
         ArgumentException.ThrowIfNullOrWhiteSpace(goal.Id);
 
@@ -66,6 +83,7 @@ public class CitizenMindService : ICitizenMindService
     
     public void RegisterAction(ActionDefinition action)
     {
+        EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(action);
         ArgumentException.ThrowIfNullOrWhiteSpace(action.Id);
 
@@ -76,7 +94,7 @@ public class CitizenMindService : ICitizenMindService
         Actions.Add(action.Id, action);
     }
     
-    public EvaluationContext CreateEvaluationContext(EntityRef citizen)
+    public EvaluationContext CreateEvaluationContext(EntityRef citizen, TimeSpan gameTime)
     {
         var facts = new Dictionary<string, object?>();
 
@@ -87,12 +105,14 @@ public class CitizenMindService : ICitizenMindService
 
         return new EvaluationContext
         {
-            Facts = facts
+            Facts = facts,
+            GameTime = gameTime
         };
     }
     
     public void RegisterCandidateProvider(CandidateProviderDescriptor descriptor, Func<EntityRef, IActionCandidateProvider> factory)
     {
+        EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(descriptor);
         ArgumentNullException.ThrowIfNull(factory);
         ArgumentException.ThrowIfNullOrWhiteSpace(descriptor.Id);

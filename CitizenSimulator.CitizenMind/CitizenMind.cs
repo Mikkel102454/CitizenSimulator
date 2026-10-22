@@ -2,6 +2,7 @@
 using CitizenSimulator.Abstractions.Modding;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.CitizenMind.Executor;
+using CitizenSimulator.CitizenMind.Executor.Handlers;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Services;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
@@ -18,6 +19,7 @@ public class CitizenMind : IMod
     {
         CitizenMindService citizenMindService = new CitizenMindService();
         context.Services.Register<ICitizenMindService>(citizenMindService);
+        citizenMindService.RegisterHandler("citizen_mind.wait_until", new WaitUntilHandler());
         
         GoalSelector goalSelector = new GoalSelector(citizenMindService);
         ICalenderService calenderService = context.Services.Get<ICalenderService>();

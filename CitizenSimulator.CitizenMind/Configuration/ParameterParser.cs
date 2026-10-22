@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using CitizenSimulator.CitizenMind.Definitions;
 
@@ -61,6 +62,6 @@ internal static class ParameterParser
             values.Add(name, Parse(definition, $"Action '{actionId}' parameter '{name}'"));
         }
 
-        return values;
+        return new ReadOnlyDictionary<string, object?>(values);
     }
 }

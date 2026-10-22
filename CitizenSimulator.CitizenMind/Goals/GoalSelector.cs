@@ -6,12 +6,12 @@ namespace CitizenSimulator.CitizenMind.Services;
 
 public class GoalSelector(CitizenMindService citizenMindService)
 {
-    public GoalDefinition? SelectGoals(MindComponent mindComponent, ulong currentTick, bool emergenciesOnly = false)
+    public GoalDefinition? SelectGoals(MindComponent mindComponent, ulong currentTick, TimeSpan gameTime, bool emergenciesOnly = false)
     {
         Dictionary<GoalDefinition, double> eligibleGoals = new Dictionary<GoalDefinition, double>();
         Dictionary<GoalDefinition, int> emergencyGoals = new Dictionary<GoalDefinition, int>();
         
-        var context = citizenMindService.CreateEvaluationContext(mindComponent.Parent);
+        var context = citizenMindService.CreateEvaluationContext(mindComponent.Parent, gameTime);
         
         foreach (var goal in citizenMindService.Goals.Values)
         {

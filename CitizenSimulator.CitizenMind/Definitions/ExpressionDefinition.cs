@@ -21,4 +21,6 @@ public sealed class ExpressionDefinition
     public string? Parameter { get; init; }
     
     public string? Calculated { get; init; }
+    
+    public string? Time { get; init; }
 }

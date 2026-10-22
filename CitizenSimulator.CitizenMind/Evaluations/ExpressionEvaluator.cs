@@ -38,6 +38,18 @@ public class ExpressionEvaluator
     /// <exception cref="DivideByZeroException">There was division by 0 in math equation</exception>
     public static object? Resolve(EvaluationContext context, ExpressionDefinition definition, ExpressionEvaluationMode mode = ExpressionEvaluationMode.Standard)
     {
+        if (definition.Time != null)
+        {
+            return definition.Time switch
+            {
+                "totalMinutes" => context.GameTime.TotalMinutes,
+                "minuteOfDay" => context.GameTime.TotalMinutes % 1440,
+
+                _ => throw new InvalidOperationException(
+                    $"Unknown time value '{definition.Time}'.")
+            };
+        }
+        
         if (definition.Fact != null)
         {
             if (!context.Facts.TryGetValue(definition.Fact, out var value))

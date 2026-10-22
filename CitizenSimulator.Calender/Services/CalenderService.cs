@@ -9,7 +9,7 @@ public class CalenderService : ICalenderService
     internal ulong TickOfDay;
     public ulong GetTicksPerDay()
     {
-        return 24 * 60; // each tick is 1 minute
+        return (24 * 60 / 5); // each tick is 5 minute
     }
 
     public ulong GetTickOfDay()
@@ -24,5 +24,12 @@ public class CalenderService : ICalenderService
         int minute = (int)(TickOfDay * 1440 / ticksPerDay % 60);
 
         return $"{hour}:{minute}";
+    }
+    
+    public TimeSpan GetGameTime(ulong tick)
+    {
+        decimal timeSpanTicks = (decimal)tick * TimeSpan.TicksPerDay / GetTicksPerDay();
+
+        return TimeSpan.FromTicks((long)timeSpanTicks);
     }
 }

@@ -1,13 +1,14 @@
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
+using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Services;
 
 namespace CitizenSimulator.CitizenMind.Executor;
 
 public class ActionExecutor(CitizenMindService service)
 {
-    private ActionResult StartStep(EntityRef citizen, PlanExecutionState execution)
+    private ActionResult StartStep(EntityRef citizen, PlanExecutionState execution, TimeSpan gameTime)
     {
         if (execution.StepIndex < 0 || execution.StepIndex >= execution.Plan.PlanSteps.Count)
         {
@@ -24,20 +25,10 @@ public class ActionExecutor(CitizenMindService service)
         if (!service.Handler.TryGetValue(action.Handler, out var handler))
             throw new InvalidOperationException($"Unknown action handler '{action.Handler}'.");
 
-        var live = service.CreateEvaluationContext(citizen);
+        var live = service.CreateEvaluationContext(citizen, gameTime);
         
-        var context = new EvaluationContext
-        {
-            Facts = live.Facts,
-            Parameters = action.ResolvedParameters,
-            Bindings = candidate.Bindings
-        };
-
-        foreach (var precondition in action.Preconditions)
-        {
-            if (!ExpressionEvaluator.Evaluate(context, precondition))
-                return ActionResult.FAILED;
-        }
+        if (!ActionPlanner.TryEvaluateAction(candidate, live, out _, out _))
+            return ActionResult.FAILED;
 
         execution.Before = new Dictionary<string, object?>(live.Facts, live.Facts.Comparer);
 
@@ -48,17 +39,18 @@ public class ActionExecutor(CitizenMindService service)
         {
             Parameters = action.ResolvedParameters,
             Bindings = candidate.Bindings,
+            GameTime = gameTime
         };
 
         return handler.Start(actionContext);
     }
     
-    private bool IsStepComplete(EntityRef citizen, PlanExecutionState execution)
+    private bool IsStepComplete(EntityRef citizen, PlanExecutionState execution, TimeSpan gameTime)
     {
         var step = execution.Plan.PlanSteps[execution.StepIndex];
         var candidate = step.Candidate;
         var action = candidate.Definition;
-        var live = service.CreateEvaluationContext(citizen);
+        var live = service.CreateEvaluationContext(citizen, gameTime);
 
         var context = new EvaluationContext
         {
@@ -66,6 +58,7 @@ public class ActionExecutor(CitizenMindService service)
             Before = execution.Before,
             Parameters = action.ResolvedParameters,
             Bindings = candidate.Bindings,
+            GameTime = live.GameTime,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = step.DurationMinutes
@@ -81,7 +74,7 @@ public class ActionExecutor(CitizenMindService service)
         return true;
     }
     
-    private void HandleResult(EntityRef citizen, PlanExecutionState execution, ActionResult result)
+    private void HandleResult(EntityRef citizen, PlanExecutionState execution, ActionResult result, TimeSpan gameTime)
     {
         switch (result)
         {
@@ -93,7 +86,7 @@ public class ActionExecutor(CitizenMindService service)
                 return;
 
             case ActionResult.SUCCEEDED:
-                if (!IsStepComplete(citizen, execution))
+                if (!IsStepComplete(citizen, execution, gameTime))
                 {
                     FailExecution(citizen, execution);
                     return;
@@ -114,7 +107,7 @@ public class ActionExecutor(CitizenMindService service)
         }
     }
     
-    public void Update(EntityRef citizen, PlanExecutionState execution, TimeSpan gameDelta)
+    public void Update(EntityRef citizen, PlanExecutionState execution, TimeSpan gameDelta, TimeSpan gameTime)
     {
         if (gameDelta < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(gameDelta));
@@ -124,8 +117,8 @@ public class ActionExecutor(CitizenMindService service)
 
         if (!execution.Started)
         {
-            var startResult = StartStep(citizen, execution);
-            HandleResult(citizen, execution, startResult);
+            var startResult = StartStep(citizen, execution, gameTime);
+            HandleResult(citizen, execution, startResult, gameTime);
             return;
         }
 
@@ -170,7 +163,8 @@ public class ActionExecutor(CitizenMindService service)
         var context = new ActionContext(citizen, execution.Elapsed, stepDelta)
         {
             Parameters = action.ResolvedParameters,
-            Bindings = candidate.Bindings
+            Bindings = candidate.Bindings,
+            GameTime = gameTime
         };
 
         var result = handler.Tick(context);
@@ -181,7 +175,7 @@ public class ActionExecutor(CitizenMindService service)
             return;
         }
 
-        HandleResult(citizen, execution, result);
+        HandleResult(citizen, execution, result, gameTime);
     }
     
     public bool Cancel(EntityRef citizen, PlanExecutionState execution, bool force = false)

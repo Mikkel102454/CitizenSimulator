@@ -9,7 +9,6 @@ using CitizenSimulator.CitizenMind.Executor;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Services;
-using CitizenSimulator.CitizenMind.Services.Abstractions;
 
 namespace CitizenSimulator.CitizenMind.Systems;
 
@@ -20,6 +19,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     protected override void OnStart(ICommandBuffer commands)
     {
         MindDefinitionValidator.Validate(service);
+        service.CloseRegistration();
     }
     
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
@@ -49,7 +49,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                     if (TrySwitchToEmergency(entity, mind, time.Tick, retryDelayTicks))
                         continue;
                     
-                    executor.Update(entity, mind.Execution, gameDelta);
+                    executor.Update(entity, mind.Execution, gameDelta, calender.GetGameTime(time.Tick));
                 }
                 else
                 {
@@ -64,7 +64,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
             }
             
-            var goal = goalSelector.SelectGoals(mind, time.Tick);
+            var goal = goalSelector.SelectGoals(mind, time.Tick, calender.GetGameTime(time.Tick));
 
             if (goal == null)
             {
@@ -72,7 +72,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
             }
 
-            var result = PlanForGoal(entity, goal);
+            var result = PlanForGoal(entity, goal, time.Tick);
 
             switch (result.Status)
             {
@@ -138,9 +138,9 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             CleanupMind(entity, mind);
     }
 
-    private PlanResult PlanForGoal(EntityRef citizen, GoalDefinition goal)
+    private PlanResult PlanForGoal(EntityRef citizen, GoalDefinition goal, ulong currentTick)
     {
-        var state = service.CreateEvaluationContext(citizen);
+        var state = service.CreateEvaluationContext(citizen, calender.GetGameTime(currentTick));
 
         var relevantActions = ActionDependencyResolver.Resolve(goal, service.Actions);
 
@@ -151,7 +151,9 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
     
     private bool TrySwitchToEmergency(EntityRef citizen, MindComponent mind, ulong currentTick, ulong retryDelayTicks)
     {
-        var emergency = goalSelector.SelectGoals(mind, currentTick, emergenciesOnly: true);
+        var gameTime = calender.GetGameTime(currentTick);
+        
+        var emergency = goalSelector.SelectGoals(mind, currentTick, gameTime, emergenciesOnly: true);
 
         if (emergency == null || emergency.Id == mind.CurrentGoal?.Id)
             return false;
@@ -166,7 +168,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
         if (currentEmergency != null)
         {
-            var live = service.CreateEvaluationContext(citizen);
+            var live = service.CreateEvaluationContext(citizen, gameTime);
 
             if (ExpressionEvaluator.Evaluate(live, currentEmergency.When) && currentEmergency.Priority >= emergency.Emergency!.Priority)
                 return false;
@@ -180,7 +182,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 return false;
         }
 
-        var result = PlanForGoal(citizen, emergency);
+        var result = PlanForGoal(citizen, emergency, currentTick);
 
         if (result.Status == PlanStatus.NO_PATH || result.Status == PlanStatus.BUDGET_EXCEEDED)
         {

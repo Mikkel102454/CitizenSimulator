@@ -33,6 +33,7 @@ public class ActionPlanner
             Facts = state.Facts,
             Parameters = action.ResolvedParameters,
             Bindings = candidate.Bindings,
+            GameTime = state.GameTime,
             Calculated = []
         };
 
@@ -50,6 +51,9 @@ public class ActionPlanner
         double duration = Convert.ToDouble(durationObject);
 
         durationMinutes = DurationConverter.ToMinutes(duration, action.Duration.Unit);
+        
+        if (!candidate.IsAvailable(state.GameTime, TimeSpan.FromMinutes(durationMinutes)))
+            return false;
         
         context.Calculated.Add("durationMinutes", durationMinutes);
         
@@ -111,6 +115,38 @@ public class ActionPlanner
         int expansions = 0;
         bool depthLimitReached = false;
         
+        void ExploreCandidate(SearchNode parent, ActionCandidate candidate)
+        {
+            if (!TryEvaluateAction(candidate, parent.State, out var duration, out var actionCost))
+                return;
+
+
+            double totalCost = parent.TotalCost + actionCost;
+
+            if (!double.IsFinite(totalCost))
+                throw new InvalidOperationException("Total plan cost must be finite.");
+
+            var predicted = ActionPredictor.Predict(candidate, parent.State, duration, descriptors);
+
+            if (HaveSameState(parent.State, predicted))
+                return;
+
+            var child = new SearchNode
+            {
+                State = predicted,
+                Parent = parent,
+                Candidate = candidate,
+                DurationMinutes = duration,
+                TotalCost = totalCost,
+                Depth = parent.Depth + 1
+            };
+
+            if (!TryRememberNode(child, known))
+                return;
+
+            frontier.Enqueue(child, (child.TotalCost, order++));
+        }
+        
         while (frontier.TryDequeue(out var current, out _))
         {
             if (!known.Contains(current))
@@ -142,6 +178,8 @@ public class ActionPlanner
 
             expansions++;
 
+            var waitTargets = new SortedSet<TimeSpan>();
+            
             foreach (var action in allowedActions)
             {
                 var candidates = GetCandidates(action, current.State, providers);
@@ -158,36 +196,30 @@ public class ActionPlanner
 
                 ValidateCandidates(action, candidates, providerDescriptor);
 
-                foreach (var candidate in candidates.OrderBy(candidate => candidate.Id))
+                foreach (var sourceCandidate in candidates.OrderBy(candidate => candidate.Id))
                 {
-                    if (!TryEvaluateAction(candidate, current.State, out var duration, out var actionCost))
-                        continue;
-
-                    double totalCost = current.TotalCost + actionCost;
-
-                    if (!double.IsFinite(totalCost))
-                        throw new InvalidOperationException("Total plan cost must be finite.");
-
-                    var predicted = ActionPredictor.Predict(candidate, current.State, duration, descriptors);
-
-                    if (HaveSameFacts(current.State.Facts, predicted.Facts))
-                        continue;
+                    var candidate = SnapshotCandidate(sourceCandidate);
                     
-                    var child = new SearchNode
-                    {
-                        State = predicted,
-                        Parent = current,
-                        Candidate = candidate,
-                        DurationMinutes = duration,
-                        TotalCost = totalCost,
-                        Depth = current.Depth + 1
-                    };
-
-                    if (!TryRememberNode(child, known))
-                        continue;
+                    foreach (var opening in candidate.GetUpcomingOpeningTimes(current.State.GameTime))
+                        waitTargets.Add(opening);
                     
-                    frontier.Enqueue(child, (child.TotalCost, order++));
+                    ExploreCandidate(current, candidate);
                 }
+            }
+            
+            if (waitTargets.Count > options.MaxCandidatesPerAction)
+            {
+                return new PlanResult
+                {
+                    Status = PlanStatus.BUDGET_EXCEEDED
+                };
+            }
+            
+            foreach (var target in waitTargets)
+            {
+                ExploreCandidate(
+                    current,
+                    WaitCandidateFactory.Create(target));
             }
         }
         
@@ -227,7 +259,7 @@ public class ActionPlanner
 
         return new ActionPlan
         {
-            PlanSteps = steps,
+            PlanSteps = steps.AsReadOnly(),
             TotalCost = goalNode.TotalCost
         };
     }
@@ -315,8 +347,14 @@ public class ActionPlanner
         }
     }
     
+    private static bool HaveSameState(EvaluationContext first, EvaluationContext second)
+    {
+        return first.GameTime == second.GameTime && HaveSameFacts(first.Facts, second.Facts);
+    }
+    
     private static bool HaveSameFacts(IReadOnlyDictionary<string, object?> first, IReadOnlyDictionary<string, object?> second)
     {
+        
         if (first.Count != second.Count)
             return false;
 
@@ -334,7 +372,7 @@ public class ActionPlanner
         foreach (var existing in known)
         {
             if (existing.TotalCost <= candidate.TotalCost && existing.Depth <= candidate.Depth && 
-                HaveSameFacts(existing.State.Facts, candidate.State.Facts))
+                HaveSameState(existing.State, candidate.State))
             {
                 return false;
             }
@@ -343,9 +381,23 @@ public class ActionPlanner
         known.RemoveAll(existing =>
             candidate.TotalCost <= existing.TotalCost &&
             candidate.Depth <= existing.Depth &&
-            HaveSameFacts(candidate.State.Facts, existing.State.Facts));
+            HaveSameState(candidate.State, existing.State));
 
         known.Add(candidate);
         return true;
+    }
+    
+    private static ActionCandidate SnapshotCandidate(ActionCandidate source)
+    {
+        var bindings = new Dictionary<string, object?>(source.Bindings);
+
+        return new ActionCandidate
+        {
+            Id = source.Id,
+            Definition = source.Definition,
+            Bindings = new System.Collections.ObjectModel.ReadOnlyDictionary<string, object?>(bindings),
+            Availability = source.Availability?.ToList().AsReadOnly(),
+            DailyAvailability = source.DailyAvailability?.ToList().AsReadOnly(),
+        };
     }
 }

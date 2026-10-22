@@ -32,6 +32,7 @@ public class ActionPredictor
             Facts = state.Facts,
             Parameters = action.ResolvedParameters,
             Bindings = candidate.Bindings,
+            GameTime = state.GameTime,
             Calculated = new Dictionary<string, double>
             {
                 ["durationMinutes"] = durationMinutes
@@ -111,7 +112,8 @@ public class ActionPredictor
 
         return new EvaluationContext
         {
-            Facts = facts
+            Facts = facts,
+            GameTime = state.GameTime + TimeSpan.FromMinutes(durationMinutes)
         };
     }
     

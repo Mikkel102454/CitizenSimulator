@@ -157,7 +157,8 @@ public class MindDefinitionValidator
         if (expression.Before != null) forms++;
         if (expression.Op != null) forms++;
         if (expression.Binding != null) forms++;
-
+        if (expression.Time != null) forms++;
+        
         if (forms != 1)
             throw new InvalidOperationException($"[CitizenMind] {location}: an expression must specify exactly one form.");
 
@@ -195,6 +196,8 @@ public class MindDefinitionValidator
         if (expression.Before != null && !service.Facts.ContainsKey(expression.Before))
             throw new InvalidOperationException($"[CtitizenMind] {location}: unknown before-action fact '{expression.Before}'.");
 
+        if (expression.Time != null && expression.Time is not ("totalMinutes" or "minuteOfDay"))
+            throw new InvalidOperationException($"[CitizenMind] {location}: unknown time value " + $"'{expression.Time}'.");
         
         for (int i = 0; i < expression.Args.Count; i++)
             ValidateExpression(expression.Args[i], $"{location}.args[{i}]", service, action, allowBefore, allowCalculated);
