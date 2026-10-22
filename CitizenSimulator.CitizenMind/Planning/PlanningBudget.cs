@@ -7,6 +7,7 @@ namespace CitizenSimulator.CitizenMind.Planning;
 /// </summary>
 public sealed class PlanningBudget
 {
+    internal PlanningMeasurement? Measurement { get; init; }
     public int Remaining { get; private set; }
     public int Consumed { get; private set; }
 

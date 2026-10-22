@@ -5,6 +5,7 @@ namespace CitizenSimulator.CitizenMind.Planning;
 
 public sealed class CandidateProviderSnapshot
 {
+    internal PlanningMeasurement? Measurement { get; init; }
     public required CandidateProviderDescriptor Descriptor { get; init; }
 
     public required IActionCandidateProvider Provider { get; init; }

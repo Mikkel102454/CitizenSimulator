@@ -273,6 +273,10 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
     }
     
     public IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateCandidateProviders(EntityRef citizen, IEnumerable<ActionDefinition> definitions)
+        => CreateCandidateProviders(citizen, definitions, null);
+
+    internal IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateCandidateProviders(EntityRef citizen,
+        IEnumerable<ActionDefinition> definitions, PlanningMeasurement? measurement)
     {
         var providers = new Dictionary<string, CandidateProviderSnapshot>();
 
@@ -284,7 +288,16 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
             if (!CandidateProviderFactories.TryGetValue(id, out var factory))
                 throw new InvalidOperationException($"Unknown candidate provider '{id}'.");
 
-            var provider = factory(citizen) ?? throw new InvalidOperationException($"Candidate provider factory '{id}' returned null.");
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            IActionCandidateProvider provider;
+            try
+            {
+                provider = factory(citizen) ?? throw new InvalidOperationException($"Candidate provider factory '{id}' returned null.");
+            }
+            finally
+            {
+                measurement?.RecordProvider(id, System.Diagnostics.Stopwatch.GetElapsedTime(started), true);
+            }
 
             
             if (!CandidateProviderDescriptors.TryGetValue(id, out var descriptor))
@@ -293,7 +306,8 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
             providers.Add(id, new CandidateProviderSnapshot
             {
                 Descriptor = descriptor,
-                Provider = provider
+                Provider = provider,
+                Measurement = measurement
             });
         }
 

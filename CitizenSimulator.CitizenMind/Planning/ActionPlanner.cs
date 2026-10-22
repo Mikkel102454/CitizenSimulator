@@ -149,10 +149,17 @@ public class ActionPlanner
         if (!providers.TryGetValue(action.CandidateProvider, out var snapshot))
             throw new InvalidOperationException($"Unknown candidate provider '{action.CandidateProvider}'.");
 
-        var candidates = snapshot.Provider.GetCandidates(action, state) 
-                         ?? throw new InvalidOperationException($"Provider '{action.CandidateProvider}' returned null.");
-
-        return candidates;
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        try
+        {
+            return snapshot.Provider.GetCandidates(action, state)
+                ?? throw new InvalidOperationException($"Provider '{action.CandidateProvider}' returned null.");
+        }
+        finally
+        {
+            snapshot.Measurement?.RecordProvider(action.CandidateProvider,
+                System.Diagnostics.Stopwatch.GetElapsedTime(started), false);
+        }
     }
     
     internal static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates, CandidateProviderDescriptor? descriptor)

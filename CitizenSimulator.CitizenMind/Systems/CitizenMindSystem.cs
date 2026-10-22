@@ -24,6 +24,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
     public int PendingPlanningCount => _planning.Count;
     public int PlanningWorkLastTick => _planning.WorkLastTick;
+    public PlanningDiagnostics GetPlanningDiagnostics() => _planning.GetDiagnostics();
 
     protected override void OnStart(ICommandBuffer commands)
     {
@@ -162,7 +163,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
     private void QueueSearch(EntityRef citizen, MindComponent mind, GoalSelection selection)
         => _planning.Enqueue(CreateJob(citizen, mind, selection, PlanningJobKind.SEARCH,
-            time => CreateSearch(citizen, selection, mind, time)));
+            (time, measurement) => CreateSearch(citizen, selection, mind, time, measurement)));
 
     private void QueueValidation(EntityRef citizen, MindComponent mind, PlanExecutionState execution)
     {
@@ -177,12 +178,13 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             Status = PlanStatus.FOUND, Plan = remaining, Reservations = execution.Reservations
         };
         _planning.Enqueue(CreateJob(citizen, mind, selection, PlanningJobKind.VALIDATION,
-            _ => new CompletedPlanningSearch(result), execution));
+            (_, _) => new CompletedPlanningSearch(result), execution));
     }
 
     private PlanningJob CreateJob(EntityRef citizen, MindComponent mind, GoalSelection selection,
-        PlanningJobKind kind, Func<TimeSpan, IPlanningSearch> create, PlanExecutionState? execution = null)
+        PlanningJobKind kind, Func<TimeSpan, PlanningMeasurement, IPlanningSearch> create, PlanExecutionState? execution = null)
     {
+        var measurement = new PlanningMeasurement();
         var priority = selection.IsEmergency
             ? (0, -(long)selection.Goal.Emergency!.Priority, long.MinValue)
             : selection.Commitment is { } entry
@@ -209,19 +211,20 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             Citizen = citizen, Kind = kind, Selection = selection,
             ScheduleRevision = mind.ScheduleRevision, Priority = priority,
             ExpectedExecution = execution, ExpectedStepIndex = execution?.StepIndex ?? 0,
-            CreateSearch = create, IsRelevant = IsRelevant, CanApply = CanApply,
-            Validate = (result, time) => ValidateResult(citizen, selection, mind, result, time)
+            Measurement = measurement,
+            CreateSearch = time => create(time, measurement), IsRelevant = IsRelevant, CanApply = CanApply,
+            Validate = (result, time) => ValidateResult(citizen, selection, mind, result, time, measurement)
         };
     }
 
     private IPlanningSearch CreateSearch(EntityRef citizen, GoalSelection selection,
-        MindComponent mind, TimeSpan gameTime)
+        MindComponent mind, TimeSpan gameTime, PlanningMeasurement measurement)
     {
         var state = service.CreateEvaluationContext(citizen, gameTime);
         var horizon = gameTime + _plannerOptions.MaxPlanDuration;
         var remaining = GetRemainingCommitments(mind, selection, horizon);
         var goals = remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal);
-        var providers = CreateProviders(citizen, goals);
+        var providers = CreateProviders(citizen, goals, measurement);
         int checks = 0;
 
         IPlanningSearch Forecast(int index, EvaluationContext projected)
@@ -284,15 +287,15 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             .Select(entry => entry.Commitment).ToArray();
 
     private IReadOnlyDictionary<string, CandidateProviderSnapshot> CreateProviders(
-        EntityRef citizen, IEnumerable<GoalDefinition> goals)
+        EntityRef citizen, IEnumerable<GoalDefinition> goals, PlanningMeasurement measurement)
     {
         var actions = goals.SelectMany(goal => ActionDependencyResolver.Resolve(goal, service.Actions))
             .DistinctBy(action => action.Id).ToArray();
-        return service.CreateCandidateProviders(citizen, actions);
+        return service.CreateCandidateProviders(citizen, actions, measurement);
     }
 
     private PlanResult? ValidateResult(EntityRef citizen, GoalSelection selection,
-        MindComponent mind, PlanResult result, TimeSpan gameTime)
+        MindComponent mind, PlanResult result, TimeSpan gameTime, PlanningMeasurement measurement)
     {
         var state = service.CreateEvaluationContext(citizen, gameTime);
         if (selection.IsEmergency && (selection.Goal.Emergency == null ||
@@ -300,7 +303,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             return null;
         var remaining = GetRemainingCommitments(mind, selection, gameTime + _plannerOptions.MaxPlanDuration);
         var providers = CreateProviders(citizen,
-            remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal));
+            remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal), measurement);
         return PlanValidator.Validate(selection.Goal, result, state, service.FactDescriptors,
             providers, service.TimePredictors, _plannerOptions, selection.Commitment?.Commitment.Window, remaining);
     }

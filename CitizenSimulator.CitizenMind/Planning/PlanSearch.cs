@@ -98,7 +98,7 @@ public sealed class PlanSearch : IPlanningSearch
             if (_expandPending)
             {
                 _expandPending = false;
-                ExpandCurrent();
+                ExpandCurrent(budget);
                 _current = null;
                 continue;
             }
@@ -136,7 +136,7 @@ public sealed class PlanSearch : IPlanningSearch
                 }
             }
 
-            ExpandCurrent();
+            ExpandCurrent(budget);
             _current = null;
         }
     }
@@ -152,7 +152,7 @@ public sealed class PlanSearch : IPlanningSearch
         };
     }
 
-    private void ExpandCurrent()
+    private void ExpandCurrent(PlanningBudget budget)
     {
         var current = _current!;
         if (current.Depth >= _options.MaxDepth)
@@ -167,6 +167,7 @@ public sealed class PlanSearch : IPlanningSearch
         }
 
         Expansions++;
+        if (budget.Measurement is { } measurement) measurement.Expansions++;
         var waitTargets = new SortedSet<TimeSpan>();
         if (_constraints?.GoalWindow is { } goalWindow && goalWindow.Start > current.State.GameTime)
         {

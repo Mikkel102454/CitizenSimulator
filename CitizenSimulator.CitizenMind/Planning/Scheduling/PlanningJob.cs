@@ -9,6 +9,7 @@ internal enum PlanningJobKind { SEARCH, VALIDATION }
 
 internal sealed class PlanningJob
 {
+    public PlanningMeasurement Measurement { get; init; } = new();
     public required EntityRef Citizen { get; init; }
     public required PlanningJobKind Kind { get; init; }
     public required GoalSelection Selection { get; init; }
