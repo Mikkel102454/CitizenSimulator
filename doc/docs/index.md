@@ -14,6 +14,8 @@ The host discovers assemblies under `Mods` beside the executable. It resolves de
 6. [Time and input](timing.md) covers every clock property, control request, and input event.
 7. [Troubleshooting](troubleshooting.md) explains common failures and verification.
 8. [CitizenMind](citizen-mind/index.md) covers citizen decisions, mod integration, goal and action YAML, and schedules.
+9. [Business operation and production](business.md) covers setup, employment, production, procurement, utilities, accounting, and lifecycle.
+10. [Coding conventions](coding-conventions.md) explains formatting, naming, and readability expectations for new code.
 
 ## Context properties
 

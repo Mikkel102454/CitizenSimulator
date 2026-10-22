@@ -61,7 +61,8 @@
   "salesPolicy": {
     "channels": ["retail", "wholesale"],
     "sellItems": {
-      "food.bread": 13
+      "food.bread": 13,
+      "waste.organic": 0.1
     },
     "targetMarkupPercent": 30,
     "customersServedPerWorkerHour": 20

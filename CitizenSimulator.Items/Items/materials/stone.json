@@ -1,7 +1,8 @@
-﻿{
+{
   "id": "material.stone",
   "name": "Stone",
   "description": "A basic construction material.",
   "consumable": false,
+  "quantityStep": 0.001,
   "effects": []
 }

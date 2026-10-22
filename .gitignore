@@ -1,5 +1,5 @@
 .idea
-*/bin
-*/obj
+**/bin/
+**/obj/
 CitizenSimulator.sln.DotSettings.user
 todo.md

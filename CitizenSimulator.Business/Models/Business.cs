@@ -3,7 +3,6 @@ namespace CitizenSimulator.Business.Models;
 public class Business
 {
     internal static List<Business> BusinessList { get; } = [];
-
     public string Id { get; init; } = "";
     public string Name { get; init; } = "";
     public List<string> Recipes { get; init; } = [];
@@ -17,4 +16,7 @@ public class Business
     public SalesPolicy? SalesPolicy { get; init; }
     public DisposalPolicy? DisposalPolicy { get; init; }
     public GridSupplyPolicy? GridSupplyPolicy { get; init; }
+    public decimal MinimumCapital { get; init; }
+    public decimal BankruptcyGraceDays { get; init; } = 7;
+    public Dictionary<string, decimal> ProductionTargets { get; init; } = [];
 }

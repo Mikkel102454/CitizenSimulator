@@ -1,7 +1,8 @@
-﻿{
+{
   "id": "material.flour",
   "name": "Flour",
   "description": "Flour used for making bread.",
   "consumable": false,
+  "quantityStep": 0.001,
   "effects": []
 }

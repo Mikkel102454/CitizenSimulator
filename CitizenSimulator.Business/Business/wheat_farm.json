@@ -52,7 +52,8 @@
       "wholesale"
     ],
     "sellItems": {
-      "material.wheat": 3
+      "material.wheat": 3,
+      "waste.organic": 0.1
     },
     "targetMarkupPercent": 30,
     "customersServedPerWorkerHour": 20

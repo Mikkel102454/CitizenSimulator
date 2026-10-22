@@ -1,0 +1,13 @@
+{
+  "id": "business.water_works",
+  "name": "Water Works",
+  "recipes": ["recipe.water"],
+  "premises": {"allowedUses": ["industrial"], "minimumAreaM2": 100, "storageCapacity": 100},
+  "workforce": [{"role": "water_operator", "desiredCount": 1, "minimumSkill": 1, "startingHourlyWage": 125}],
+  "equipment": [{"equipmentId": "equipment.water_pump", "count": 1}],
+  "openingHours": [{"days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"], "opens": "00:00", "closes": "23:59"}],
+  "utilities": {"electricityKwhPerOperatingHour": 1, "waterLitresPerOperatingHour": 0},
+  "operatingCosts": {"insurancePerDay": 10, "maintenanceBudgetPerDay": 15},
+  "gridSupplyPolicy": {"utility": "water", "connectionRequired": true, "maxExportPerHour": 1000, "unitPrice": 0.01},
+  "stockPolicy": []
+}

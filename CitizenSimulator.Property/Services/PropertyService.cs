@@ -9,18 +9,25 @@ namespace CitizenSimulator.Property.Services;
 
 public class PropertyService(IEntityStore store, IEventBus events) : IPropertyService
 {
-    public bool CreateProperty(ICommandBuffer commands, EntityRef entityRef, PropertyComponent.PropertyType type, int capacity, 
-        double baseValue, CitizenComponent? owner, out PropertyComponent? outProperty)
+    public bool CreateProperty(ICommandBuffer commands,
+        EntityRef entityRef,
+        PropertyComponent.PropertyType type,
+        int capacity,
+        decimal areaM2,
+        double baseValue,
+        CitizenComponent? owner,
+        out PropertyComponent? outProperty)
     {
-        if (store.HasComponent<PropertyComponent>(entityRef))
+        if (areaM2 <= 0 || store.HasComponent<PropertyComponent>(entityRef))
         {
             outProperty = null;
             return false;
         }
-        
+
         outProperty = commands.AddComponent(entityRef, new PropertyComponent());
         outProperty.Type = type;
         outProperty.Capacity = capacity;
+        outProperty.AreaM2 = areaM2;
         outProperty.BaseValue = baseValue;
         outProperty.Owner = owner;
         events.Publish(new OnPropertyCreated(outProperty));

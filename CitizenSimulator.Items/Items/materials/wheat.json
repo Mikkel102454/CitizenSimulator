@@ -3,5 +3,6 @@
   "name": "Wheat",
   "description": "Harvested wheat. One inventory unit represents one kilogram.",
   "consumable": false,
+  "quantityStep": 0.001,
   "effects": []
 }

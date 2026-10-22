@@ -14,10 +14,9 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
             outVault = null;
             return false;
         }
-        
+
         outVault = commands.AddComponent(entityRef, new VaultComponent());
         outVault.Name = name;
-
         return true;
     }
 
@@ -33,7 +32,6 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
         {
             Vault = vault
         };
-        
         outAccount.Balance = 0;
         vault.Accounts.Add(outAccount);
         return true;
@@ -48,29 +46,34 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
 
     public bool AddBalance(BankAccountComponent account, decimal amount)
     {
-        if(amount <= 0)
-            throw new ArgumentException("Amount must be greater than zero");
-        
+        if (amount <= 0 || account.Balance > decimal.MaxValue - amount)
+            return false;
+
         account.Balance += amount;
-        
         return true;
     }
 
     public bool RemoveBalance(BankAccountComponent account, decimal amount)
     {
-        if(amount >= 0)
-            throw new ArgumentException("Amount must be greater than zero");
-        
+        if (amount <= 0 || account.Balance < amount)
+            return false;
+
         account.Balance -= amount;
-        
         return true;
     }
 
-    public bool TransferBalance(BankAccountComponent senderAccount, BankAccountComponent receiverAccount, decimal amount)
+    public bool TransferBalance(BankAccountComponent senderAccount,
+        BankAccountComponent receiverAccount,
+        decimal amount)
     {
-        if(senderAccount.Balance < amount)
+        if (amount <= 0
+            || ReferenceEquals(senderAccount, receiverAccount)
+            || senderAccount.Balance < amount
+            || receiverAccount.Balance > decimal.MaxValue - amount
+            || !senderAccount.Vault.Accounts.Contains(senderAccount)
+            || !receiverAccount.Vault.Accounts.Contains(receiverAccount))
             return false;
-        
+
         senderAccount.Balance -= amount;
         receiverAccount.Balance += amount;
         return true;
@@ -78,8 +81,10 @@ public class VaultService(IEntityStore store, IEventBus events) : IVaultService
 
     public bool SetBalance(BankAccountComponent account, decimal amount)
     {
+        if (amount < 0)
+            return false;
+
         account.Balance = amount;
-        
         return true;
     }
 }

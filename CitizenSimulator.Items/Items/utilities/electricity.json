@@ -3,5 +3,6 @@
   "name": "Electricity",
   "description": "Electrical energy generated for the power grid. One inventory unit represents one kilowatt-hour (kWh).",
   "consumable": false,
+  "quantityStep": 0.001,
   "effects": []
 }

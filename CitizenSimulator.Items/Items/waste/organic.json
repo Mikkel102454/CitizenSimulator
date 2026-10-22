@@ -3,5 +3,7 @@
   "name": "Organic Waste",
   "description": "Biodegradable waste from farming and food production. One inventory unit represents one kilogram.",
   "consumable": false,
+  "quantityStep": 0.001,
+  "massKgPerUnit": 1,
   "effects": []
 }

@@ -1,8 +1,7 @@
 {
   "id": "recipe.bread",
   "inputs": {
-    "material.flour": 2,
-    "drink.water": 1
+    "material.flour": 2
   },
   "outputs": {
     "food.bread": 4
@@ -16,7 +15,8 @@
     }
   ],
   "utilitiesPerBatch": {
-    "electricityKwh": 2
+    "electricityKwh": 2,
+    "waterLitres": 1
   },
   "wasteOutputs": {
     "waste.organic": 0.1

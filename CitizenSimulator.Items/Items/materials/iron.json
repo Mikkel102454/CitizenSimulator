@@ -1,7 +1,8 @@
-﻿{
+{
   "id": "material.iron",
   "name": "Iron",
   "description": "Iron used for manufacturing tools and machinery.",
   "consumable": false,
+  "quantityStep": 0.001,
   "effects": []
 }

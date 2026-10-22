@@ -3,5 +3,7 @@
   "name": "Incinerator Ash",
   "description": "Solid residue from burning waste, requiring disposal. One inventory unit represents one kilogram.",
   "consumable": false,
+  "quantityStep": 0.001,
+  "massKgPerUnit": 1,
   "effects": []
 }

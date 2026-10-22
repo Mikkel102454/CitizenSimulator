@@ -42,6 +42,12 @@
                     "Troubleshooting":  "troubleshooting.md"
                 },
                 {
+                    "Business operation and production": "business.md"
+                },
+                {
+                    "Coding conventions": "coding-conventions.md"
+                },
+                {
                     "CitizenMind": [
                         { "Overview": "citizen-mind/index.md" },
                         { "Processing": "citizen-mind/processing.md" },

@@ -1,4 +1,4 @@
-﻿using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Citizen.Components;
 
 namespace CitizenSimulator.Property.Components;
@@ -9,18 +9,16 @@ public sealed class PropertyComponent : Component<PropertyComponent>
     {
         Residential,
         Commercial,
-        Industrial
+        Industrial,
+        Agricultural,
+        Mixed
     }
-    
+
     public PropertyType Type { get; internal set; }
-
     public int Capacity { get; internal set; }
-
+    public decimal AreaM2 { get; internal set; }
     public double BaseValue { get; internal set; }
-        
     public CitizenComponent? Owner { get; internal set; }
-        
     public double Condition { get; internal set; } = 100;
-    
     public bool Destroyed { get; internal set; } = false;
 }

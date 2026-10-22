@@ -1,0 +1,11 @@
+{
+  "id": "recipe.water",
+  "inputs": {},
+  "outputs": {},
+  "durationMinutes": 60,
+  "laborMinutes": 60,
+  "requiredEquipment": [{"equipmentId": "equipment.water_pump", "count": 1}],
+  "utilitiesPerBatch": {"electricityKwh": 0.5},
+  "utilityOutputsPerBatch": {"waterLitres": 1000},
+  "wasteOutputs": {}
+}
