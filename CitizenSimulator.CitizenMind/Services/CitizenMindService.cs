@@ -116,6 +116,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
 
         return new GoalDefinition
         {
+            YamlSource = goal.YamlSource,
             Id = goal.Id,
             Eligible = goal.Eligible,
             Emergency = goal.Emergency,
@@ -254,6 +255,8 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(goal);
         ArgumentException.ThrowIfNullOrWhiteSpace(goal.Id);
+        if (goal.YamlSource == null)
+            throw new InvalidOperationException("Goals must be loaded from YAML using MindDefinitionLoader.");
 
         if (Goals.Values.Any(x => x.Id == goal.Id))
             throw new InvalidOperationException($"[CitizenMind] Duplicate goal id '{goal.Id}'");
@@ -266,6 +269,8 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
         EnsureRegistrationOpen();
         ArgumentNullException.ThrowIfNull(action);
         ArgumentException.ThrowIfNullOrWhiteSpace(action.Id);
+        if (action.YamlSource == null)
+            throw new InvalidOperationException("Actions must be loaded from YAML using MindDefinitionLoader.");
 
         if (Actions.Values.Any(x => x.Id == action.Id))
             throw new InvalidOperationException($"[CitizenMind] Duplicate action id '{action.Id}'");

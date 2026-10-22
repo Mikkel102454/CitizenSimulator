@@ -1,0 +1,19 @@
+id: business.travel_to_work
+handler: business.travel_to_work
+candidateProvider: business.shifts
+parameters:
+  arrived: {type: DOUBLE, value: "1"}
+preconditions:
+  - {op: gt, args: [{fact: employment.hasJob}, {literal: 0}]}
+  - {op: lte, args: [{fact: employment.atWorkplace}, {literal: 0}]}
+duration:
+  unit: simulationMinutes
+  estimate: {fact: employment.commuteMinutes}
+prediction:
+  - {fact: employment.atWorkplace, op: set, value: {parameter: arrived}}
+completion:
+  - {op: gt, args: [{fact: employment.atWorkplace}, {literal: 0}]}
+cost:
+  expression: {calculated: durationMinutes}
+execution:
+  interruptible: true

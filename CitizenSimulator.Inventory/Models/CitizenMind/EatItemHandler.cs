@@ -24,7 +24,7 @@ public sealed class EatItemHandler(IEntityStore store,
         if (!CanEat(context))
             return ActionResult.FAILED;
 
-        if (context.Elapsed.TotalMinutes < FoodActions.EatingMinutes)
+        if (context.Elapsed.TotalMinutes < context.GetParameter<double>("durationMinutes"))
             return ActionResult.RUNNING;
 
         var inventory = store.GetComponent<InventoryComponent>(context.Citizen)!;

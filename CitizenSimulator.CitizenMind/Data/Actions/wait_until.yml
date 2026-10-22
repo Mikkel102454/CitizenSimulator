@@ -1,0 +1,19 @@
+expand: waitTargets
+id: citizen_mind.wait_until
+handler: citizen_mind.wait_until
+parameters:
+  untilMinutes: {type: DOUBLE, value: "${untilMinutes}"}
+duration:
+  unit: simulationMinutes
+  estimate:
+    op: max
+    args:
+      - {literal: 0}
+      - {op: subtract, args: [{parameter: untilMinutes}, {time: totalMinutes}]}
+prediction: []
+completion:
+  - {op: gte, args: [{time: totalMinutes}, {parameter: untilMinutes}]}
+cost:
+  expression: {calculated: durationMinutes}
+execution:
+  interruptible: true

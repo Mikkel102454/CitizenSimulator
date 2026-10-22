@@ -11,7 +11,9 @@ public interface ICitizenMindService
 {
     public void RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false);
     public void RegisterHandler(string id, IMindActionHandler handler);
+    /// <summary>Loader infrastructure: only definitions loaded from YAML can be registered.</summary>
     public void RegisterGoal(GoalDefinition goal);
+    /// <summary>Loader infrastructure: only definitions loaded from YAML can be registered.</summary>
     public void RegisterAction(ActionDefinition action);
     public void AddGoalActions(string goalId, IEnumerable<string> actionIds);
 

@@ -1,0 +1,22 @@
+id: business.resign
+handler: business.resign
+parameters:
+  durationMinutes: {type: DOUBLE, value: "5"}
+  cleared: {type: DOUBLE, value: "0"}
+preconditions:
+  - {op: gt, args: [{fact: employment.hasJob}, {literal: 0}]}
+  - {op: gt, args: [{fact: employment.shouldResign}, {literal: 0}]}
+duration:
+  unit: simulationMinutes
+  estimate: {parameter: durationMinutes}
+prediction:
+  - {fact: employment.hasJob, op: set, value: {parameter: cleared}}
+  - {fact: employment.atWorkplace, op: set, value: {parameter: cleared}}
+  - {fact: employment.shiftDue, op: set, value: {parameter: cleared}}
+completion:
+  - {op: lte, args: [{fact: employment.hasJob}, {literal: 0}]}
+cost:
+  expression: {calculated: durationMinutes}
+execution:
+  interruptible: true
+  timeoutMinutes: 30

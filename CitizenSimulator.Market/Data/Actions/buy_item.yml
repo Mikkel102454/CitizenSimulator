@@ -1,0 +1,39 @@
+expand: items
+id: market.buy.${itemId}
+handler: market.buy.${itemId}
+candidateProvider: market.offers.${itemId}
+parameters:
+  durationMinutes: {type: DOUBLE, value: "5"}
+preconditions:
+  - op: gte
+    args:
+      - {fact: market.balance}
+      - {op: multiply, args: [{binding: quantity}, {binding: unitPrice}]}
+  - {op: gte, args: [{fact: inventory.freeCapacity}, {binding: quantity}]}
+duration:
+  unit: simulationMinutes
+  estimate: {parameter: durationMinutes}
+prediction:
+  - fact: inventory.quantity.${itemId}
+    op: add
+    value: {binding: quantity}
+  - fact: market.balance
+    op: subtract
+    value: {op: multiply, args: [{binding: quantity}, {binding: unitPrice}]}
+  - fact: inventory.freeCapacity
+    op: subtract
+    value: {binding: quantity}
+completion:
+  - op: gte
+    args:
+      - {fact: "inventory.quantity.${itemId}"}
+      - {op: add, args: [{before: "inventory.quantity.${itemId}"}, {binding: quantity}]}
+cost:
+  expression:
+    op: add
+    args:
+      - {op: multiply, args: [{binding: quantity}, {binding: unitPrice}]}
+      - {parameter: durationMinutes}
+execution:
+  interruptible: true
+  timeoutMinutes: 30

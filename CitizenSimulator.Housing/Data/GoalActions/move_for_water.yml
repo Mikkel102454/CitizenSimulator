@@ -1,0 +1,2 @@
+goalId: citizen_brain.core.satisfy_thirst
+actions: [housing.move_home]

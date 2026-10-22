@@ -2,24 +2,53 @@
 
 ## Loading definitions
 
-The current format is one `GoalDefinition` or `ActionDefinition` per YAML document, with camelCase property names. CitizenMind loads only its own embedded resources whose names contain `.Data.Goals.` or `.Data.Actions.` and end in `.yml`. Files ending in `.yml.disabled` are excluded.
+Always author actions and goals in YAML, including their costs, conditions, predictions, timings and goal-to-action links. C# supplies facts, candidate providers, handlers, domain services and catalog values.
 
-Placing a loose YAML file in `Mods` does not register it. Another mod must load its own resources or files, deserialize them, and call the registration API during `OnLoad`. For example, with YamlDotNet referenced and `mind` retrieved from the service registry:
+Each existing mod embeds its own definitions. `MindDefinitionLoader` loads one definition per document with camelCase property names, in this order:
+
+1. `Data/Goals/*.yml`: goals.
+2. `Data/Actions/*.yml`: actions or action templates.
+3. `Data/GoalActions/*.yml`: additions to existing goals' action lists.
+
+Nested directories are supported. Files ending in `.yml.disabled` and the design examples under `plan/examples` are excluded. A loose file in `Mods` is not automatically loaded. Embed resources with `<EmbeddedResource Include="Data/**/*.yml" />` and load them in the owning mod's `OnLoad`, after registering its capabilities:
 
 ```csharp
-using CitizenSimulator.CitizenMind.Models;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using CitizenSimulator.CitizenMind.Configuration;
 
-var yaml = new DeserializerBuilder()
-    .WithNamingConvention(CamelCaseNamingConvention.Instance)
-    .Build();
-
-mind.RegisterGoal(yaml.Deserialize<GoalDefinition>(goalText));
-mind.RegisterAction(yaml.Deserialize<ActionDefinition>(actionText));
+MindDefinitionLoader.Load(mind, GetType().Assembly);
 ```
 
-`goalText` and `actionText` are strings read by your mod. There is no current pack, profile, or schedule YAML loader. Runtime schedules use the [schedule API](schedules.md).
+This loader does not implement the proposed pack/profile format. Runtime schedules still use the [schedule API](schedules.md).
+
+## Catalog templates
+
+`expand: foods` repeats a YAML document for each record in a named expansion group supplied to `MindDefinitionLoader.Load`. `${itemId}` and similar placeholders substitute scalar values. They cannot insert YAML structure or C# expressions. Unknown groups/variables fail with the resource name. Empty groups produce no definitions. `requires: foods` skips a document when that group is empty.
+
+Inventory supplies `foods` and `drinks`, each with `itemId`, `hungerChange`, `thirstChange` and `energyChange` from the item catalog. Market supplies `items`, `foods` and `drinks` with `itemId`. Core waiting supplies a runtime `untilMinutes` value. Use invariant numeric strings as typed parameter values:
+
+```yaml
+expand: foods
+id: inventory.eat.${itemId}
+handler: inventory.eat.${itemId}
+parameters:
+  durationMinutes: {type: DOUBLE, value: "5"}
+  hungerChange: {type: DOUBLE, value: "${hungerChange}"}
+# The remaining action fields follow the normal action schema.
+```
+
+Sequence entries can use `whenNonzero: energyChange` to omit an effect when a supplied numeric catalog value is zero. The loader removes this directive before deserialization. This preserves the planner's dependency graph without constructing prediction effects in C#.
+
+## Adding actions to a goal
+
+Put links in `Data/GoalActions`, including links to another mod's goal. Dependencies must load that goal first. For example:
+
+```yaml
+expand: foods
+goalId: citizen_brain.core.satisfy_hunger
+actions: ["market.buy.${itemId}"]
+```
+
+All referenced actions must already have been loaded. Generic registration and expansion belong in the loader; do not append behavior rules from C#.
 
 ## Goal example
 

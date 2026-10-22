@@ -1,0 +1,22 @@
+id: business.work_shift
+handler: business.work_shift
+candidateProvider: business.shifts
+parameters:
+  cleared: {type: DOUBLE, value: "0"}
+preconditions:
+  - {op: gt, args: [{fact: employment.hasJob}, {literal: 0}]}
+  - {op: gt, args: [{fact: employment.atWorkplace}, {literal: 0}]}
+duration:
+  unit: simulationMinutes
+  estimate: {op: subtract, args: [{binding: shiftEndMinutes}, {time: totalMinutes}]}
+prediction:
+  - {fact: employment.shiftDue, op: set, value: {parameter: cleared}}
+  - {fact: employment.atWorkplace, op: set, value: {parameter: cleared}}
+  - {fact: employment.completedShiftEndMinutes, op: set, value: {binding: shiftEndMinutes}}
+completion:
+  - {op: gte, args: [{fact: employment.completedShiftEndMinutes}, {binding: shiftEndMinutes}]}
+  - {op: lte, args: [{fact: employment.atWorkplace}, {literal: 0}]}
+cost:
+  expression: {calculated: durationMinutes}
+execution:
+  interruptible: true

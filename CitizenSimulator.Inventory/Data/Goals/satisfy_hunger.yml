@@ -1,0 +1,13 @@
+requires: foods
+id: citizen_brain.core.satisfy_hunger
+eligible: {op: gte, args: [{fact: needs.hunger}, {literal: 0.35}]}
+emergency:
+  when: {op: gte, args: [{fact: needs.hunger}, {literal: 0.90}]}
+  priority: 90
+desired:
+  - {op: lte, args: [{fact: needs.hunger}, {literal: 0.25}]}
+utility:
+  considerations:
+    - input: {fact: needs.hunger}
+      curve: [[0, 0], [0.35, 0.15], [0.70, 0.75], [1, 1]]
+goalActions: []

@@ -5,6 +5,9 @@ namespace CitizenSimulator.CitizenMind.Models;
 
 public sealed class ActionDefinition
 {
+    [YamlIgnore]
+    public string? YamlSource { get; internal set; }
+
     public required string Id { get; init; }
     
     public required string Handler { get; init; }

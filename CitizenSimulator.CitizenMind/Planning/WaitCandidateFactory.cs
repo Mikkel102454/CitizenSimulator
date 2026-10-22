@@ -1,82 +1,25 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using CitizenSimulator.CitizenMind.Configuration;
-using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Models;
 
 namespace CitizenSimulator.CitizenMind.Planning;
 
 internal static class WaitCandidateFactory
 {
+    private static readonly ConcurrentDictionary<long, ActionDefinition> Definitions = new();
+
     public static ActionCandidate Create(TimeSpan until)
     {
-        var target = new ExpressionDefinition
-        {
-            Parameter = "untilMinutes"
-        };
-
-        var clock = new ExpressionDefinition
-        {
-            Time = "totalMinutes"
-        };
-
-        var action = new ActionDefinition
-        {
-            Id = "citizen_mind.wait_until",
-            Handler = "citizen_mind.wait_until",
-
-            Parameters = new()
+        // Reuse immutable YAML definitions for common opening times; keep this cache bounded.
+        if (Definitions.Count >= 128)
+            Definitions.Clear();
+        var action = Definitions.GetOrAdd(until.Ticks, ticks => MindDefinitionLoader.ReadAction(
+            typeof(WaitCandidateFactory).Assembly, "CitizenSimulator.CitizenMind.Data.Actions.wait_until.yml",
+            new Dictionary<string, string>
             {
-                ["untilMinutes"] = new ParameterDefinition
-                {
-                    Type = ParameterType.DOUBLE,
-                    Value = until.TotalMinutes.ToString("R", CultureInfo.InvariantCulture)
-                }
-            },
-
-            Duration = new DurationDefinition
-            {
-                Unit = "simulationMinutes",
-                Estimate = new ExpressionDefinition
-                {
-                    Op = "max",
-                    Args =
-                    [
-                        new() { Literal = 0 },
-                        new()
-                        {
-                            Op = "subtract",
-                            Args = [target, clock]
-                        }
-                    ]
-                }
-            },
-
-            Prediction = [],
-
-            Completion =
-            [
-                new()
-                {
-                    Op = "gte",
-                    Args = [clock, target]
-                }
-            ],
-
-            Cost = new CostDefinition
-            {
-                Expression = new ExpressionDefinition
-                {
-                    Calculated = "durationMinutes"
-                }
-            }
-        };
-
-        action.ResolvedParameters = ParameterParser.ParseAll(action.Parameters, action.Id);
-
-        return new ActionCandidate
-        {
-            Id = $"citizen_mind.wait_until:{until.Ticks}",
-            Definition = action
-        };
+                ["untilMinutes"] = TimeSpan.FromTicks(ticks).TotalMinutes.ToString("R", CultureInfo.InvariantCulture)
+            }));
+        return new ActionCandidate { Id = $"{action.Id}:{until.Ticks}", Definition = action };
     }
 }

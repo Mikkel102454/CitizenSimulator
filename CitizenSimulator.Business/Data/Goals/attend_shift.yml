@@ -1,0 +1,10 @@
+id: business.attend_shift
+eligible: {op: gt, args: [{fact: employment.shiftDue}, {literal: 0}]}
+desired:
+  - {op: lte, args: [{fact: employment.shiftDue}, {literal: 0}]}
+utility:
+  bias: 0.8
+  considerations:
+    - input: {literal: 1}
+      curve: [[0, 0], [1, 1]]
+goalActions: [business.travel_to_work, business.work_shift]

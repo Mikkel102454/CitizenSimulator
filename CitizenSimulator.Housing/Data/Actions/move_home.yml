@@ -1,0 +1,26 @@
+id: housing.move_home
+handler: housing.move_home
+candidateProvider: housing.homes
+parameters:
+  durationMinutes: {type: DOUBLE, value: "15"}
+  housed: {type: DOUBLE, value: "1"}
+preconditions:
+  - {op: lte, args: [{fact: housing.hasHome}, {literal: 0}]}
+  - {op: gte, args: [{fact: market.balance}, {binding: price}]}
+duration:
+  unit: simulationMinutes
+  estimate: {parameter: durationMinutes}
+prediction:
+  - {fact: housing.hasHome, op: set, value: {parameter: housed}}
+  - {fact: housing.dailyRent, op: set, value: {binding: price}}
+  - {fact: home.can_sleep, op: set, value: {binding: canSleep}}
+  - {fact: home.can_drink, op: set, value: {binding: canDrink}}
+  - {fact: home.can_cook, op: set, value: {binding: canCook}}
+  - {fact: home.can_store, op: set, value: {binding: canStore}}
+completion:
+  - {op: gt, args: [{fact: housing.hasHome}, {literal: 0}]}
+cost:
+  expression: {op: add, args: [{binding: price}, {calculated: durationMinutes}]}
+execution:
+  interruptible: true
+  timeoutMinutes: 60

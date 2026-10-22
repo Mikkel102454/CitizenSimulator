@@ -4,6 +4,8 @@ Updated 2026-10-22. CitizenMind implements typed registration and startup valida
 
 The API reference is [the CitizenMind documentation](../../doc/docs/citizen-mind/index.md). YAML under `examples/` describes a future behavior-pack format, not loadable runtime configuration.
 
+All implemented actions, goals and goal-action links are authored in each existing mod's `Data` YAML files. `MindDefinitionLoader` loads normal definitions and catalog templates. C# supplies facts, handlers, providers and catalog data, including item effect values; it does not build behavior definitions. Runtime commitment targets specialize existing YAML goals for particular shift occurrences. See [the YAML reference](../../doc/docs/citizen-mind/yaml.md).
+
 ## Connected world behaviors
 
 | Domain | Implemented connection |

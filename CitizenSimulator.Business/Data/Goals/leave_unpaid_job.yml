@@ -1,0 +1,10 @@
+id: business.leave_unpaid_job
+eligible: {op: gt, args: [{fact: employment.shouldResign}, {literal: 0}]}
+desired:
+  - {op: lte, args: [{fact: employment.hasJob}, {literal: 0}]}
+utility:
+  bias: 0.7
+  considerations:
+    - input: {literal: 1}
+      curve: [[0, 0], [1, 1]]
+goalActions: [business.resign]

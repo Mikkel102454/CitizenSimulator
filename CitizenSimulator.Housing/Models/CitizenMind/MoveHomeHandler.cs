@@ -16,7 +16,7 @@ public sealed class MoveHomeHandler(IEntityStore store, IHousingService housing,
         if (!CanMove(context))
             return ActionResult.FAILED;
 
-        double minutes = purchase ? HousingActions.PurchaseMinutes : HousingActions.MoveMinutes;
+        double minutes = context.GetParameter<double>("durationMinutes");
         if (context.Elapsed.TotalMinutes < minutes)
             return ActionResult.RUNNING;
 

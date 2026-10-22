@@ -1,7 +1,12 @@
+using YamlDotNet.Serialization;
+
 namespace CitizenSimulator.CitizenMind.Models;
 
 public sealed class GoalDefinition
 {
+    [YamlIgnore]
+    public string? YamlSource { get; internal set; }
+
     public required string Id { get; init; }
 
     public required ExpressionDefinition Eligible { get; init; }

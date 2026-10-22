@@ -1,0 +1,24 @@
+id: business.accept_job
+handler: business.accept_job
+candidateProvider: business.jobs
+parameters:
+  durationMinutes: {type: DOUBLE, value: "5"}
+  employed: {type: DOUBLE, value: "1"}
+preconditions:
+  - {op: lte, args: [{fact: employment.hasJob}, {literal: 0}]}
+duration:
+  unit: simulationMinutes
+  estimate: {parameter: durationMinutes}
+prediction:
+  - {fact: employment.hasJob, op: set, value: {parameter: employed}}
+completion:
+  - {op: gt, args: [{fact: employment.hasJob}, {literal: 0}]}
+cost:
+  expression:
+    op: add
+    args:
+      - {parameter: durationMinutes}
+      - {op: divide, args: [{literal: 1000}, {binding: hourlyWage}]}
+execution:
+  interruptible: true
+  timeoutMinutes: 30

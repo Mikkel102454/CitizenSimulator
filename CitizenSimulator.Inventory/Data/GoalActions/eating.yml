@@ -1,0 +1,3 @@
+expand: foods
+goalId: citizen_brain.core.satisfy_hunger
+actions: ["inventory.eat.${itemId}"]

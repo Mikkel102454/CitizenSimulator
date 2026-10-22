@@ -31,6 +31,6 @@ Setting `IsActive = false` causes cleanup on the next mind update, including can
 
 ## Integration recipe
 
-During your mod's `OnLoad`, retrieve `ICitizenMindService`, register the facts and handlers your definitions reference, then register goals and actions. Before systems start, CitizenMind validates the combined definitions and closes registration.
+During your mod's `OnLoad`, retrieve `ICitizenMindService`, register its facts, candidate providers and handlers, then load its embedded YAML through `MindDefinitionLoader`. Actions, goals and goal-action links must always be authored in YAML. Catalog templates keep item-specific behavior in YAML too. Before systems start, CitizenMind validates the combined definitions and closes registration.
 
 After attaching a mind, assign any schedules through the runtime API. Read the [mod API](api.md) before implementing handlers: prediction changes a planning snapshot and never applies effects to the live world.

@@ -1,0 +1,2 @@
+goalId: citizen_brain.core.restore_energy
+actions: [housing.move_home]

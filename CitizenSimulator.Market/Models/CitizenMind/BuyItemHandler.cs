@@ -21,7 +21,7 @@ public sealed class BuyItemHandler(IEntityStore store, IMarketService market, st
         if (!CanPurchase(context))
             return ActionResult.FAILED;
 
-        if (context.Elapsed.TotalMinutes < ShoppingActions.PurchaseMinutes)
+        if (context.Elapsed.TotalMinutes < context.GetParameter<double>("durationMinutes"))
             return ActionResult.RUNNING;
 
         var offer = ResolveOffer(context)!;

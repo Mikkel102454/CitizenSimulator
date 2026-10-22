@@ -32,7 +32,9 @@ mind.RegisterFact<double>("example.fatigue", ReadFatigue, canPredict: true);
 
 `RegisterGoal(GoalDefinition goal)` adds a goal. `RegisterAction(ActionDefinition action)` adds an action and parses its typed parameters immediately. Most definition classes are in `CitizenSimulator.CitizenMind.Models`; parameter and provider descriptor types are in `.Definitions`.
 
-Definitions may be constructed in C# or deserialized using the [YAML recipe](yaml.md). Cross-references are validated at system startup, so registration order between individual goals, actions, facts, and handlers does not need to mirror their references. Finish all registration before startup and treat registered definitions as immutable.
+Definitions must be authored in YAML and loaded with `MindDefinitionLoader`; do not construct them in C#. The registration methods are loader infrastructure. Cross-references are validated at system startup, so individual goals, actions, facts and handlers can reference later registrations. Goal-action extension files are applied after their actions and require the target goal to have loaded. Finish all registration before startup and treat definitions as immutable. See the [YAML loader and template reference](yaml.md).
+
+Registered goals and actions expose `YamlSource` for inspection. Registration rejects definitions without a source assigned by `MindDefinitionLoader`. Untyped YAML literals are read as booleans, integers or doubles; use typed `DECIMAL` parameters for money and inventory quantities.
 
 ## RegisterHandler(string id, IMindActionHandler handler)
 

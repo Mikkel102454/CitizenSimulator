@@ -19,6 +19,7 @@
     <ItemGroup>
         <EmbeddedResource Include="Business/**/*.json" />
         <EmbeddedResource Include="Recipes/**/*.json" />
+        <EmbeddedResource Include="Data/**/*.yml" />
     </ItemGroup>
 
     <Target Name="CopyModToHost"

@@ -1,0 +1,9 @@
+id: housing.find_home
+eligible: {fact: housing.canFindHome}
+desired:
+  - {op: gt, args: [{fact: housing.hasHome}, {literal: 0}]}
+utility:
+  considerations:
+    - input: {literal: 1}
+      curve: [[0, 0], [1, 1]]
+goalActions: [housing.move_home, housing.buy_home]

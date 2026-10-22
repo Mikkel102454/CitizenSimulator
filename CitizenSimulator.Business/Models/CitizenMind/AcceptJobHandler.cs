@@ -17,7 +17,7 @@ public sealed class AcceptJobHandler(IEntityStore store, IBusinessService busine
         if (!CanApply(context))
             return ActionResult.FAILED;
 
-        if (context.Elapsed.TotalMinutes < EmploymentActions.ApplicationMinutes)
+        if (context.Elapsed.TotalMinutes < context.GetParameter<double>("durationMinutes"))
             return ActionResult.RUNNING;
 
         var worker = EmploymentActionContext.GetWorker(store, context)!;

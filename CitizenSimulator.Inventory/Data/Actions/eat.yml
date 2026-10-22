@@ -1,0 +1,71 @@
+expand: foods
+id: inventory.eat.${itemId}
+handler: inventory.eat.${itemId}
+parameters:
+  durationMinutes: {type: DOUBLE, value: "5"}
+  portion: {type: DECIMAL, value: "1"}
+  unlimitedCapacity: {type: DECIMAL, value: "79228162514264337593543950335"}
+  hungerChange: {type: DOUBLE, value: "${hungerChange}"}
+  thirstChange: {type: DOUBLE, value: "${thirstChange}"}
+  energyChange: {type: DOUBLE, value: "${energyChange}"}
+preconditions:
+  - op: gte
+    args: [{fact: "inventory.quantity.${itemId}"}, {parameter: portion}]
+  - {op: gt, args: [{fact: needs.hunger}, {literal: 0.25}]}
+duration:
+  unit: simulationMinutes
+  estimate: {parameter: durationMinutes}
+prediction:
+  - fact: inventory.quantity.${itemId}
+    op: subtract
+    value: {parameter: portion}
+  - fact: inventory.freeCapacity
+    op: add
+    value:
+      op: min
+      args:
+        - {parameter: portion}
+        - {op: subtract, args: [{parameter: unlimitedCapacity}, {fact: inventory.freeCapacity}]}
+  - whenNonzero: hungerChange
+    fact: needs.hunger
+    op: set
+    value:
+      op: min
+      args:
+        - {literal: 1}
+        - op: max
+          args:
+            - {literal: 0}
+            - {op: add, args: [{fact: needs.hunger}, {parameter: hungerChange}]}
+  - whenNonzero: thirstChange
+    fact: needs.thirst
+    op: set
+    value:
+      op: min
+      args:
+        - {literal: 1}
+        - op: max
+          args:
+            - {literal: 0}
+            - {op: add, args: [{fact: needs.thirst}, {parameter: thirstChange}]}
+  - whenNonzero: energyChange
+    fact: needs.energy
+    op: set
+    value:
+      op: min
+      args:
+        - {literal: 1}
+        - op: max
+          args:
+            - {literal: 0}
+            - {op: add, args: [{fact: needs.energy}, {parameter: energyChange}]}
+completion:
+  - op: lte
+    args:
+      - {fact: "inventory.quantity.${itemId}"}
+      - {op: subtract, args: [{before: "inventory.quantity.${itemId}"}, {parameter: portion}]}
+cost:
+  expression: {calculated: durationMinutes}
+execution:
+  interruptible: true
+  timeoutMinutes: 15

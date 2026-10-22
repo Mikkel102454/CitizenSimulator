@@ -1,0 +1,3 @@
+expand: drinks
+goalId: citizen_brain.core.satisfy_thirst
+actions: ["inventory.drink.${itemId}"]

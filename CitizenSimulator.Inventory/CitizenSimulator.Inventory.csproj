@@ -11,6 +11,10 @@
       <ProjectReference Include="..\CitizenSimulator.Items\CitizenSimulator.Items.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Data/**/*.yml" />
+    </ItemGroup>
+
     <Target Name="CopyModToHost"
             AfterTargets="Build">
 

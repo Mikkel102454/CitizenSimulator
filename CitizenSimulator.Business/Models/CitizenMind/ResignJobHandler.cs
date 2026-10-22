@@ -17,7 +17,7 @@ public sealed class ResignJobHandler(IEntityStore store, IBusinessService busine
         if (!HasUnpaidSuspendedJob(context))
             return ActionResult.FAILED;
 
-        if (context.Elapsed.TotalMinutes < EmploymentActions.ApplicationMinutes)
+        if (context.Elapsed.TotalMinutes < context.GetParameter<double>("durationMinutes"))
             return ActionResult.RUNNING;
 
         var worker = EmploymentActionContext.GetWorker(store, context)!;
