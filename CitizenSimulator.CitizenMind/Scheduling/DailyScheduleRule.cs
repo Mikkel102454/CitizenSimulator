@@ -15,8 +15,26 @@ public sealed class DailyScheduleRule
     public int Priority { get; init; }
     public TimeSpan PreparationTime { get; init; }
 
+    private IReadOnlyList<DayOfWeek>? _weekdays;
+
+    /// <summary>
+    /// Null means every day; an empty list disables the rule. An overnight window
+    /// belongs to its start weekday. The supplied list is copied at construction.
+    /// </summary>
+    public IReadOnlyList<DayOfWeek>? Weekdays
+    {
+        get => _weekdays;
+        init => _weekdays = value?.ToList().AsReadOnly();
+    }
+
+    private int WeekdayMask => Weekdays == null ? 127 :
+        Weekdays.Aggregate(0, (mask, day) => mask | (1 << (int)day));
+
+    internal bool RunsOn(DayOfWeek day) => (WeekdayMask & (1 << (int)day)) != 0;
+
     internal bool Matches(DailyScheduleRule other)
         => Id == other.Id && GoalId == other.GoalId &&
            Window.Start == other.Window.Start && Window.End == other.Window.End &&
-           Priority == other.Priority && PreparationTime == other.PreparationTime;
+           Priority == other.Priority && PreparationTime == other.PreparationTime &&
+           WeekdayMask == other.WeekdayMask;
 }

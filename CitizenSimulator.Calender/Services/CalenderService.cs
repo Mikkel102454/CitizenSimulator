@@ -6,6 +6,8 @@ namespace CitizenSimulator.Calender.Services;
 
 public class CalenderService : ICalenderService
 {
+    private static readonly DateOnly StartDate = new(2000, 1, 1);
+
     internal ulong TickOfDay;
     public ulong GetTicksPerDay()
     {
@@ -32,4 +34,15 @@ public class CalenderService : ICalenderService
 
         return TimeSpan.FromTicks((long)timeSpanTicks);
     }
+
+    public DateOnly GetDate(TimeSpan gameTime)
+    {
+        if (gameTime < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(gameTime));
+
+        int days = checked((int)(gameTime.Ticks / TimeSpan.TicksPerDay));
+        return StartDate.AddDays(days);
+    }
+
+    public DayOfWeek GetDayOfWeek(TimeSpan gameTime) => GetDate(gameTime).DayOfWeek;
 }

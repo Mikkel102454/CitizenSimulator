@@ -44,7 +44,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
             }
 
-            DailyScheduleGenerator.Refresh(mind, gameTime, _plannerOptions.MaxPlanDuration);
+            DailyScheduleGenerator.Refresh(mind, gameTime, _plannerOptions.MaxPlanDuration, calender);
             RefreshSchedule(entity, mind, gameTime);
 
             if (mind.Execution is { Status: not PlanExecutionStatus.RUNNING })

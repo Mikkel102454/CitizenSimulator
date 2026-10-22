@@ -9,70 +9,45 @@ namespace CitizenSimulator.Calender.Systems;
 
 public class CalenderSystem(IEventBus events, CalenderService calenderService) : GameSystem
 {
-    private const int STARTYEAR = 2000; // 10 seconds
-    private CalenderComponent _calenderComponent;
+    private CalenderComponent _calenderComponent = null!;
+    private DateOnly _currentDate;
 
     protected override void OnStart(ICommandBuffer commands)
     {
         EntityRef entity = commands.CreateEntity();
         _calenderComponent = commands.AddComponent(entity, new CalenderComponent());
             
-        _calenderComponent.DayOfWeek = (STARTYEAR + STARTYEAR / 4 - STARTYEAR / 100 + STARTYEAR / 400) % 7;
-        _calenderComponent.DayOfMonth = 1;
-        _calenderComponent.MonthOfYear = CalenderComponent.Months.JANUARY;
-        _calenderComponent.Year = STARTYEAR;
+        SetDate(calenderService.GetDate(TimeSpan.Zero));
         
         CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
         
         events.Publish(new OnDayStart(currentDate));
         events.Publish(new OnMonthStart(currentDate));
         events.Publish(new OnYearStart(currentDate));
-        events.Publish(new OnWeekStart(currentDate));
+        if (_currentDate.DayOfWeek == DayOfWeek.Monday)
+            events.Publish(new OnWeekStart(currentDate));
     }
 
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
     {
         ulong tickOfDay = time.Tick % calenderService.GetTicksPerDay();
+        calenderService.TickOfDay = tickOfDay;
+        var date = calenderService.GetDate(calenderService.GetGameTime(time.Tick));
         
-        if (tickOfDay == 0)
+        if (date != _currentDate)
         { // new day
+            var previousDate = _currentDate;
+            SetDate(date);
             CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
             
             events.Publish(new OnDayStart(currentDate));
 
-            if (GetDaysInMonth(_calenderComponent.MonthOfYear, _calenderComponent.Year) - (_calenderComponent.DayOfMonth + 1) <= 0)
-            { // new month
+            if (date.Month != previousDate.Month || date.Year != previousDate.Year)
                 events.Publish(new OnMonthStart(currentDate));
-                
-                if (_calenderComponent.MonthOfYear == CalenderComponent.Months.DECEMBER)
-                { // new year
-                    events.Publish(new OnYearStart(currentDate));
-                    
-                    _calenderComponent.MonthOfYear = CalenderComponent.Months.JANUARY;
-                    _calenderComponent.Year++;
-                }
-                else
-                {
-                    _calenderComponent.MonthOfYear++;
-                }
-
-                _calenderComponent.DayOfMonth = 1;
-            }
-            else
-            {
-                _calenderComponent.DayOfMonth++;
-            }
-
-            if (_calenderComponent.DayOfWeek == CalenderComponent.Days.Sunday)
-            {
+            if (date.Year != previousDate.Year)
+                events.Publish(new OnYearStart(currentDate));
+            if (date.DayOfWeek == DayOfWeek.Monday)
                 events.Publish(new OnWeekStart(currentDate));
-
-                _calenderComponent.DayOfWeek = CalenderComponent.Days.MONDAY;
-            }
-            else
-            {
-                _calenderComponent.DayOfWeek++;
-            }
             
             Console.WriteLine($"Day started! Day: {_calenderComponent.DayOfWeek} " +
                               $"Month: {_calenderComponent.MonthOfYear} " +
@@ -82,39 +57,24 @@ public class CalenderSystem(IEventBus events, CalenderService calenderService) :
         if (tickOfDay == GetDayStartTick(calenderService.GetTicksPerDay()))
         {
             CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
-            events.Publish(new OnMonthStart(currentDate));
+            events.Publish(new OnMorningStart(currentDate));
         } else if (tickOfDay == GetNightStartTick(calenderService.GetTicksPerDay()))
         {
             CalenderComponent.Date currentDate = new CalenderComponent.Date(_calenderComponent.DayOfMonth, _calenderComponent.MonthOfYear,  _calenderComponent.Year);
             events.Publish(new OnNightStart(currentDate));
         }
 
-        calenderService.TickOfDay = tickOfDay;
     }
     
-    private static uint GetDaysInMonth(CalenderComponent.Months month, int year)
+    private void SetDate(DateOnly date)
     {
-        return month switch
-        {
-            CalenderComponent.Months.JANUARY => 31U,
-            CalenderComponent.Months.FEBRUARY => IsLeapYear(year) ? 29U : 28U,
-            CalenderComponent.Months.MARCH => 31U,
-            CalenderComponent.Months.APRIL => 30U,
-            CalenderComponent.Months.MAY => 31U,
-            CalenderComponent.Months.JUNE => 30U,
-            CalenderComponent.Months.JULY => 31U,
-            CalenderComponent.Months.AUGUST => 31U,
-            CalenderComponent.Months.SEPTEMBER => 30U,
-            CalenderComponent.Months.OCTOBER => 31U,
-            CalenderComponent.Months.NOVEMBER => 30U,
-            CalenderComponent.Months.DECEMBER => 31U,
-            _ => throw new ArgumentOutOfRangeException(nameof(month))
-        };
-    }
-    
-    private static bool IsLeapYear(int year)
-    {
-        return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+        _currentDate = date;
+        _calenderComponent.DayOfMonth = (uint)date.Day;
+        _calenderComponent.MonthOfYear = (CalenderComponent.Months)(date.Month - 1);
+        _calenderComponent.Year = date.Year;
+        // Preserve the component's Monday-first enum while the public API uses
+        // System.DayOfWeek (Sunday first).
+        _calenderComponent.DayOfWeek = (CalenderComponent.Days)(((int)date.DayOfWeek + 6) % 7);
     }
     
     private static ulong GetDayStartTick(ulong ticksPerDay)

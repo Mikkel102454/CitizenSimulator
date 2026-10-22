@@ -115,6 +115,8 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
             ArgumentNullException.ThrowIfNull(rule.Window);
             if (rule.PreparationTime < TimeSpan.Zero)
                 throw new ArgumentException("Preparation time must be nonnegative.");
+            if (rule.Weekdays != null && rule.Weekdays.Any(day => !Enum.IsDefined(day)))
+                throw new ArgumentException($"Daily schedule rule '{rule.Id}' has an invalid weekday.");
             if (!ids.Add(rule.Id))
                 throw new InvalidOperationException($"Duplicate daily schedule rule id '{rule.Id}'.");
             if (!Goals.ContainsKey(rule.GoalId))

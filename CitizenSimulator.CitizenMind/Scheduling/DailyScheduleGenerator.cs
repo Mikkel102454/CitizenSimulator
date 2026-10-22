@@ -1,4 +1,5 @@
 using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.Calender.Services.Abstractions;
 
 namespace CitizenSimulator.CitizenMind.Scheduling;
 
@@ -6,7 +7,8 @@ internal static class DailyScheduleGenerator
 {
     internal const string OccurrenceIdPrefix = "citizen_mind.daily:";
 
-    public static void Refresh(MindComponent mind, TimeSpan gameTime, TimeSpan planningHorizon)
+    public static void Refresh(MindComponent mind, TimeSpan gameTime, TimeSpan planningHorizon,
+        ICalenderService calender)
     {
         if (mind.DailyScheduleRules.Count == 0)
             return;
@@ -23,6 +25,9 @@ internal static class DailyScheduleGenerator
             {
                 var window = rule.Window.GetWindowForDay(day);
                 if (window.End < gameTime || window.Start > horizonEnd)
+                    continue;
+
+                if (!rule.RunsOn(calender.GetDayOfWeek(window.Start)))
                     continue;
 
                 // Length-prefixing the rule ID keeps occurrence IDs unambiguous.
