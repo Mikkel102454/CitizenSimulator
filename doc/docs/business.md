@@ -13,11 +13,29 @@ Use IBusinessService from the service registry.
 5. Hire workers with TryHire. WorkerProfileComponent.Skills holds role skill levels; absent roles have level zero. Vacancies are limited by the type's workforce counts. A worker may have one active job. Wages cannot be below the configured starting wage.
 6. Connect utility access using TryConnectGrid. Existing suppliers can fill utility buffers through procurement. A new scenario must explicitly provide initial utility stocks/imports with TryDepositUtilities to bootstrap the power/water supply chain.
 7. Call TryActivateBusiness. Readiness requires controlled premises, equipment, staffed roles, a cost recipient where needed, and cash covering outstanding liabilities plus the greater of MinimumCapital or one day of fixed costs plus one hour of contracted wages.
-8. Workers call TryCheckIn during their agreed shifts. Hiring alone does not create attendance. TryCheckOut ends attendance; the runtime automatically checks workers out when the current shift ends.
+8. Workers arrive with TryArriveAtWorkplace, then call TryCheckIn during their agreed shifts. Hiring alone does not create attendance. TryCheckOut ends attendance; TryLeaveWorkplace also clears workplace presence. The runtime automatically checks workers out when the current working window ends.
 
 Shifts default to the business's opening windows. Custom shift windows can be supplied to TryHire. Opening is inclusive and closing exclusive, including overnight windows. Duplicate or overlapping windows are merged when computing pay. Equal opening/closing endpoints mean a closed interval.
 
-CitizenMind job seeking, travel, and attendance actions are separate integrations: they should call these hiring/attendance APIs. No worker is silently assumed present.
+Business registers its CitizenMind facts, candidate providers, actions, and goals during OnLoad. Active citizen minds can find and accept qualified jobs, travel to work, and attend shifts. Business activation remains an owner/scenario operation; filling a roster does not silently activate the business.
+
+## Employment and citizen decisions
+
+IBusinessService exposes these queries and operations:
+
+- GetVacancies returns funded vacancies with the employer, role, available positions, minimum skill, and hourly wage.
+- GetAvailableJobs filters vacancies for a living, unemployed citizen with a registered payment account and sufficient skills. Jobs are ordered by wage, then stable employer/role order.
+- GetEmployment returns the citizen's current employer and contract, or null.
+- GetNextShift returns the remaining current working window or the next one within eight days. It intersects the contract's shifts with the business's actual opening hours, including overnight windows. Suspended businesses have no attendable shift.
+- TryResign records attendance through the current game time and terminates employment. The old contract remains on the employer's roster for outstanding wage payments. Resignation and dismissal never forgive wages.
+
+Job applications take five simulation minutes. Each action binds a specific employer and role; hiring rechecks qualifications, funding, and available positions at completion, so competing applications cannot overfill a vacancy. The planner prefers higher wages through the application's cost. Citizens hold at most one active job.
+
+Workplace travel is an abstract journey because there is no map/pathfinding system yet. WorkerProfileComponent.CommuteMinutes configures its duration (default 15 minutes; nonpositive or nonfinite values use the default). Interrupted journeys do not mark arrival or earn wages. IsAtWorkplace records presence on the active contract, and check-in requires that presence. TryArriveAtWorkplace is also available for scenario/import integrations that already model travel.
+
+A shift becomes due one commute plus one simulation tick before its start. Its goal uses interrupt priority 40, below the existing hunger (90), exhaustion (95), and thirst (100) emergencies. Travel and work are interruptible. An emergency checks the citizen out immediately, retaining pay for completed attendance; the citizen can travel back and resume the remaining shift after recovery. A work action occupies the citizen until the working window ends, then checks out and clears workplace presence. Neither planning predictions nor hiring directly create labor or wage income.
+
+Citizens with active minds also resign from a suspended employer that owes them wages, then become eligible to find another job. Employers with unpaid wages while suspended do not advertise new jobs. Scenario code may call TryResign directly for other reasons.
 
 ## Runtime order
 
@@ -105,4 +123,4 @@ dotnet build tests/CitizenSimulator.BusinessChecks --no-restore -m:1
 dotnet run --project tests/CitizenSimulator.BusinessChecks --no-build --no-restore
 ~~~
 
-The integration executable uses real ECS command playback, business ticks, market transactions, and game-calendar time. It covers conservation, readiness, attendance, payroll, blocked outputs, repeated completion/cancellation, crop timing, utilities, disposal units, procurement, and lifecycle transitions.
+The integration executable uses real ECS command playback, business ticks, market transactions, game-calendar time, and CitizenMind planning/execution. It covers conservation, readiness, attendance, payroll, blocked outputs, repeated completion/cancellation, crop timing, utilities, disposal units, procurement, lifecycle transitions, competing applications, resignation and arrears, overnight shifts, autonomous job acceptance and travel, and emergency interruption/resumption.

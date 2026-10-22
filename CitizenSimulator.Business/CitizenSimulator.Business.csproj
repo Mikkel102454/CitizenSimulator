@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CitizenSimulator.CitizenMind\CitizenSimulator.CitizenMind.csproj" />
       <ProjectReference Include="..\CitizenSimulator.Inventory\CitizenSimulator.Inventory.csproj" />
       <ProjectReference Include="..\CitizenSimulator.Calender\CitizenSimulator.Calender.csproj" />
       <ProjectReference Include="..\CitizenSimulator.Items\CitizenSimulator.Items.csproj" />

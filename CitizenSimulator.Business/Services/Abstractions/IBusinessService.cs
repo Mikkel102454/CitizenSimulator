@@ -9,14 +9,18 @@ namespace CitizenSimulator.Business.Services.Abstractions;
 
 public interface IBusinessService
 {
+    TimeSpan GameTime { get; }
     IReadOnlyList<Models.Business> GetBusinessTypes();
     IReadOnlyList<Recipe> GetRecipes();
-    bool CreateBusiness(ICommandBuffer commands,
-        string typeId,
-        string name,
-        CitizenComponent owner,
-        PropertyComponent property,
-        out BusinessComponent? business);
+    IReadOnlyList<JobVacancy> GetVacancies();
+    IReadOnlyList<JobVacancy> GetAvailableJobs(CitizenComponent worker);
+    Employment? GetEmployment(CitizenComponent worker);
+    WorkShift? GetNextShift(CitizenComponent worker);
+    bool TryResign(CitizenComponent worker);
+    bool TryArriveAtWorkplace(BusinessComponent business, CitizenComponent worker);
+    bool TryLeaveWorkplace(CitizenComponent worker);
+    bool CreateBusiness(ICommandBuffer commands, string typeId, string name,
+        CitizenComponent owner, PropertyComponent property, out BusinessComponent? business);
     bool TryActivateBusiness(BusinessComponent business);
     bool TrySuspendBusiness(BusinessComponent business);
     bool TryCloseBusiness(BusinessComponent business);
@@ -30,26 +34,16 @@ public interface IBusinessService
     bool TryAddBatchLabor(BusinessComponent business, decimal laborMinutes);
     bool TryCompleteBatch(BusinessComponent business);
     bool TryCancelBatch(BusinessComponent business);
-    bool TryHire(BusinessComponent business,
-        CitizenComponent worker,
-        string role,
-        out EmploymentContract? contract,
-        decimal? hourlyWage = null,
-        IReadOnlyList<OpeningHours>? shifts = null);
+    bool TryHire(BusinessComponent business, CitizenComponent worker, string role,
+        out EmploymentContract? contract, decimal? hourlyWage = null, IReadOnlyList<OpeningHours>? shifts = null);
     bool TryDismiss(BusinessComponent business, CitizenComponent worker);
     bool TryCheckIn(BusinessComponent business, CitizenComponent worker);
     bool TryCheckOut(BusinessComponent business, CitizenComponent worker);
     bool TryPayWages(BusinessComponent business);
-    bool TryDepositUtilities(BusinessComponent business,
-        decimal electricityKwh,
-        decimal waterLitres,
-        decimal totalValue = 0);
+    bool TryDepositUtilities(BusinessComponent business, decimal electricityKwh, decimal waterLitres, decimal totalValue = 0);
     bool TryConnectGrid(BusinessComponent business);
-    bool TryTransferUtility(BusinessComponent supplier,
-        BusinessComponent receiver,
-        string utility,
-        decimal requested,
-        out decimal transferred);
+    bool TryTransferUtility(BusinessComponent supplier, BusinessComponent receiver, string utility,
+        decimal requested, out decimal transferred);
     bool TryDisposeWaste(BusinessComponent source, BusinessComponent disposalBusiness, string itemId, decimal amount);
     decimal GetDisposalCapacity(BusinessComponent disposalBusiness, string itemId);
     void RecordTrade(BusinessComponent seller, BusinessComponent? buyer, decimal price, decimal costOfGoods);

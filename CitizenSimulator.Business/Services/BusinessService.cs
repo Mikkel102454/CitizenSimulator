@@ -16,21 +16,17 @@ using BusinessDefinition = CitizenSimulator.Business.Models.Business;
 
 namespace CitizenSimulator.Business.Services;
 
-public partial class BusinessService(IEntityStore store,
-    IEventBus events,
-    IVaultService vaultService,
-    IInventoryService inventoryService,
-    ICalenderService calender,
-    ISimulationClock clock,
-    IItemService items) : IBusinessService
+public partial class BusinessService(IEntityStore store, IEventBus events, IVaultService vaultService, IInventoryService inventoryService,
+    ICalenderService calender, ISimulationClock clock, IItemService items) : IBusinessService
 {
     private readonly Dictionary<EntityRef, BusinessComponent> _pendingCreations = [];
     private TimeSpan _observedGameTime;
+    public TimeSpan GameTime => Now;
     private TimeSpan Now
     {
         get
         {
-            var clockTime = calender.GetGameTime(clock.Tick);
+            TimeSpan clockTime = calender.GetGameTime(clock.Tick);
             return clockTime > _observedGameTime ? clockTime : _observedGameTime;
         }
     }
@@ -48,9 +44,7 @@ public partial class BusinessService(IEntityStore store,
 
     private bool IsLiving(CitizenComponent citizen)
     {
-        return citizen.Alive
-            && store.IsAlive(citizen.Parent)
-            && ReferenceEquals(store.GetComponent<CitizenComponent>(citizen.Parent), citizen);
+        return citizen.Alive && store.IsAlive(citizen.Parent) && ReferenceEquals(store.GetComponent<CitizenComponent>(citizen.Parent), citizen);
     }
 
     private static bool IsTerminal(BusinessComponent business)
@@ -60,10 +54,8 @@ public partial class BusinessService(IEntityStore store,
 
     private decimal GetRequiredCapital(BusinessComponent business)
     {
-        var costs = business.Type.OperatingCosts;
-        decimal hourlyPayroll = business.Contracts
-            .Where(contract => contract.IsEmployed)
-            .Sum(contract => contract.HourlyWage);
+        OperatingCosts costs = business.Type.OperatingCosts;
+        decimal hourlyPayroll = business.Contracts.Where(contract => contract.IsEmployed).Sum(contract => contract.HourlyWage);
         decimal operatingReserve = costs.InsurancePerDay + costs.MaintenanceBudgetPerDay + hourlyPayroll;
 
         return business.UnpaidLiabilities + Math.Max(business.Type.MinimumCapital, operatingReserve);
@@ -137,18 +129,18 @@ public partial class BusinessService(IEntityStore store,
             || _pendingCreations.ContainsKey(property.Parent))
             return false;
 
-        var type = BusinessDefinition.BusinessList.Find(definition => definition.Id == typeId);
+        BusinessDefinition? type = BusinessDefinition.BusinessList.Find(definition => definition.Id == typeId);
         if (type == null
             || property.AreaM2 < type.Premises.MinimumAreaM2
             || !type.Premises.AllowedUses.Contains(property.Type.ToString(), StringComparer.OrdinalIgnoreCase))
             return false;
 
-        var vault = store.Query(VaultComponent.GetComponentType())
+        VaultComponent? vault = store.Query(VaultComponent.GetComponentType())
             .Select(entity => store.GetComponent<VaultComponent>(entity)).FirstOrDefault();
         if (vault == null)
             return false;
 
-        var inventory = store.GetComponent<InventoryComponent>(property.Parent);
+        InventoryComponent? inventory = store.GetComponent<InventoryComponent>(property.Parent);
         if (inventory != null && inventory.UsedCapacity > type.Premises.StorageCapacity)
             return false;
 
@@ -195,7 +187,7 @@ public partial class BusinessService(IEntityStore store,
 
     private bool HasRequiredContracts(BusinessComponent business)
     {
-        foreach (var requirement in business.Type.Workforce)
+        foreach (WorkforceRequirement requirement in business.Type.Workforce)
         {
             int employeeCount = business.Contracts.Count(contract =>
                 contract.IsEmployed && IsLiving(contract.Employee) && contract.Role == requirement.Role);
@@ -213,7 +205,7 @@ public partial class BusinessService(IEntityStore store,
 
         RecordAttendance(business, Now);
         business.State = BusinessState.Suspended;
-        foreach (var contract in business.Contracts)
+        foreach (EmploymentContract contract in business.Contracts)
         {
             contract.IsCheckedIn = false;
         }
@@ -227,10 +219,11 @@ public partial class BusinessService(IEntityStore store,
             return false;
 
         RecordAttendance(business, Now);
-        foreach (var contract in business.Contracts)
+        foreach (EmploymentContract contract in business.Contracts)
         {
             contract.IsCheckedIn = false;
             contract.IsEmployed = false;
+            contract.IsAtWorkplace = false;
         }
 
         business.State = BusinessState.ShutDown;
@@ -243,10 +236,11 @@ public partial class BusinessService(IEntityStore store,
             return false;
 
         business.State = BusinessState.Bankrupt;
-        foreach (var contract in business.Contracts)
+        foreach (EmploymentContract contract in business.Contracts)
         {
             contract.IsCheckedIn = false;
             contract.IsEmployed = false;
+            contract.IsAtWorkplace = false;
         }
 
         return true;
@@ -258,8 +252,8 @@ public partial class BusinessService(IEntityStore store,
             || business.ElectricityKwh != 0 || business.WaterLitres != 0 || !IsLiving(business.Owner))
             return false;
 
-        var receiver = store.GetComponent<InventoryComponent>(business.Owner.Parent);
-        var account = store.GetComponent<BankAccountComponent>(business.Owner.Parent);
+        InventoryComponent? receiver = store.GetComponent<InventoryComponent>(business.Owner.Parent);
+        BankAccountComponent? account = store.GetComponent<BankAccountComponent>(business.Owner.Parent);
         if (receiver == null || account == null || ReferenceEquals(receiver, business.Inventory)
             || ReferenceEquals(account, business.PaymentAccount) || receiver.FreeCapacity < business.Inventory.UsedCapacity
             || account.Balance > decimal.MaxValue - business.PaymentAccount.Balance)
@@ -269,7 +263,7 @@ public partial class BusinessService(IEntityStore store,
         if (business.ActiveBatch != null && !TryCancelBatch(business))
             return false;
 
-        foreach (var item in business.Inventory.Inventory.Where(entry => entry.Value > 0).ToArray())
+        foreach (KeyValuePair<string, decimal> item in business.Inventory.Inventory.Where(entry => entry.Value > 0).ToArray())
         {
             decimal value = business.Inventory.GetValue(item.Key);
             if (!inventoryService.TryTransfer(item.Key, business.Inventory, receiver, item.Value, value, out _))
@@ -291,7 +285,7 @@ public partial class BusinessService(IEntityStore store,
         if (amount <= 0 || !IsRegistered(business) || !IsLiving(business.Owner))
             return false;
 
-        var account = store.GetComponent<BankAccountComponent>(business.Owner.Parent);
+        BankAccountComponent? account = store.GetComponent<BankAccountComponent>(business.Owner.Parent);
         decimal funding = business.OwnerFunding + amount;
         if (account == null || !vaultService.TransferBalance(account, business.PaymentAccount, amount))
             return false;
@@ -305,7 +299,7 @@ public partial class BusinessService(IEntityStore store,
         if (amount <= 0 || !IsRegistered(business) || !IsLiving(business.Owner) || business.PaymentAccount.Balance - amount < business.UnpaidLiabilities)
             return false;
 
-        var account = store.GetComponent<BankAccountComponent>(business.Owner.Parent);
+        BankAccountComponent? account = store.GetComponent<BankAccountComponent>(business.Owner.Parent);
         decimal withdrawn = business.OwnerWithdrawals + amount;
         if (account == null || !vaultService.TransferBalance(business.PaymentAccount, account, amount))
             return false;

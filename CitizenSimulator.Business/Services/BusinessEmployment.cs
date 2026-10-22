@@ -1,3 +1,4 @@
+using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Business.Components;
 using CitizenSimulator.Business.Models;
 using CitizenSimulator.Citizen.Components;
@@ -13,12 +14,8 @@ public partial class BusinessService
             || role.Contains("retail", StringComparison.OrdinalIgnoreCase);
     }
 
-    public bool TryHire(BusinessComponent business,
-        CitizenComponent worker,
-        string role,
-        out EmploymentContract? contract,
-        decimal? hourlyWage = null,
-        IReadOnlyList<OpeningHours>? shifts = null)
+    public bool TryHire(BusinessComponent business, CitizenComponent worker, string role,
+        out EmploymentContract? contract, decimal? hourlyWage = null, IReadOnlyList<OpeningHours>? shifts = null)
     {
         contract = null;
         if (!IsRegistered(business) || IsTerminal(business) || !IsLiving(worker))
@@ -31,10 +28,8 @@ public partial class BusinessService
         if (requirement == null || requirement.DesiredCount <= 0 || skill < requirement.MinimumSkill)
             return false;
 
-        if (account == null
-            || ReferenceEquals(account, business.PaymentAccount)
-            || wage <= 0
-            || wage < requirement.StartingHourlyWage)
+        if (account == null || !account.Vault.Accounts.Contains(account) || ReferenceEquals(account, business.PaymentAccount)
+            || wage <= 0 || wage < requirement.StartingHourlyWage)
             return false;
 
         int filledPositions = business.Contracts.Count(contract => contract.IsEmployed && contract.Role == role);
@@ -44,10 +39,11 @@ public partial class BusinessService
         decimal existingHourlyPayroll = business.Contracts
             .Where(contract => contract.IsEmployed).Sum(contract => contract.HourlyWage);
         decimal requiredFunds = business.UnpaidLiabilities + existingHourlyPayroll + wage;
+
         if (business.PaymentAccount.Balance < requiredFunds)
             return false;
 
-        var agreedShifts = (shifts ?? business.Type.OpeningHours)
+        OpeningHours[] agreedShifts = (shifts ?? business.Type.OpeningHours)
             .Select(openingHours => new OpeningHours
             {
                 Days = [.. openingHours.Days],
@@ -56,6 +52,11 @@ public partial class BusinessService
             })
             .ToArray();
         if (agreedShifts.Length == 0 || agreedShifts.Any(openingHours => !BusinessCatalog.ValidHours(openingHours)))
+            return false;
+
+        decimal workingMinutes = BusinessTime.WorkingMinutes(agreedShifts, business.Type.OpeningHours,
+            Now, Now + TimeSpan.FromDays(8), calender);
+        if (workingMinutes <= 0)
             return false;
 
         contract = new EmploymentContract
@@ -72,9 +73,9 @@ public partial class BusinessService
 
     private bool HasActiveJob(CitizenComponent worker)
     {
-        foreach (var entity in store.Query(BusinessComponent.GetComponentType()))
+        foreach (EntityRef entity in store.Query(BusinessComponent.GetComponentType()))
         {
-            var business = store.GetComponent<BusinessComponent>(entity)!;
+            BusinessComponent business = store.GetComponent<BusinessComponent>(entity)!;
             bool employsWorker = business.Contracts.Any(contract => contract.IsEmployed
                 && contract.Employee.Parent == worker.Parent);
             if (employsWorker)
@@ -96,6 +97,7 @@ public partial class BusinessService
 
         RecordAttendance(business, Now);
         contract.IsCheckedIn = false;
+        contract.IsAtWorkplace = false;
         contract.IsEmployed = false;
         return true;
     }
@@ -108,14 +110,19 @@ public partial class BusinessService
             || !BusinessTime.IsOpen(business.Type.OpeningHours, Now, calender))
             return false;
 
-        var employment = business.Contracts.Find(employment => employment.IsEmployed
-            && employment.Employee.Parent == worker.Parent);
-        if (employment == null || employment.IsCheckedIn || !BusinessTime.IsOpen(employment.Shifts, Now, calender))
+        EmploymentContract? employment = business.Contracts.Find(employment => employment.IsEmployed
+                                                                               && employment.Employee.Parent == worker.Parent);
+        if (employment == null || employment.IsCheckedIn || !employment.IsAtWorkplace
+            || !BusinessTime.IsOpen(employment.Shifts, Now, calender))
+            return false;
+
+        WorkShift? shift = GetNextShift(worker);
+        if (shift == null || shift.Start > Now)
             return false;
 
         employment.IsCheckedIn = true;
         employment.CheckedInAt = Now;
-        employment.CheckedInUntil = BusinessTime.ShiftEnd(employment.Shifts, Now, calender);
+        employment.CheckedInUntil = shift.End;
         employment.LastAttendanceProcessedAt = Now;
         return true;
     }
@@ -125,8 +132,8 @@ public partial class BusinessService
         if (!IsRegistered(business))
             return false;
 
-        var employment = business.Contracts.Find(employment => employment.IsCheckedIn
-            && employment.Employee.Parent == worker.Parent);
+        EmploymentContract? employment = business.Contracts.Find(employment => employment.IsCheckedIn
+                                                                               && employment.Employee.Parent == worker.Parent);
         if (employment == null)
             return false;
 
@@ -159,6 +166,7 @@ public partial class BusinessService
             if (!IsLiving(contract.Employee))
             {
                 contract.IsCheckedIn = false;
+                contract.IsAtWorkplace = false;
                 contract.IsEmployed = false;
                 continue;
             }

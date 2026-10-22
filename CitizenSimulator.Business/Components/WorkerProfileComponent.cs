@@ -6,4 +6,5 @@ namespace CitizenSimulator.Business.Components;
 public sealed class WorkerProfileComponent : Component<WorkerProfileComponent>
 {
     public Dictionary<string, int> Skills { get; init; } = new(StringComparer.Ordinal);
+    public double CommuteMinutes { get; set; } = 15;
 }

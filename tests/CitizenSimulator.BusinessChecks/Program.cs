@@ -2,12 +2,22 @@ using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Business.Components;
 using CitizenSimulator.Business.Models;
+using CitizenSimulator.Business.Models.CitizenMind;
+using CitizenSimulator.Business.Services.Abstractions;
 using CitizenSimulator.Business.Services;
 using CitizenSimulator.Business.Systems;
 using CitizenSimulator.Calender.Services;
+using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Citizen.Components;
 using CitizenSimulator.Citizen.Services;
 using CitizenSimulator.CitizenMind.Components;
+using CitizenSimulator.CitizenMind.Executor;
+using CitizenSimulator.CitizenMind.Executor.Handlers;
+using CitizenSimulator.CitizenMind.Models;
+using CitizenSimulator.CitizenMind.Models.Abstractions;
+using CitizenSimulator.CitizenMind.Services;
+using CitizenSimulator.CitizenMind.Services.Abstractions;
+using CitizenSimulator.CitizenMind.Systems;
 using CitizenSimulator.Engine.ECS;
 using CitizenSimulator.Engine.Events;
 using CitizenSimulator.Engine.Modding;
@@ -38,9 +48,9 @@ void Check(bool condition, string message)
 void Near(decimal actual,
     decimal expected,
     string message) => Check(Math.Abs(actual - expected) < 0.00000001m, $"{message}: expected {expected}, got {actual}");
-void Scenario(string name, Action<World> run, bool procurement = false)
+void Scenario(string name, Action<World> run, bool procurement = false, bool autonomousEmployment = false)
 {
-    using var world = new World(procurement);
+    using var world = new World(procurement, autonomousEmployment);
     run(world);
     Console.WriteLine("PASS " + name);
 }
@@ -424,6 +434,7 @@ Scenario("host destination tick is authoritative during callbacks", world =>
     var business = world.Make("business.bakery");
     world.Prepare(business);
     var employee = business.Employees[0];
+    world.Businesses.TryArriveAtWorkplace(business, employee.Employee);
     TimeSpan expected = world.Calendar.GetGameTime(world.Clock.Tick + 1);
     world.AfterBusiness(() => Check(world.Businesses.TryCheckIn(business, employee.Employee), "Check in during host callback"));
     world.TickLikeHost();
@@ -432,7 +443,184 @@ Scenario("host destination tick is authoritative during callbacks", world =>
     world.TickLikeHost();
     Near(employee.MinutesWorked, 5, "Next host callback earns exactly five minutes");
 });
+Scenario("vacancy discovery, qualifications, and competing applications", world =>
+{
+    var business = world.Make("business.bakery");
+    world.Businesses.TryFundBusiness(business, 1000000);
+    var applicant = world.Citizen();
+    var vacancies = world.Businesses.GetVacancies();
+    Check(vacancies.Sum(vacancy => vacancy.AvailablePositions) == 3, "Vacancies reflect desired head counts");
+    Check(world.Businesses.GetAvailableJobs(applicant).Single().Role == "cashier", "Skills filter accessible jobs");
+
+    var action = new ActionContext(applicant.Parent, TimeSpan.Zero, TimeSpan.Zero)
+    {
+        Bindings = new Dictionary<string, object?>
+        {
+            ["employer"] = business.Parent,
+            ["role"] = "cashier",
+            ["hourlyWage"] = 125m
+        }
+    };
+    var handler = new AcceptJobHandler(world.Store, world.Businesses);
+    Check(handler.Start(action) == ActionResult.RUNNING, "Application can start against a live vacancy");
+    var rival = world.Citizen();
+    Check(world.Businesses.TryHire(business, rival, "cashier", out _), "Another citizen can fill the vacancy");
+    Check(handler.Tick(action with { Elapsed = TimeSpan.FromMinutes(5) }) == ActionResult.FAILED,
+        "A stale application must not overfill the roster");
+    Check(world.Businesses.GetEmployment(applicant) == null, "Failed application creates no contract");
+    Check(world.Businesses.GetAvailableJobs(rival).Count == 0, "Employed citizens cannot take a second job");
+    world.Finance.SetBalance(business.PaymentAccount, 0);
+    Check(world.Businesses.GetVacancies().Count == 0, "Unfunded employers do not advertise payable jobs");
+});
+
+Scenario("workplace arrival and resignation retain wage debt", world =>
+{
+    var business = world.Make("business.bakery");
+    world.Prepare(business);
+    var contract = business.Employees[0];
+    Check(!world.Businesses.TryCheckIn(business, contract.Employee), "Remote check-in must fail");
+    Check(world.Businesses.TryArriveAtWorkplace(business, contract.Employee), "Explicit workplace arrival");
+    Check(world.Businesses.TryCheckIn(business, contract.Employee), "Arrival permits check-in");
+    world.Tick();
+    world.Finance.SetBalance(business.PaymentAccount, 0);
+    world.Tick();
+    decimal unpaid = contract.UnpaidWages;
+    Check(unpaid > 0, "Attendance creates an unpaid wage liability when funds run out");
+    Check(world.Businesses.TryResign(contract.Employee), "Citizen can resign from suspended employer");
+    Check(!contract.IsEmployed && !contract.IsCheckedIn && !contract.IsAtWorkplace, "Resignation clears attendance");
+    Check(world.Businesses.GetEmployment(contract.Employee) == null, "Resignation removes current employment");
+    Near(contract.UnpaidWages, unpaid, "Resignation retains wage debt on the old roster");
+    world.Businesses.TryFundBusiness(business, unpaid + 1000);
+    Check(world.Businesses.TryPayWages(business), "Former employees can receive wage arrears");
+    Near(contract.UnpaidWages, 0, "Arrears settle normally after resignation");
+});
+
+Scenario("overnight next shifts intersect employer opening windows", world =>
+{
+    var business = world.Make("business.bakery");
+    business.Type.OpeningHours.Clear();
+    business.Type.OpeningHours.Add(new OpeningHours { Days = ["monday"], Opens = "22:00", Closes = "02:00" });
+    world.Prepare(business);
+    var worker = business.Employees[0].Employee;
+    var shift = world.Businesses.GetNextShift(worker)!;
+    Check(shift.Start == TimeSpan.FromDays(2) + TimeSpan.FromHours(22), "Find Monday night from Monday morning");
+    Check(shift.End == TimeSpan.FromDays(3) + TimeSpan.FromHours(2), "Shift ends on Tuesday");
+    ulong shiftTick = (ulong)(shift.Start.TotalMinutes / 5);
+    world.Jump(shiftTick - world.Clock.Tick + 12);
+    Check(world.Businesses.GetNextShift(worker)!.End == shift.End, "After midnight belongs to the same shift");
+    world.CheckIn(business);
+    world.Tick(36);
+    Check(!business.Employees[0].IsCheckedIn, "Overnight attendance ends at closing time");
+    Check(world.Businesses.GetNextShift(worker)!.Start > shift.End, "Next weekly occurrence excludes the ended shift");
+});
+
+Scenario("cancelled commutes and stale contracts cannot create attendance", world =>
+{
+    var business = world.Make("business.bakery");
+    world.Prepare(business);
+    var contract = business.Employees[0];
+    var shift = world.Businesses.GetNextShift(contract.Employee)!;
+    var context = new ActionContext(contract.Employee.Parent, TimeSpan.Zero, TimeSpan.Zero)
+    {
+        Bindings = new Dictionary<string, object?>
+        {
+            ["employer"] = business.Parent,
+            ["contractId"] = contract.Id,
+            ["shiftEndMinutes"] = shift.End.TotalMinutes
+        }
+    };
+    var travel = new TravelToWorkHandler(world.Store, world.Businesses);
+    Check(travel.Start(context) == ActionResult.RUNNING, "Commute starts for the current contract");
+    Check(travel.Tick(context with { Elapsed = TimeSpan.FromMinutes(10) }) == ActionResult.RUNNING,
+        "Partial commute does not complete arrival");
+    travel.Cancel(context);
+    world.Tick();
+    Check(!contract.IsAtWorkplace && !contract.IsCheckedIn, "Interrupted journey leaves worker off site");
+    Near(contract.MinutesWorked, 0, "Commuting provides no labor");
+
+    world.Businesses.TryDismiss(business, contract.Employee);
+    Check(world.Businesses.TryHire(business, contract.Employee, contract.Role, out var replacement), "Worker can sign a new contract");
+    Check(replacement!.Id != contract.Id, "New employment has a new contract identity");
+    Check(travel.Tick(context with { Elapsed = TimeSpan.FromMinutes(20) }) == ActionResult.FAILED,
+        "Old commute cannot move a replacement contract");
+    Check(new WorkShiftHandler(world.Store, world.Businesses).Start(context) == ActionResult.FAILED,
+        "Old work action cannot check in a replacement contract");
+
+    world.Businesses.TryResign(contract.Employee);
+    var nightOnly = new[] { new OpeningHours { Days = ["monday"], Opens = "22:00", Closes = "23:00" } };
+    Check(!world.Businesses.TryHire(business, contract.Employee, contract.Role, out _, shifts: nightOnly),
+        "A contract must overlap actual business opening hours");
+});
+
+Scenario("citizens autonomously accept jobs, commute, work, and finish shifts", world =>
+{
+    var business = world.Make("business.bakery");
+    world.Prepare(business);
+    world.CheckIn(business);
+    var previousWorker = business.Employees.First(contract => contract.Role == "baker");
+    world.Businesses.TryDismiss(business, previousWorker.Employee);
+    var applicant = world.Citizen();
+    world.Store.AddComponent(applicant.Parent, new WorkerProfileComponent { Skills = new() { ["baker"] = 1 } });
+    world.Store.GetComponent<MindComponent>(applicant.Parent)!.IsActive = true;
+    world.Tick(14);
+
+    var employment = world.Businesses.GetEmployment(applicant);
+    Check(employment != null && employment.Contract.Role == "baker", "Mind accepts a qualified vacancy");
+    var contract = employment!.Contract;
+    Check(contract.IsAtWorkplace && contract.IsCheckedIn, "Citizen completes commute and checks in");
+    Check(contract.MinutesWorked > 0 && contract.WagesPaid > 0, "Autonomous attendance earns real wages");
+    Near(contract.WagesPaid, contract.MinutesWorked * contract.HourlyWage / 60, "Only attended minutes are paid");
+    world.Tick(110);
+    Check(!contract.IsCheckedIn && !contract.IsAtWorkplace, "Work action checks out and leaves at shift end");
+    decimal wagesAtClosing = contract.WagesPaid;
+    world.Tick(5);
+    Near(contract.WagesPaid, wagesAtClosing, "No wages accrue after the shift");
+}, autonomousEmployment: true);
+
+Scenario("emergencies interrupt work and citizens return afterward", world =>
+{
+    var business = world.Make("business.bakery");
+    world.Prepare(business);
+    world.CheckIn(business);
+    var contract = business.Employees[0];
+    world.Store.GetComponent<MindComponent>(contract.Employee.Parent)!.IsActive = true;
+    world.Tick(2);
+    Check(contract.IsCheckedIn, "Existing employee starts a work action");
+    world.Emergency = true;
+    world.Tick();
+    Check(!contract.IsCheckedIn && !contract.IsAtWorkplace, "Higher priority emergency checks the worker out");
+    decimal workedBeforeBreak = contract.MinutesWorked;
+    world.Tick(2);
+    Near(contract.MinutesWorked, workedBeforeBreak, "Emergency recovery and travel cannot produce labor");
+    world.Tick(10);
+    Check(contract.IsCheckedIn && contract.MinutesWorked > workedBeforeBreak, "Worker returns after recovery");
+
+    world.Finance.SetBalance(business.PaymentAccount, 0);
+    world.Tick(6);
+    Check(!contract.IsEmployed, "Citizen leaves an employer suspended with unpaid wages");
+    Check(contract.UnpaidWages > 0, "Autonomous resignation preserves earned wages");
+}, autonomousEmployment: true);
+
 Console.WriteLine($"PASS: {checks} business integration checks.");
+
+sealed class TestEmergencyHandler(Action recover) : IMindActionHandler
+{
+    public ActionResult Start(ActionContext context)
+    {
+        return ActionResult.RUNNING;
+    }
+
+    public ActionResult Tick(ActionContext context)
+    {
+        recover();
+        return ActionResult.SUCCEEDED;
+    }
+
+    public void Cancel(ActionContext context)
+    {
+    }
+}
+
 sealed class TestClock : ISimulationClock
 {
     public int TickRate => 30;
@@ -470,13 +658,14 @@ sealed class World : IDisposable
     public MarketService Market { get; }
     public IItemService Items { get; }
     public VaultComponent Vault { get; }
+    public bool Emergency { get; set; }
 
     private readonly CitizenService _citizens;
     private readonly PropertyService _properties;
     private readonly SystemScheduler _scheduler;
     private readonly QueuedCommands _queue = new();
     private readonly AfterBusinessCommands _after = new();
-    public World(bool procurement)
+    public World(bool procurement, bool autonomousEmployment = false)
     {
         var registry = new ComponentRegistry();
         ComponentTypes.Initialize(registry);
@@ -520,6 +709,20 @@ sealed class World : IDisposable
         Market = new(Store, Events, Finance, Inventory, Businesses, Items);
         _citizens = new(Store, Events);
         _properties = new(Store, Events);
+
+        if (autonomousEmployment)
+        {
+            var mind = new CitizenMindService(Store);
+            services.Register<ICitizenMindService>(mind);
+            services.Register<IBusinessService>(Businesses);
+            services.Register<ICalenderService>(Calendar);
+            EmploymentActions.Register(context);
+            mind.RegisterHandler("citizen_mind.wait_until", new WaitUntilHandler());
+            RegisterTestEmergency(mind);
+            systems.Register(new CitizenMindSystem(Events, new GoalSelector(mind), mind,
+                Calendar, new ActionExecutor(mind)));
+        }
+
         systems.Register(_queue);
         systems.Register(new BusinessSystem(Calendar, Businesses));
         systems.Register(_after);
@@ -528,6 +731,44 @@ sealed class World : IDisposable
 
         _scheduler = new(systems, Events);
         _scheduler.Start(Store);
+    }
+
+    private void RegisterTestEmergency(CitizenMindService mind)
+    {
+        mind.RegisterFact("test.emergency", _ => Emergency ? 1.0 : 0.0, canPredict: true);
+        mind.RegisterHandler("test.recover", new TestEmergencyHandler(() => Emergency = false));
+        var active = new ExpressionDefinition
+        {
+            Op = "gt",
+            Args = [new() { Fact = "test.emergency" }, new() { Literal = 0.0 }]
+        };
+        var recovered = new ExpressionDefinition
+        {
+            Op = "lte",
+            Args = [new() { Fact = "test.emergency" }, new() { Literal = 0.0 }]
+        };
+        mind.RegisterAction(new ActionDefinition
+        {
+            Id = "test.recover",
+            Handler = "test.recover",
+            Preconditions = [active],
+            Duration = new() { Unit = "simulationMinutes", Estimate = new() { Literal = 5.0 } },
+            Prediction = [new() { Fact = "test.emergency", Op = "set", Value = new() { Literal = 0.0 } }],
+            Completion = [recovered],
+            Cost = new() { Expression = new() { Literal = 1.0 } }
+        });
+        mind.RegisterGoal(new GoalDefinition
+        {
+            Id = "test.recover",
+            Eligible = active,
+            Emergency = new() { When = active, Priority = 100 },
+            Desired = [recovered],
+            Utility = new()
+            {
+                Considerations = [new() { Input = new() { Literal = 1.0 }, Curve = [[0, 0], [1, 1]] }]
+            },
+            GoalActions = ["test.recover"]
+        });
     }
 
     public BankAccountComponent NewAccount(decimal balance)
@@ -541,6 +782,7 @@ sealed class World : IDisposable
     {
         var entity = Store.CreateEntity();
         _citizens.CreateCitizen(entity, "Citizen " + entity.Id, 30, out var citizen);
+        Store.GetComponent<MindComponent>(entity)!.IsActive = false;
         Store.AddComponent(entity, NewAccount(10000000));
         Store.AddComponent(entity, new InventoryComponent());
         return citizen!;
@@ -611,6 +853,9 @@ sealed class World : IDisposable
     {
         foreach (var contract in business.Employees.Where(contract => contract.IsEmployed))
         {
+            if (!Businesses.TryArriveAtWorkplace(business, contract.Employee))
+                throw new Exception("Workplace arrival fixture");
+
             if (!Businesses.TryCheckIn(business, contract.Employee))
                 throw new Exception("Check-in fixture");
         }

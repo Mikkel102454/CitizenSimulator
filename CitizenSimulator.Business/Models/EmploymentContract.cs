@@ -13,6 +13,7 @@ public sealed class EmploymentContract
     public required IReadOnlyList<OpeningHours> Shifts { get; init; }
     public bool IsEmployed { get; internal set; } = true;
     public bool IsCheckedIn { get; internal set; }
+    public bool IsAtWorkplace { get; internal set; }
     public TimeSpan CheckedInAt { get; internal set; }
     public TimeSpan CheckedInUntil { get; internal set; }
     public TimeSpan LastAttendanceProcessedAt { get; internal set; }
