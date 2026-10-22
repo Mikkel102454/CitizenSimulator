@@ -59,6 +59,8 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
 
             if (commitment.Window.Start < TimeSpan.Zero || commitment.PreparationTime < TimeSpan.Zero)
                 throw new ArgumentException("Commitment start and preparation time must be nonnegative.");
+            if (commitment.Id.StartsWith(DailyScheduleGenerator.OccurrenceIdPrefix, StringComparison.Ordinal))
+                throw new ArgumentException("The 'citizen_mind.daily:' commitment ID prefix is reserved.");
             if (!ids.Add(commitment.Id))
                 throw new InvalidOperationException($"Duplicate commitment id '{commitment.Id}'.");
             if (!Goals.ContainsKey(commitment.GoalId))
@@ -66,6 +68,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
                     $"Commitment '{commitment.Id}' references unknown goal '{commitment.GoalId}'.");
 
             var previous = mind.Schedule.FirstOrDefault(entry =>
+                entry.SourceRuleId == null &&
                 entry.Commitment.Id == commitment.Id &&
                 entry.Commitment.GoalId == commitment.GoalId &&
                 entry.Commitment.Window.Start == commitment.Window.Start &&
@@ -77,6 +80,7 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
             });
         }
 
+        entries.AddRange(mind.Schedule.Where(entry => entry.SourceRuleId != null));
         long revision = checked(mind.ScheduleRevision + 1);
         mind.Schedule = entries;
         mind.ScheduleRevision = revision;
@@ -86,7 +90,60 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
     public IReadOnlyList<ScheduledCommitmentState> GetSchedule(EntityRef citizen)
         => GetMind(citizen).Schedule.AsReadOnly();
 
-    public void ClearSchedule(EntityRef citizen) => SetSchedule(citizen, []);
+    public void ClearSchedule(EntityRef citizen)
+    {
+        var mind = GetMind(citizen);
+        long revision = checked(mind.ScheduleRevision + 1);
+        mind.Schedule = [];
+        mind.DailyScheduleRules = [];
+        mind.ScheduleRevision = revision;
+        mind.GoalRetryTicks.Clear();
+    }
+
+    public void SetDailySchedule(EntityRef citizen, IReadOnlyList<DailyScheduleRule> rules)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        var mind = GetMind(citizen);
+        var definitions = new List<DailyScheduleRule>();
+        var ids = new HashSet<string>();
+
+        foreach (var rule in rules)
+        {
+            ArgumentNullException.ThrowIfNull(rule);
+            ArgumentException.ThrowIfNullOrWhiteSpace(rule.Id);
+            ArgumentException.ThrowIfNullOrWhiteSpace(rule.GoalId);
+            ArgumentNullException.ThrowIfNull(rule.Window);
+            if (rule.PreparationTime < TimeSpan.Zero)
+                throw new ArgumentException("Preparation time must be nonnegative.");
+            if (!ids.Add(rule.Id))
+                throw new InvalidOperationException($"Duplicate daily schedule rule id '{rule.Id}'.");
+            if (!Goals.ContainsKey(rule.GoalId))
+                throw new InvalidOperationException(
+                    $"Daily schedule rule '{rule.Id}' references unknown goal '{rule.GoalId}'.");
+
+            definitions.Add(rule);
+        }
+
+        if (definitions.Count == mind.DailyScheduleRules.Count &&
+            definitions.All(rule => mind.DailyScheduleRules.Any(existing => existing.Matches(rule))))
+            return;
+
+        long revision = checked(mind.ScheduleRevision + 1);
+        var unchangedIds = definitions.Where(rule =>
+                mind.DailyScheduleRules.Any(existing => existing.Matches(rule)))
+            .Select(rule => rule.Id).ToHashSet();
+        mind.DailyScheduleRules = definitions;
+        mind.Schedule = mind.Schedule.Where(entry =>
+            entry.SourceRuleId == null || entry.Status != CommitmentStatus.PENDING ||
+            unchangedIds.Contains(entry.SourceRuleId)).ToList();
+        mind.ScheduleRevision = revision;
+        mind.GoalRetryTicks.Clear();
+    }
+
+    public IReadOnlyList<DailyScheduleRule> GetDailySchedule(EntityRef citizen)
+        => GetMind(citizen).DailyScheduleRules.AsReadOnly();
+
+    public void ClearDailySchedule(EntityRef citizen) => SetDailySchedule(citizen, []);
 
     private MindComponent GetMind(EntityRef citizen)
     {

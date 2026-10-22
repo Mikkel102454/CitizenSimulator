@@ -44,6 +44,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
             }
 
+            DailyScheduleGenerator.Refresh(mind, gameTime, _plannerOptions.MaxPlanDuration);
             RefreshSchedule(entity, mind, gameTime);
 
             if (mind.Execution is { Status: not PlanExecutionStatus.RUNNING })
@@ -316,14 +317,26 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
             mind.GoalRetryTicks[mind.CurrentGoal.Id] = checked(currentTick + retryDelayTicks);
 
         if (mind.Execution?.Status == PlanExecutionStatus.COMPLETED &&
-            mind.CurrentCommitment is { Status: CommitmentStatus.PENDING } entry)
+            mind.CurrentCommitment is { } current)
         {
-            var context = service.CreateEvaluationContext(citizen, gameTime);
-            if (gameTime >= entry.Commitment.Window.Start && gameTime <= entry.Commitment.Window.End &&
-                GoalSatisfied(service.Goals[entry.Commitment.GoalId], context))
-                entry.Status = CommitmentStatus.COMPLETED;
-            else if (gameTime > entry.Commitment.Window.End)
-                entry.Status = CommitmentStatus.MISSED;
+            // A schedule refresh may replace the state object while an action that
+            // cannot be interrupted is still running. Record against the current
+            // matching occurrence, never against a replacement goal or window.
+            var entry = mind.Schedule.FirstOrDefault(entry =>
+                entry.Commitment.Id == current.Commitment.Id &&
+                entry.Commitment.GoalId == current.Commitment.GoalId &&
+                entry.Commitment.Window.Start == current.Commitment.Window.Start &&
+                entry.Commitment.Window.End == current.Commitment.Window.End);
+
+            if (entry is { Status: CommitmentStatus.PENDING })
+            {
+                var context = service.CreateEvaluationContext(citizen, gameTime);
+                if (gameTime >= entry.Commitment.Window.Start && gameTime <= entry.Commitment.Window.End &&
+                    GoalSatisfied(service.Goals[entry.Commitment.GoalId], context))
+                    entry.Status = CommitmentStatus.COMPLETED;
+                else if (gameTime > entry.Commitment.Window.End)
+                    entry.Status = CommitmentStatus.MISSED;
+            }
         }
 
         ClearPlan(mind);
@@ -449,6 +462,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         {
             ClearPlan(mind);
             mind.Schedule.Clear();
+            mind.DailyScheduleRules.Clear();
             mind.GoalRetryTicks.Clear();
             mind.EmergencyActive.Clear();
         }

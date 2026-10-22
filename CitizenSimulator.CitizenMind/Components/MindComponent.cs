@@ -20,6 +20,7 @@ public sealed class MindComponent : Component<MindComponent>
     public ScheduledCommitmentState? CurrentCommitment { get; internal set; }
 
     internal List<ScheduledCommitmentState> Schedule { get; set; } = [];
+    internal List<DailyScheduleRule> DailyScheduleRules { get; set; } = [];
     internal long ScheduleRevision { get; set; }
     internal long PlanScheduleRevision { get; set; }
 }
