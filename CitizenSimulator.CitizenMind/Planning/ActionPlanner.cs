@@ -78,7 +78,8 @@ public class ActionPlanner
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
         IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options,
-        IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null)
+        IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null,
+        PlanConstraints? constraints = null)
     {
         if (options.MaxDepth < 1)
             throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
@@ -93,13 +94,37 @@ public class ActionPlanner
         if (options.MaxPlanDuration <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(options.MaxPlanDuration));
 
+        if (options.MaxScheduleChecks < 1)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxScheduleChecks));
+
         var latestAllowedTime = state.GameTime + options.MaxPlanDuration;
+        bool continuationBudgetExceeded = false;
+
+        bool IsAcceptedGoal(EvaluationContext candidateState)
+        {
+            if (!IsGoalSatisfied(goal, candidateState))
+                return false;
+
+            if (constraints?.GoalWindow is { } window &&
+                (candidateState.GameTime < window.Start || candidateState.GameTime > window.End))
+                return false;
+
+            var status = constraints?.CheckContinuation?.Invoke(candidateState) ?? PlanStatus.FOUND;
+            if (status == PlanStatus.BUDGET_EXCEEDED)
+                continuationBudgetExceeded = true;
+
+            return status is PlanStatus.FOUND or PlanStatus.ALREADY_SATISFIED;
+        }
         
-        if(IsGoalSatisfied(goal, state))
+        if (IsAcceptedGoal(state))
             return new PlanResult()
             {
                 Status = PlanStatus.ALREADY_SATISFIED,
+                PredictedState = state
             };
+
+        if (constraints?.GoalWindow is { } expiredWindow && state.GameTime > expiredWindow.End)
+            return new PlanResult { Status = PlanStatus.NO_PATH };
         
         var allowedActions = ActionDependencyResolver.Resolve(goal, actions);
         
@@ -135,6 +160,10 @@ public class ActionPlanner
                 return;
             }
 
+            if (constraints?.GoalWindow is { } window &&
+                actionDuration > window.End - parent.State.GameTime)
+                return;
+
             double totalCost = parent.TotalCost + actionCost;
 
             if (!double.IsFinite(totalCost))
@@ -167,12 +196,14 @@ public class ActionPlanner
             if (!known.Contains(current))
                 continue;
             
-            if (IsGoalSatisfied(goal, current.State))
+            // The starting state was already checked before the search began.
+            if (current != start && IsAcceptedGoal(current.State))
             {
                 return new PlanResult
                 {
                     Status = PlanStatus.FOUND,
-                    Plan = BuildPlan(current)
+                    Plan = BuildPlan(current),
+                    PredictedState = current.State
                 };
             }
             
@@ -194,6 +225,14 @@ public class ActionPlanner
             expansions++;
 
             var waitTargets = new SortedSet<TimeSpan>();
+
+            if (constraints?.GoalWindow is { } goalWindow && goalWindow.Start > current.State.GameTime)
+            {
+                if (goalWindow.Start <= latestAllowedTime)
+                    waitTargets.Add(goalWindow.Start);
+                else
+                    timeLimitReached = true;
+            }
             
             foreach (var action in allowedActions)
             {
@@ -217,6 +256,9 @@ public class ActionPlanner
                     
                     foreach (var opening in candidate.GetUpcomingOpeningTimes(current.State.GameTime))
                     {
+                        if (constraints?.GoalWindow is { } window && opening > window.End)
+                            continue;
+
                         if (opening > latestAllowedTime)
                         {
                             timeLimitReached = true;
@@ -248,7 +290,9 @@ public class ActionPlanner
         
         return new PlanResult
         {
-            Status = depthLimitReached || timeLimitReached ? PlanStatus.BUDGET_EXCEEDED : PlanStatus.NO_PATH
+            Status = depthLimitReached || timeLimitReached || continuationBudgetExceeded
+                ? PlanStatus.BUDGET_EXCEEDED
+                : PlanStatus.NO_PATH
         };
     }
 

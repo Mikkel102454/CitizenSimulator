@@ -17,7 +17,7 @@ public class CitizenMind : IMod
 {
     public void OnLoad(IModContext context)
     {
-        CitizenMindService citizenMindService = new CitizenMindService();
+        CitizenMindService citizenMindService = new CitizenMindService(context.Store);
         context.Services.Register<ICitizenMindService>(citizenMindService);
         citizenMindService.RegisterHandler("citizen_mind.wait_until", new WaitUntilHandler());
         

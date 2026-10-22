@@ -1,5 +1,6 @@
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.CitizenMind.Configuration;
+using CitizenSimulator.CitizenMind.Components;
 using CitizenSimulator.CitizenMind.Definitions;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
@@ -7,10 +8,11 @@ using CitizenSimulator.CitizenMind.Models.Abstractions;
 using CitizenSimulator.CitizenMind.Planning;
 using CitizenSimulator.CitizenMind.Planning.Abstractions;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
+using CitizenSimulator.CitizenMind.Scheduling;
 
 namespace CitizenSimulator.CitizenMind.Services;
 
-public class CitizenMindService : ICitizenMindService
+public class CitizenMindService(IEntityStore store) : ICitizenMindService
 {
     internal readonly Dictionary<string, Delegate> Facts = [];
 
@@ -39,6 +41,60 @@ public class CitizenMindService : ICitizenMindService
     internal void CloseRegistration()
     {
         _registrationClosed = true;
+    }
+
+    public void SetSchedule(EntityRef citizen, IReadOnlyList<ScheduledCommitment> commitments)
+    {
+        ArgumentNullException.ThrowIfNull(commitments);
+        var mind = GetMind(citizen);
+        var entries = new List<ScheduledCommitmentState>();
+        var ids = new HashSet<string>();
+
+        foreach (var commitment in commitments)
+        {
+            ArgumentNullException.ThrowIfNull(commitment);
+            ArgumentException.ThrowIfNullOrWhiteSpace(commitment.Id);
+            ArgumentException.ThrowIfNullOrWhiteSpace(commitment.GoalId);
+            ArgumentNullException.ThrowIfNull(commitment.Window);
+
+            if (commitment.Window.Start < TimeSpan.Zero || commitment.PreparationTime < TimeSpan.Zero)
+                throw new ArgumentException("Commitment start and preparation time must be nonnegative.");
+            if (!ids.Add(commitment.Id))
+                throw new InvalidOperationException($"Duplicate commitment id '{commitment.Id}'.");
+            if (!Goals.ContainsKey(commitment.GoalId))
+                throw new InvalidOperationException(
+                    $"Commitment '{commitment.Id}' references unknown goal '{commitment.GoalId}'.");
+
+            var previous = mind.Schedule.FirstOrDefault(entry =>
+                entry.Commitment.Id == commitment.Id &&
+                entry.Commitment.GoalId == commitment.GoalId &&
+                entry.Commitment.Window.Start == commitment.Window.Start &&
+                entry.Commitment.Window.End == commitment.Window.End);
+
+            entries.Add(new ScheduledCommitmentState(commitment)
+            {
+                Status = previous?.Status ?? CommitmentStatus.PENDING
+            });
+        }
+
+        long revision = checked(mind.ScheduleRevision + 1);
+        mind.Schedule = entries;
+        mind.ScheduleRevision = revision;
+        mind.GoalRetryTicks.Clear();
+    }
+
+    public IReadOnlyList<ScheduledCommitmentState> GetSchedule(EntityRef citizen)
+        => GetMind(citizen).Schedule.AsReadOnly();
+
+    public void ClearSchedule(EntityRef citizen) => SetSchedule(citizen, []);
+
+    private MindComponent GetMind(EntityRef citizen)
+    {
+        if (!store.IsAlive(citizen))
+            throw new InvalidOperationException($"Citizen '{citizen}' no longer exists.");
+
+        return store.GetComponent<MindComponent>(citizen)
+            ?? throw new InvalidOperationException($"Citizen '{citizen}' has no mind component.");
     }
 
     public void RegisterTimePredictor(string id, IElapsedTimePredictor predictor)
