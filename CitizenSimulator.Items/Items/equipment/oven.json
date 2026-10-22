@@ -1,5 +1,6 @@
 {
   "id": "equipment.oven",
+  "unit": "piece",
   "name": "Commercial Oven",
   "description": "An oven used to bake food. One inventory unit represents one oven.",
   "consumable": false,

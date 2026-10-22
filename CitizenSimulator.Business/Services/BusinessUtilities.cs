@@ -87,7 +87,8 @@ public partial class BusinessService
         if (policy.UnitPrice > 0)
         {
             decimal spendableBalance = Math.Max(0, receiver.PaymentAccount.Balance - receiver.UnpaidLiabilities);
-            decimal affordableQuantity = spendableBalance / policy.UnitPrice;
+            bool affordable = policy.UnitPrice < 1 && quantity * policy.UnitPrice <= spendableBalance;
+            decimal affordableQuantity = affordable ? quantity : spendableBalance / policy.UnitPrice;
             quantity = Math.Min(quantity, affordableQuantity);
         }
 
@@ -138,9 +139,14 @@ public partial class BusinessService
 
         decimal today = business.DisposalDate == calender.GetDate(Now) ? business.DisposedToday : 0;
         decimal dailyCapacityLeft = policy.MaxIntakeTonnesPerDay - today;
-        decimal lifetimeCapacityLeft = policy.CapacityTonnes - business.DisposedTonnes;
+        decimal storedTonnes = policy.AcceptedItems.Sum(acceptedId =>
+            (business.Inventory.GetQuantity(acceptedId) + business.Inventory.GetReservedQuantity(acceptedId))
+            * (items.GetItems().First(item => item.Id == acceptedId).MassKgPerUnit ?? 0) / 1000);
+        decimal usedCapacity = policy.PermanentStorage ? business.DisposedTonnes : storedTonnes;
+        decimal lifetimeCapacityLeft = policy.CapacityTonnes - usedCapacity;
         decimal tonnes = Math.Max(0, Math.Min(dailyCapacityLeft, lifetimeCapacityLeft));
-        return Math.Min(business.Inventory.FreeCapacity, tonnes * 1000 / mass);
+        decimal itemCapacity = tonnes * 1000 / mass;
+        return policy.PermanentStorage ? itemCapacity : Math.Min(business.Inventory.FreeCapacity, itemCapacity);
     }
 
     public bool TryDisposeWaste(BusinessComponent source, BusinessComponent disposalBusiness, string itemId, decimal amount)
@@ -161,6 +167,8 @@ public partial class BusinessService
             return false;
 
         decimal fee = tonnes * policy.FeePerTonne;
+        if (fee > Math.Max(0, source.PaymentAccount.Balance - source.UnpaidLiabilities))
+            return false;
 
         // Check ledger arithmetic before moving money or inventory.
         _ = source.DisposalCosts + fee;
@@ -172,7 +180,11 @@ public partial class BusinessService
         if (fee > 0 && !vaultService.TransferBalance(source.PaymentAccount, disposalBusiness.PaymentAccount, fee))
             return false;
 
-        if (!inventoryService.TryTransfer(itemId, source.Inventory, disposalBusiness.Inventory, amount, 0, out var lostValue))
+        decimal lostValue;
+        bool delivered = policy.PermanentStorage
+            ? inventoryService.TryRemove(itemId, source.Inventory, amount, out lostValue)
+            : inventoryService.TryTransfer(itemId, source.Inventory, disposalBusiness.Inventory, amount, 0, out lostValue);
+        if (!delivered)
         {
             vaultService.SetBalance(source.PaymentAccount, sourceBalanceBefore);
             vaultService.SetBalance(disposalBusiness.PaymentAccount, disposalBalanceBefore);

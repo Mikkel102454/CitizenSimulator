@@ -1,5 +1,6 @@
 {
   "id": "food.sandwich",
+  "unit": "portion",
   "name": "Sandwich",
   "description": "A filling sandwich with vegetables and meat.",
   "consumable": true,

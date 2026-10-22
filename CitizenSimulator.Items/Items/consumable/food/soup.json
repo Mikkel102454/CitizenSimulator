@@ -1,5 +1,6 @@
 {
   "id": "food.soup",
+  "unit": "portion",
   "name": "Soup",
   "description": "A warm bowl of vegetable soup.",
   "consumable": true,

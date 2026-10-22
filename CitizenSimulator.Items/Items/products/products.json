@@ -1,5 +1,6 @@
-﻿{
+{
   "id": "product.furniture",
+  "unit": "piece",
   "name": "Furniture",
   "description": "Basic furniture for homes and offices.",
   "consumable": false,

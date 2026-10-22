@@ -39,6 +39,8 @@ public sealed class BusinessComponent : Component<BusinessComponent>
     public IReadOnlyList<EmploymentContract> Employees => Contracts.AsReadOnly();
     public decimal SalesRevenue { get; internal set; }
     public decimal OwnerFunding { get; internal set; }
+    public decimal StartupFunding { get; internal set; }
+    public bool StartupFundingAwarded { get; internal set; }
     public decimal OwnerWithdrawals { get; internal set; }
     public decimal StockPurchases { get; internal set; }
     public decimal CostOfGoodsSold { get; internal set; }
@@ -56,7 +58,7 @@ public sealed class BusinessComponent : Component<BusinessComponent>
     public decimal Profit => SalesRevenue - Expenses;
     public decimal TradingCashFlow => SalesRevenue - StockPurchases;
     public decimal OperatingCashFlow => TradingCashFlow - OperatingCostsPaid - WagesPaid - UtilityPurchases - DisposalCosts;
-    public decimal NetCashFlow => OperatingCashFlow + OwnerFunding - OwnerWithdrawals;
+    public decimal NetCashFlow => OperatingCashFlow + OwnerFunding + StartupFunding - OwnerWithdrawals;
     public decimal UnpaidLiabilities => UnpaidOperatingCosts + UnpaidWages;
     // Utility buffers use kWh/litres, separate from physical item storage.
     public decimal ElectricityKwh { get; internal set; }

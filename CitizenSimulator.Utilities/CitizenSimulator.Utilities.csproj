@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="../CitizenSimulator.Market/CitizenSimulator.Market.csproj" />
+        <ProjectReference Include="../CitizenSimulator.Housing/CitizenSimulator.Housing.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="Configuration/world-supply.yml" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+    <Target Name="CopyModToHost" AfterTargets="Build">
+        <PropertyGroup>
+            <ModsDirectory>$(MSBuildProjectDirectory)/../CitizenSimulator/bin/$(Configuration)/$(TargetFramework)/Mods/Core</ModsDirectory>
+        </PropertyGroup>
+        <MakeDir Directories="$(ModsDirectory)/Configuration" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsDirectory)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="Configuration/world-supply.yml" DestinationFolder="$(ModsDirectory)/Configuration" SkipUnchangedFiles="true" />
+    </Target>
+</Project>

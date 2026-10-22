@@ -8,10 +8,10 @@ Use IBusinessService from the service registry.
 
 1. Create a living citizen with a BankAccountComponent. Create and commit an owned property with a permitted type and sufficient AreaM2.
 2. Call CreateBusiness with a command buffer and commit its structural changes. It creates a separate business account and inventory, or preserves an existing premises inventory. Duplicate pending creation is rejected.
-3. Transfer owner money using TryFundBusiness. Buy or explicitly seed equipment through IInventoryService.TryAdd. Supply totalValue when seeding valued assets.
+3. Transfer owner money using TryFundBusiness, or enable the Utilities startup policy for a finite one-time grant and paid procurement of initial stock/equipment. Manual scenarios can seed equipment through IInventoryService.TryAdd; supply totalValue for valued assets.
 4. Configure an operating-cost recipient with TrySetOperatingCostRecipient. Insurance and maintenance are modeled as a bundled daily service charge; this does not itself repair property condition.
 5. Hire workers with TryHire. WorkerProfileComponent.Skills holds role skill levels; absent roles have level zero. Vacancies are limited by the type's workforce counts. A worker may have one active job. Wages cannot be below the configured starting wage.
-6. Connect utility access using TryConnectGrid. Existing suppliers can fill utility buffers through procurement. A new scenario must explicitly provide initial utility stocks/imports with TryDepositUtilities to bootstrap the power/water supply chain.
+6. With Utilities enabled, connections and shortage imports follow world-supply.yml. Use IUtilityService.Connect to configure a business's connection rates. Without Utilities, use TryConnectGrid and explicitly bootstrap supply with TryDepositUtilities.
 7. Call TryActivateBusiness. Readiness requires controlled premises, equipment, staffed roles, a cost recipient where needed, and cash covering outstanding liabilities plus the greater of MinimumCapital or one day of fixed costs plus one hour of contracted wages.
 8. Workers arrive with TryArriveAtWorkplace, then call TryCheckIn during their agreed shifts. Hiring alone does not create attendance. TryCheckOut ends attendance; TryLeaveWorkplace also clears workplace presence. The runtime automatically checks workers out when the current working window ends.
 
@@ -39,7 +39,7 @@ Citizens with active minds also resign from a suspended employer that owes them 
 
 ## Runtime order
 
-BusinessSystem runs at priority -5, before normal citizen/action systems, and BusinessRestockSystem at priority ten. It observes the callback destination tick because the host commits Clock.Tick after callbacks finish.
+UtilitySystem runs at priority -7 for accounts, connections, startup procurement, and domestic consumption. BusinessSystem runs at -5, before normal citizen/action systems. BusinessRestockSystem runs at 10, and HomeUtilitySystem fills domestic buffers at 11 after local production. They observe the callback destination tick because the host commits Clock.Tick after callbacks finish.
 
 Each business tick:
 
@@ -117,11 +117,96 @@ The base selling price is the greater of the configured floor and weighted inven
 
 Electricity and water use separate kWh/litre buffers. Connected businesses buy supply toward UtilityBufferHours (default 24) plus recipe batch needs. Producers must have actual stock and a matching GridSupplyPolicy. Export rates apply across all consumers in a tick: 30 kW allows 2.5 kWh per five-minute tick. Utility output is never treated as free stock or discarded on completion.
 
-Water Works is a natural-source producer requiring a pump, electricity, staff, and time. Waste-to-energy uses organic waste and creates power plus ash. Initial energy/import stock is explicitly scenario supplied. Adding business definitions does not automatically construct these businesses.
+Water Works is a natural-source producer requiring a pump, electricity, staff, and time. Waste-to-energy uses organic waste and creates power plus ash. Utilities can bootstrap energy and other stock through paid imports; without that mod initial stocks remain a scenario responsibility. Adding business definitions does not automatically construct businesses.
 
-Waste mass is declared with Item.MassKgPerUnit. Disposal converts kilograms to tonnes before applying landfill fees, total capacity, and daily intake limits. Physical waste is transferred to the disposal business's inventory; it does not disappear. Organic-waste producer catalogs expose waste wholesale offers for the energy facility to procure.
+Waste mass is declared with Item.MassKgPerUnit. Disposal converts kilograms to tonnes before applying fees, total capacity, and daily intake limits. Recovery facilities receive real inventory for processing. Permanent landfills bury accepted items and retain the quantity as DisposedTonnes against lifetime capacity, rather than filling a small working inventory. Organic-waste producer catalogs also expose waste wholesale offers for the energy facility to procure.
 
 These are abstract deliveries/connections; routes, trucks, construction, and geographic utility networks belong to other simulation modules.
+
+## Configurable city supply and world imports
+
+The Utilities mod implements `IUtilityService`. Market discovers its smaller `ICitySupplyService` interface at runtime, so Market can still operate without world imports when Utilities is absent.
+
+The checked-in configuration is `CitizenSimulator.Utilities/Configuration/world-supply.yml`. Building copies the default beside the mod DLL in `Mods/Core/Configuration`. To keep an installation-specific override across builds, place `Configuration/world-supply.yml` beside the host executable; this path takes precedence. Configuration is loaded on startup, so restart after changing it. Unknown fields, duplicate YAML keys, unknown items, mismatched units, and negative prices/capacities are rejected.
+
+```yaml
+utilities:
+  electricity:
+    enabled: true
+    unit: kWh
+    unitPrice: 2
+    maxPerHour: 100000
+  water:
+    enabled: true
+    unit: litre
+    unitPrice: 0.02
+    maxPerHour: 1000000
+
+items:
+  material.wood:
+    enabled: true
+    unit: kg
+    unitPrice: 3
+    maxPerDay: 100000
+```
+
+Omit an entry or set `enabled: false` to prohibit that world purchase. Limits are shared across the entire city. Item limits reset each game day. Utility rate limits apply per game tick: 120 kWh/hour permits 10 kWh in a five-minute tick. Connection rates separately limit each receiver, and each local supplier's export rate is shared across its customers. Repeated calls in one tick cannot reset these budgets.
+
+### Local supply before world supply
+
+`ReplenishStock(businessEntity, itemId, quantity)` first buys from actual local wholesale offers using Market. Local opening hours, stock, access, service capacity, funds, and storage apply. It imports only the remaining quantity allowed by the whitelist, daily quota, funds, and receiving storage. Item quantities round down to QuantityStep. Imported stock receives its actual acquisition cost, and the outstanding market request is reduced by the imported quantity without inventing a domestic sale.
+
+`SupplyUtility(businessEntity, utility, targetQuantity)` fills toward a total buffer target, rather than adding that quantity every call. It buys available local supply first, then world supply for the remainder. For example, a 500 kWh target supplied with 300 exportable local kWh imports exactly 200 kWh, provided connection, export, world-import capacity, and funds allow it. Local suppliers retain their own operating and batch reserve. Local supply takes priority even when its configured price is higher than the world price.
+
+`Connect` configures a business's electricity capacity in kW and water capacity in litres/hour. `Disconnect` stops further network deliveries, and automatic connection does not undo that explicit choice. Existing paid business buffers remain usable; they represent the current abstract energy/water reserve rather than a geographic cable or pipe model. Imports stop when funds or limits run out; normal business utility checks then expose MissingUtilities and prevent unsupported operation or production.
+
+Import payments go into an actual registered `WorldAccount`. They are external payments, not income for a fictitious local seller. Businesses record `StockPurchases` or `UtilityPurchases`; utility consumption remains an expense through `UtilityCostsConsumed`.
+
+### Startup stock and working capital
+
+With `startup.enabled: true`, setting-up businesses receive at most one grant from a finite `StartupFund`. `StartupFundingAwarded` records that the grant decision has happened, including when existing funds made a zero grant sufficient. Draining the account cannot trigger another award. Exhausting the fund leaves unfunded businesses in setup.
+
+The budget covers required equipment, explicit stock targets, all recipe inputs, initial utility buffers, and a working-capital reserve. The reserve uses 24 hours of desired payroll and operating utilities per configured day, plus fixed daily costs; this is deliberately conservative. The default is seven days; the wheat farm overrides it to 95 days to cover its 90-day first harvest. Imports of wheat, flour, and bread can bridge the city's food supply while local farms mature. Fruit, milk, water portions, timber, iron, and required equipment also have configurable import sources.
+
+The grant is a separately recorded capital inflow, not sales revenue or owner funding. Stock and equipment are then purchased through the normal local-first delivery path. The layer does not create buildings, hire workers, invent attendance, or activate businesses. Those remain owner/scenario/citizen operations. Disable startup grants for scenarios that supply their own capital.
+
+### Waste collection and recovery
+
+`CollectWaste` uses explicit abstract delivery: accepted waste arrives immediately at the selected facility, and the facility fee includes collection and delivery. `collectionTonnesPerDay` bounds city-wide transport capacity; routes, trucks, and travel times are not simulated.
+
+Collection tries recovery facilities first, then permanent landfills, then an enabled world disposal route for any remaining waste. Each local facility enforces operating state, accepted items, daily intake, physical recovery storage, and lifetime landfill capacity. Collection only removes accepted, paid quantities; uncollected waste stays in the source inventory and can block production storage.
+
+The incinerator accepts organic waste into inventory rather than burying it. Its real recipe consumes that stock, requires equipment, labor, time and utilities, and creates 30 kWh plus ash per batch. That generated buffer participates in local electricity sales. Ash then requires separate collection and disposal. Recovery capacity becomes available again after processing; permanent burial capacity never resets. World disposal also has daily and lifetime limits plus a configurable fee per tonne.
+
+### Domestic utility meters
+
+Homes participate in the same local-first utility supply and shared world-import limits. Household policy configures connection rates, buffer hours, and background consumption per resident per day. The living property owner pays the shared meter, so the current policy treats utilities as included in rent. No automatic household grant is supplied.
+
+`ConnectHome`, `DisconnectHome`, and `GetHomeConnection` expose the meter. It records delivered buffers, purchases, actual consumption, and unserved background demand. When Utilities is loaded, safe-water access requires actual water, and cooking access requires both water and electricity. The home-water drinking handler consumes an additional quarter litre per active drinking minute and rechecks availability before reducing thirst. Sleeping still requires a bed and usable residence, not electricity. Empty buffers or unpaid replenishment do not grant water access.
+
+### Quantity units and measurements
+
+| Resource | Quantity unit |
+|---|---|
+| Food and packaged drinks | One consumable portion; consumption removes one portion |
+| Packaged drinks | LitresPerUnit declares volume: water/milk/juice 1 litre, coffee 0.25 litre |
+| Wheat, flour, timber, iron, stone | Kilograms; QuantityStep permits 0.001 kg |
+| Organic waste and ash | Kilograms; fees/capacities convert using MassKgPerUnit / 1000 to tonnes |
+| Equipment and furniture | Whole pieces |
+| Network electricity | kWh; connection/export power is kW, multiplied by elapsed game hours |
+| Network water | Litres; connection/export rates are litres/hour |
+| Physical inventory storage | Abstract storage units: one base item quantity occupies one unit |
+
+Storage units are a gameplay capacity measure, not kilograms, litres, or cubic metres. Utility buffers are separate from physical inventory storage. Bottled drinking-water portions and network-water litres are separate resources; the bakery's water is already declared in UtilitiesPerBatch and operating utilities, so procurement does not substitute bottles for it.
+
+`GetStatistics(resourceId)` exposes cumulative local deliveries, imports, import costs, collected/disposed tonnes, disposal fees, and current outstanding delivery shortages. Requested counts delivery attempts, including retries; it is not a production-consumption forecast. Item and utility shortages use their native quantity units, while waste collection/disposal counters use tonnes. Business utility consumption and domestic unserved demand are available on their respective business/meter records.
+
+Run the supply integration checks with:
+
+```powershell
+dotnet build tests/CitizenSimulator.UtilityChecks --configuration Release --disable-build-servers -m:1 -p:UseSharedCompilation=false
+dotnet run --project tests/CitizenSimulator.UtilityChecks --configuration Release --no-build --no-restore
+```
 
 ## Accounting
 
@@ -133,10 +218,10 @@ BusinessComponent exposes:
 - OperatingCostsAccrued, OperatingCostsPaid, and UnpaidOperatingCosts.
 - WagesAccrued, WagesPaid, and UnpaidWages.
 - UtilityPurchases, UtilityCostsConsumed, and DisposalCosts.
-- OwnerFunding and OwnerWithdrawals.
+- OwnerFunding, StartupFunding, and OwnerWithdrawals.
 - Profit = sales revenue minus recognized expenses.
 - OperatingCashFlow = sales receipts minus stock purchases, operating payments, wage payments, utility purchases, and disposal fees.
-- NetCashFlow = operating cash flow plus owner funding minus withdrawals.
+- NetCashFlow = operating cash flow plus owner funding and startup funding minus withdrawals.
 
 Funding is never sales revenue. Buying stock creates an asset, not immediate cost of goods sold. Revenue/expense totals update immediately on confirmed transactions. OnBusinessSale is an observation event and must not be used to credit these totals a second time.
 

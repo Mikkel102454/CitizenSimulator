@@ -1,5 +1,6 @@
 {
   "id": "waste.organic",
+  "unit": "kg",
   "name": "Organic Waste",
   "description": "Biodegradable waste from farming and food production. One inventory unit represents one kilogram.",
   "consumable": false,

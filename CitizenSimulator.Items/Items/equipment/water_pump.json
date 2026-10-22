@@ -1,5 +1,6 @@
 {
   "id": "equipment.water_pump",
+  "unit": "piece",
   "name": "Water Treatment Pump",
   "description": "Pumps and treats water from a natural water source.",
   "consumable": false,

@@ -1,5 +1,7 @@
 {
   "id": "drink.water",
+  "unit": "portion",
+  "litresPerUnit": 1,
   "name": "Water Bottle",
   "description": "A bottle of clean drinking water.",
   "consumable": true,

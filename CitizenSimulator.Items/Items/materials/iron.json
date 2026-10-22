@@ -1,5 +1,7 @@
 {
   "id": "material.iron",
+  "unit": "kg",
+  "massKgPerUnit": 1,
   "name": "Iron",
   "description": "Iron used for manufacturing tools and machinery.",
   "consumable": false,

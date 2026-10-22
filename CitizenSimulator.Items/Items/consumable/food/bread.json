@@ -1,5 +1,6 @@
 {
   "id": "food.bread",
+  "unit": "portion",
   "name": "Bread",
   "description": "A freshly baked loaf of bread.",
   "consumable": true,

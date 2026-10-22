@@ -1,5 +1,7 @@
 {
   "id": "material.wheat",
+  "unit": "kg",
+  "massKgPerUnit": 1,
   "name": "Wheat",
   "description": "Harvested wheat. One inventory unit represents one kilogram.",
   "consumable": false,

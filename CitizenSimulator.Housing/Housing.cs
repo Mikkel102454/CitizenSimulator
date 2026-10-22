@@ -17,7 +17,7 @@ public class Housing : IMod
     {
         HousingService housing = new(context.Store, context.Services.Get<IPropertyService>(),
             context.Services.Get<IVaultService>(), context.Services.Get<IInventoryService>(),
-            context.Services.Get<ICalenderService>(), context.Clock);
+            context.Services.Get<ICalenderService>(), context.Clock, context.Services);
         context.Services.Register<IHousingService>(housing);
         context.Services.Register<IHomeAccessService>(housing);
         context.Systems.Register(new HousingSystem(housing));

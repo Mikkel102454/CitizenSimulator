@@ -1,4 +1,5 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.Abstractions.Services;
 using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Citizen.Components;
@@ -15,7 +16,7 @@ namespace CitizenSimulator.Housing.Services;
 
 public sealed partial class HousingService(IEntityStore store, IPropertyService properties,
     IVaultService vault, IInventoryService inventories, ICalenderService calendar,
-    ISimulationClock clock) : IHousingService
+    ISimulationClock clock, IServiceRegistry? services = null) : IHousingService
 {
     public const double MinimumHabitableCondition = 20;
     public const decimal RepairCostPerPoint = 10;
@@ -139,8 +140,21 @@ public sealed partial class HousingService(IEntityStore store, IPropertyService 
     }
 
     public bool CanSleep(EntityRef citizen) => GetAccessibleHome(citizen) is { HasBeds: true };
-    public bool CanDrink(EntityRef citizen) => GetAccessibleHome(citizen) is { HasSafeWater: true };
-    public bool CanCook(EntityRef citizen) => GetAccessibleHome(citizen) is { HasKitchen: true, HasSafeWater: true };
+    public bool CanDrink(EntityRef citizen)
+    {
+        if (GetAccessibleHome(citizen) is not { HasSafeWater: true } house)
+            return false;
+
+        return services == null || !services.TryGet<IHomeUtilityService>(out var utilities) || utilities!.HasWater(house.Parent);
+    }
+
+    public bool CanCook(EntityRef citizen)
+    {
+        if (GetAccessibleHome(citizen) is not { HasKitchen: true, HasSafeWater: true } house || !CanDrink(citizen))
+            return false;
+
+        return services == null || !services.TryGet<IHomeUtilityService>(out var utilities) || utilities!.HasElectricity(house.Parent);
+    }
     public bool CanStore(EntityRef citizen) => GetAccessibleHome(citizen) is { StorageCapacity: > 0 };
 
     public void Advance(ulong tick)

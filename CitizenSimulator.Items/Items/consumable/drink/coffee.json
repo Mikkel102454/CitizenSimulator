@@ -1,5 +1,7 @@
 {
   "id": "drink.coffee",
+  "unit": "portion",
+  "litresPerUnit": 0.25,
   "name": "Coffee",
   "description": "A freshly brewed cup of coffee.",
   "consumable": true,

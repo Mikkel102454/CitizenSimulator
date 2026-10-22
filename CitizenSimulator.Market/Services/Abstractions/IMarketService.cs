@@ -39,6 +39,7 @@ public interface IMarketService
     void ReportDemand(InventoryComponent receiveInventory, BankAccountComponent paymentAccount,
         string itemId, decimal amount, BusinessComponent? preferredSeller = null, BuyStatus? failureStatus = null);
     void CancelDemand(InventoryComponent receiveInventory, string itemId);
+    void ResolveExternalDemand(InventoryComponent receiveInventory, string itemId, decimal quantity);
     MarketStatistics GetStatistics(string itemId, BusinessComponent? seller = null);
     decimal GetRestockTarget(BusinessComponent business, string itemId, decimal configuredTarget);
     void AdvanceMarket(TimeSpan gameTime);

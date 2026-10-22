@@ -1,5 +1,7 @@
 {
   "id": "drink.orange_juice",
+  "unit": "portion",
+  "litresPerUnit": 1,
   "name": "Orange Juice",
   "description": "A bottle of orange juice.",
   "consumable": true,

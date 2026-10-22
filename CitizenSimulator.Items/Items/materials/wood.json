@@ -1,5 +1,7 @@
 {
   "id": "material.wood",
+  "unit": "kg",
+  "massKgPerUnit": 1,
   "name": "Wood",
   "description": "Raw timber used for construction and manufacturing.",
   "consumable": false,

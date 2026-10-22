@@ -119,7 +119,7 @@ Rent accrues in game time, prorated from the lease's start. Cumulative calculati
 
 ### Access, storage, and cleanup
 
-A property is habitable at condition 20 or above and must not be destroyed. `CanSleep`, `CanDrink`, `CanCook`, and `CanStore` require a living resident and owner and a usable home. Sleeping additionally requires beds; drinking requires safe water; cooking requires a kitchen and safe water. These checks represent access, not a utility supply network or cooking recipes. Future cooking handlers can use `IHomeAccessService.CanCook` to enforce kitchen access.
+A property is habitable at condition 20 or above and must not be destroyed. `CanSleep`, `CanDrink`, `CanCook`, and `CanStore` require a living resident and owner and a usable home. Sleeping additionally requires beds; drinking requires safe water; cooking requires a kitchen and safe water. With Utilities loaded, drinking also requires an actual water buffer, and cooking requires water and electricity. The utility layer bills the owner and consumes domestic water/energy; see [city supply](business.md#configurable-city-supply-and-world-imports). Cooking recipes remain a separate feature; their handlers can use `IHomeAccessService.CanCook` to enforce kitchen access.
 
 Needs registers `home.can_sleep`, `home.can_drink`, `home.can_cook`, and `home.can_store` through that interface. Sleep and home-water handlers recheck access at start and every tick. Resting outdoors remains possible. Existing inventory consumption and needs modification are unchanged.
 

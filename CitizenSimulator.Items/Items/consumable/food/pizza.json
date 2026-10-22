@@ -1,5 +1,6 @@
 {
   "id": "food.pizza",
+  "unit": "portion",
   "name": "Pizza",
   "description": "A freshly prepared pizza.",
   "consumable": true,

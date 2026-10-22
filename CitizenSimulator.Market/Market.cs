@@ -28,7 +28,7 @@ public class Market : IMod
         context.Systems.Register(new BusinessRestockSystem(
             context.Services.Get<IMarketService>(),
             context.Services.Get<IBusinessService>(),
-            context.Services.Get<IItemService>()));
+            context.Services.Get<IItemService>(), context.Services));
 
         context.Systems.Register(new MarketSystem(
             context.Services.Get<IMarketService>(), context.Services.Get<IBusinessService>()));

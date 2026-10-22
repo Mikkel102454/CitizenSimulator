@@ -1,0 +1,57 @@
+# Restart the simulation after editing. Prices use the exact unit shown here.
+# Local supplies are always attempted before world purchases, even if dearer.
+autoConnectBusinesses: true
+connectionElectricityKw: 1000
+connectionWaterLitresPerHour: 10000
+collectionTonnesPerDay: 500
+
+# The property's owner pays the meter; rent therefore includes these utilities.
+# Drinking consumes additional measured water from the same buffer.
+households:
+  autoConnect: true
+  electricityKw: 20
+  waterLitresPerHour: 1000
+  electricityKwhPerResidentPerDay: 8
+  waterLitresPerResidentPerDay: 100
+  bufferHours: 24
+
+startup:
+  enabled: true
+  fundBalance: 1000000000
+  workingCapitalDays: 7
+  workingCapitalDaysByBusiness:
+    business.wheat_farm: 95
+
+# Limits are shared by the entire city, per game day.
+# Remove an entry or set enabled: false to prohibit that import.
+items:
+  drink.water: { unit: portion, unitPrice: 2, maxPerDay: 100000 }
+  drink.milk: { unit: portion, unitPrice: 6, maxPerDay: 10000 }
+  drink.coffee: { unit: portion, unitPrice: 5, maxPerDay: 10000 }
+  drink.orange_juice: { unit: portion, unitPrice: 5, maxPerDay: 10000 }
+  food.apple: { unit: portion, unitPrice: 2, maxPerDay: 10000 }
+  food.banana: { unit: portion, unitPrice: 2, maxPerDay: 10000 }
+  food.bread: { unit: portion, unitPrice: 8, maxPerDay: 10000 }
+  material.wheat: { unit: kg, unitPrice: 2, maxPerDay: 100000 }
+  material.flour: { unit: kg, unitPrice: 4, maxPerDay: 100000 }
+  material.wood: { unit: kg, unitPrice: 3, maxPerDay: 100000 }
+  material.iron: { unit: kg, unitPrice: 8, maxPerDay: 100000 }
+  material.stone: { unit: kg, unitPrice: 1, maxPerDay: 100000 }
+  equipment.oven: { unit: piece, unitPrice: 10000, maxPerDay: 100 }
+  equipment.grain_mill: { unit: piece, unitPrice: 15000, maxPerDay: 100 }
+  equipment.tractor: { unit: piece, unitPrice: 40000, maxPerDay: 100 }
+  equipment.workbench: { unit: piece, unitPrice: 5000, maxPerDay: 100 }
+  equipment.water_pump: { unit: piece, unitPrice: 20000, maxPerDay: 100 }
+  equipment.waste_incinerator: { unit: piece, unitPrice: 100000, maxPerDay: 100 }
+
+# Rate limits apply each simulation tick: kW * game hours = delivered kWh.
+utilities:
+  electricity: { unit: kWh, unitPrice: 2, maxPerHour: 100000 }
+  water: { unit: litre, unitPrice: 0.02, maxPerHour: 1000000 }
+
+# Abstract collection delivers directly to an available local recovery facility,
+# then landfill, then (only for the remaining waste) the configured world route.
+# Local facility fees include delivery; this fallback fee does too.
+waste:
+  waste.organic: { enabled: true, feePerTonne: 120, maxTonnesPerDay: 500, capacityTonnes: 1000000 }
+  waste.ash: { enabled: true, feePerTonne: 100, maxTonnesPerDay: 500, capacityTonnes: 1000000 }

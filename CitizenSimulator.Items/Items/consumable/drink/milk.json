@@ -1,5 +1,7 @@
 {
   "id": "drink.milk",
+  "unit": "portion",
+  "litresPerUnit": 1,
   "name": "Milk",
   "description": "A carton of fresh milk.",
   "consumable": true,

@@ -1,5 +1,6 @@
 using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.Timing;
+using CitizenSimulator.Abstractions.Services;
 using CitizenSimulator.Business.Components;
 using CitizenSimulator.Business.Models;
 using CitizenSimulator.Business.Services.Abstractions;
@@ -11,7 +12,7 @@ namespace CitizenSimulator.Market.Systems;
 // Procurement runs after business updates, including when production is temporarily blocked.
 public sealed class BusinessRestockSystem(IMarketService market,
     IBusinessService businesses,
-    IItemService items) : GameSystem(priority: 10)
+    IItemService items, IServiceRegistry? services = null) : GameSystem(priority: 10)
 {
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
     {
@@ -40,7 +41,13 @@ public sealed class BusinessRestockSystem(IMarketService market,
         {
             foreach (var (itemId, quantity) in recipe.Inputs)
             {
-                policies.TryAdd(itemId, new StockPolicy { ItemId = itemId, ReorderBelow = quantity, TargetQuantity = quantity * 2 });
+                policies.TryGetValue(itemId, out var existing);
+                policies[itemId] = new StockPolicy
+                {
+                    ItemId = itemId,
+                    ReorderBelow = Math.Max(existing?.ReorderBelow ?? 0, quantity),
+                    TargetQuantity = Math.Max(existing?.TargetQuantity ?? 0, quantity * 2)
+                };
             }
         }
 
@@ -56,7 +63,10 @@ public sealed class BusinessRestockSystem(IMarketService market,
                 continue;
 
             decimal shortage = target - quantity;
-            market.TryBuyUpTo(business.Inventory, business.PaymentAccount, policy.ItemId, shortage);
+            if (services != null && services.TryGet<ICitySupplyService>(out var supply))
+                supply!.ReplenishStock(business.Parent, policy.ItemId, shortage);
+            else
+                market.TryBuyUpTo(business.Inventory, business.PaymentAccount, policy.ItemId, shortage);
         }
     }
 
@@ -72,6 +82,12 @@ public sealed class BusinessRestockSystem(IMarketService market,
 
     private void BuyUtility(BusinessComponent business, string utility, decimal target, BusinessComponent[] allBusinesses)
     {
+        if (services != null && services.TryGet<ICitySupplyService>(out var supply))
+        {
+            supply!.SupplyUtility(business.Parent, utility, target);
+            return;
+        }
+
         var suppliers = allBusinesses
             .Where(supplier => !ReferenceEquals(supplier, business)
             && supplier.Type.GridSupplyPolicy?.Utility == utility)
@@ -90,9 +106,18 @@ public sealed class BusinessRestockSystem(IMarketService market,
 
     private void DisposeWaste(BusinessComponent business, Recipe[] recipes, BusinessComponent[] allBusinesses)
     {
-        var wasteIds = recipes.SelectMany(recipe => recipe.WasteOutputs.Keys).Distinct();
+        var fuelInputs = recipes.SelectMany(recipe => recipe.Inputs.Keys).ToHashSet();
+        var wasteIds = recipes.SelectMany(recipe => recipe.WasteOutputs.Keys)
+            .Concat(business.Inventory.Inventory.Keys.Where(itemId => itemId.StartsWith("waste.", StringComparison.Ordinal)))
+            .Where(itemId => !fuelInputs.Contains(itemId)).Distinct().ToArray();
         foreach (var itemId in wasteIds)
         {
+            if (services != null && services.TryGet<ICitySupplyService>(out var supply))
+            {
+                supply!.CollectWaste(business.Parent, itemId);
+                continue;
+            }
+
             var landfills = allBusinesses
                 .Where(landfill => !ReferenceEquals(landfill, business)
                 && landfill.Type.DisposalPolicy?.AcceptedItems.Contains(itemId) == true)

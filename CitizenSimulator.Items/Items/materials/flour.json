@@ -1,5 +1,7 @@
 {
   "id": "material.flour",
+  "unit": "kg",
+  "massKgPerUnit": 1,
   "name": "Flour",
   "description": "Flour used for making bread.",
   "consumable": false,

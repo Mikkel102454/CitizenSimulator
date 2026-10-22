@@ -52,6 +52,8 @@ public class Needs : IMod
             && housing!.CanDrink(citizen);
         bool CanSleep(EntityRef citizen) => context.Services.TryGet<IHomeAccessService>(out var housing)
             && housing!.CanSleep(citizen);
+        decimal ConsumeWater(EntityRef citizen, decimal litres) =>
+            context.Services.TryGet<IHomeUtilityService>(out var utilities) ? utilities!.ConsumeDrinkingWater(citizen, litres) : litres;
 
         citizenMindService.RegisterFact("home.can_drink", citizen => CanDrink(citizen));
         citizenMindService.RegisterFact("home.can_sleep", citizen => CanSleep(citizen));
@@ -64,6 +66,6 @@ public class Needs : IMod
         citizenMindService.RegisterHandler("needs.sleep", new RestHandler(context.Store, context.Services.Get<INeedsService>(), CanSleep));
         citizenMindService.RegisterHandler("needs.rest", new RestHandler(context.Store, context.Services.Get<INeedsService>()));
         
-        citizenMindService.RegisterHandler("needs.drink_accessible_safe_water", new DrinkWaterHandler(context.Store, context.Services.Get<INeedsService>(), CanDrink));
+        citizenMindService.RegisterHandler("needs.drink_accessible_safe_water", new DrinkWaterHandler(context.Store, context.Services.Get<INeedsService>(), CanDrink, ConsumeWater));
     }
 }

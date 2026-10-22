@@ -1,5 +1,6 @@
 {
   "id": "food.apple",
+  "unit": "portion",
   "name": "Apple",
   "description": "A fresh, juicy apple.",
   "consumable": true,

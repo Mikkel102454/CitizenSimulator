@@ -66,6 +66,16 @@ public partial class MarketService
             request.RemainingQuantity = 0;
     }
 
+    public void ResolveExternalDemand(InventoryComponent inventory, string itemId, decimal quantity)
+    {
+        if (quantity <= 0 || !_requests.TryGetValue((inventory, itemId), out var request))
+            return;
+
+        request.RemainingQuantity = Math.Max(0, request.RemainingQuantity - quantity);
+        if (request.RemainingQuantity == 0)
+            request.Status = BuyStatus.SUCCESS;
+    }
+
     private BuyStatus GetRequestStatus(InventoryComponent inventory, string itemId)
     {
         return _requests.TryGetValue((inventory, itemId), out var request) ? request.Status : BuyStatus.OUT_OF_STOCK;

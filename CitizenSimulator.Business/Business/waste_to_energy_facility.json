@@ -55,6 +55,7 @@
       "targetQuantity": 2000
     }
   ],
+  "disposalPolicy": {"permanentStorage": false, "acceptedItems": ["waste.organic"], "capacityTonnes": 5, "maxIntakeTonnesPerDay": 20, "feePerTonne": 40},
   "gridSupplyPolicy": {
     "utility": "electricity",
     "connectionRequired": true,

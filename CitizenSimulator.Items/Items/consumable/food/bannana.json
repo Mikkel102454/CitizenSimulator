@@ -1,5 +1,6 @@
 {
   "id": "food.banana",
+  "unit": "portion",
   "name": "Banana",
   "description": "A ripe banana.",
   "consumable": true,

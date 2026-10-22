@@ -42,8 +42,15 @@ public interface IBusinessService
     bool TryPayWages(BusinessComponent business);
     bool TryDepositUtilities(BusinessComponent business, decimal electricityKwh, decimal waterLitres, decimal totalValue = 0);
     bool TryConnectGrid(BusinessComponent business);
+    bool TryDisconnectGrid(BusinessComponent business);
+    bool TryFundStartup(BusinessComponent business, BankAccountComponent fund, decimal amount);
+    bool TryImportStock(BusinessComponent business, BankAccountComponent supplier, string itemId, decimal amount, decimal unitPrice);
+    bool TryImportUtility(BusinessComponent business, BankAccountComponent supplier, string utility, decimal amount, decimal unitPrice);
+    bool TryExportWaste(BusinessComponent business, BankAccountComponent recipient, string itemId, decimal amount, decimal fee);
     bool TryTransferUtility(BusinessComponent supplier, BusinessComponent receiver, string utility,
         decimal requested, out decimal transferred);
+    bool TrySellUtility(BusinessComponent supplier, BankAccountComponent buyer, string utility,
+        decimal requested, out decimal transferred, out decimal price);
     bool TryDisposeWaste(BusinessComponent source, BusinessComponent disposalBusiness, string itemId, decimal amount);
     decimal GetDisposalCapacity(BusinessComponent disposalBusiness, string itemId);
     void RecordTrade(BusinessComponent seller, BusinessComponent? buyer, decimal price, decimal costOfGoods,
