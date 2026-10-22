@@ -3,6 +3,7 @@ using CitizenSimulator.Abstractions.Services;
 using CitizenSimulator.Abstractions.Timing;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Citizen.Components;
+using CitizenSimulator.CitizenMind.Components;
 using CitizenSimulator.Housing.Components;
 using CitizenSimulator.Housing.Models;
 using CitizenSimulator.Housing.Services.Abstractions;
@@ -219,16 +220,22 @@ public sealed partial class HousingService(IEntityStore store, IPropertyService 
         // Give displaced residents first chance before filling the remaining vacancies.
         foreach (CitizenComponent citizen in displaced)
         {
-            TryAllocate(citizen);
+            if (ShouldAllocateAutomatically(citizen))
+                TryAllocate(citizen);
         }
 
         // Allocation retries each tick so homeless citizens can take newly available homes.
         foreach (EntityRef entity in store.Query(CitizenComponent.GetComponentType()).OrderBy(entity => entity.Id))
         {
             CitizenComponent citizen = store.GetComponent<CitizenComponent>(entity)!;
-            if (!_residences.ContainsKey(entity))
+            if (!_residences.ContainsKey(entity) && ShouldAllocateAutomatically(citizen))
                 TryAllocate(citizen);
         }
+    }
+
+    private bool ShouldAllocateAutomatically(CitizenComponent citizen)
+    {
+        return store.GetComponent<MindComponent>(citizen.Parent) is not { IsActive: true };
     }
 
     private void EndResidence(Residence residence)

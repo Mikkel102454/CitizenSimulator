@@ -3,6 +3,7 @@ using CitizenSimulator.Inventory.Models.CitizenMind;
 using CitizenSimulator.Inventory.Services;
 using CitizenSimulator.Inventory.Services.Abstractions;
 using CitizenSimulator.Items.Services.Abstractions;
+using CitizenSimulator.Inventory.Systems;
 
 namespace CitizenSimulator.Inventory;
 
@@ -18,5 +19,6 @@ public class Inventory : IMod
             context.Services.Get<IItemService>()));
 
         FoodActions.Register(context);
+        context.Systems.Register(new CitizenInventorySystem(context.Events));
     }
 }

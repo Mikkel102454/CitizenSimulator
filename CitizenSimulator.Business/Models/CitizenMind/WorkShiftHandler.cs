@@ -29,7 +29,8 @@ public sealed class WorkShiftHandler(IEntityStore store, IBusinessService busine
         if (businesses.GameTime.TotalMinutes >= shiftEnd)
         {
             businesses.TryLeaveWorkplace(employment.Contract.Employee);
-            return ActionResult.SUCCEEDED;
+            return employment.Contract.LastCompletedShiftEnd.TotalMinutes >= shiftEnd
+                ? ActionResult.SUCCEEDED : ActionResult.FAILED;
         }
 
         return employment.Contract.IsCheckedIn ? ActionResult.RUNNING : ActionResult.FAILED;

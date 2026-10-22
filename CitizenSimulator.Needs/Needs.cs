@@ -55,12 +55,12 @@ public class Needs : IMod
         decimal ConsumeWater(EntityRef citizen, decimal litres) =>
             context.Services.TryGet<IHomeUtilityService>(out var utilities) ? utilities!.ConsumeDrinkingWater(citizen, litres) : litres;
 
-        citizenMindService.RegisterFact("home.can_drink", citizen => CanDrink(citizen));
-        citizenMindService.RegisterFact("home.can_sleep", citizen => CanSleep(citizen));
+        citizenMindService.RegisterFact("home.can_drink", citizen => CanDrink(citizen), canPredict: true);
+        citizenMindService.RegisterFact("home.can_sleep", citizen => CanSleep(citizen), canPredict: true);
         citizenMindService.RegisterFact("home.can_cook", citizen =>
-            context.Services.TryGet<IHomeAccessService>(out var housing) && housing!.CanCook(citizen));
+            context.Services.TryGet<IHomeAccessService>(out var housing) && housing!.CanCook(citizen), canPredict: true);
         citizenMindService.RegisterFact("home.can_store", citizen =>
-            context.Services.TryGet<IHomeAccessService>(out var housing) && housing!.CanStore(citizen));
+            context.Services.TryGet<IHomeAccessService>(out var housing) && housing!.CanStore(citizen), canPredict: true);
 
         citizenMindService.RegisterFact("needs.energyChangePerMinute", _ => NeedsDynamics.EnergyChangePerDay / 1440.0);
         citizenMindService.RegisterHandler("needs.sleep", new RestHandler(context.Store, context.Services.Get<INeedsService>(), CanSleep));

@@ -182,6 +182,8 @@ public partial class BusinessService
             contract.LastAttendanceProcessedAt = to;
             contract.MinutesWorked += minutes;
             contract.WagesAccrued += contract.HourlyWage * minutes / 60;
+            if (minutes > 0 && to >= contract.CheckedInUntil && contract.CheckedInUntil > contract.LastCompletedShiftEnd)
+                contract.LastCompletedShiftEnd = contract.CheckedInUntil;
             if (IsServiceRole(contract.Role))
                 business.AvailableServiceMinutes += minutes;
             else

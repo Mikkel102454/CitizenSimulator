@@ -9,13 +9,13 @@ using CitizenSimulator.Inventory.Models.CitizenMind;
 using CitizenSimulator.Items.Models;
 using CitizenSimulator.Items.Services.Abstractions;
 using CitizenSimulator.Market.Services.Abstractions;
-using CitizenSimulator.Vault.Components;
+using CitizenSimulator.Vault.Models.CitizenMind;
 
 namespace CitizenSimulator.Market.Models.CitizenMind;
 
 public static class ShoppingActions
 {
-    public const string BalanceFact = "market.balance";
+    public const string BalanceFact = AccountFacts.Balance;
     public const string FreeCapacityFact = FoodActions.FreeCapacityFact;
     public const double PurchaseMinutes = 5;
 
@@ -34,15 +34,16 @@ public static class ShoppingActions
         var mind = context.Services.Get<ICitizenMindService>();
         var market = context.Services.Get<IMarketService>();
         var foodActions = new List<string>();
-        mind.RegisterFact(BalanceFact, entity => context.Store.GetComponent<BankAccountComponent>(entity)?.Balance ?? 0m,
-            canPredict: true);
+        var drinkActions = new List<string>();
 
         foreach (var item in context.Services.Get<IItemService>().GetItems().OrderBy(item => item.Id))
         {
-            bool isFood = ConsumptionEffects.TryRead(item, out var effects) && effects.Hunger < 0;
+            bool consumable = ConsumptionEffects.TryRead(item, out var effects);
+            bool isFood = consumable && effects.Hunger < 0;
+            bool isDrink = consumable && effects.Thirst < 0;
             string quantityFact = FoodActions.QuantityFact(item.Id);
-            // Inventory already registers stock facts and eating actions for hunger-reducing foods.
-            if (!isFood)
+            // Inventory registers stock facts for need-relieving food and drinks.
+            if (!isFood && !isDrink)
             {
                 mind.RegisterFact(quantityFact,
                     entity => context.Store.GetComponent<InventoryComponent>(entity)?.GetQuantity(item.Id) ?? 0m,
@@ -68,10 +69,14 @@ public static class ShoppingActions
             mind.RegisterAction(CreateAction(item.Id, providerId));
             if (isFood)
                 foodActions.Add(actionId);
+            if (isDrink)
+                drinkActions.Add(actionId);
         }
 
         if (foodActions.Count > 0)
             mind.AddGoalActions("citizen_brain.core.satisfy_hunger", foodActions);
+        if (drinkActions.Count > 0)
+            mind.AddGoalActions("citizen_brain.core.satisfy_thirst", drinkActions);
     }
 
     private static ActionDefinition CreateAction(string itemId, string providerId)

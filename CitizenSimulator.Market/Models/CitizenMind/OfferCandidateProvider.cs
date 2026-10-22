@@ -1,3 +1,4 @@
+using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Planning;
@@ -8,10 +9,13 @@ namespace CitizenSimulator.Market.Models.CitizenMind;
 
 public sealed class OfferCandidateProvider(IReadOnlyList<MarketOffer> offers, decimal quantity) : IActionCandidateProvider
 {
+    private readonly OfferSnapshot[] _offers = offers.Select(offer => new OfferSnapshot(offer.Seller.Parent,
+        offer.UnitPrice, offer.AvailableQuantity, offer.Availability, offer.AvailableFrom, offer.AvailableUntil)).ToArray();
+
     public IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition definition, EvaluationContext state)
     {
         var candidates = new List<ActionCandidate>();
-        foreach (var offer in offers)
+        foreach (var offer in _offers)
         {
             if (offer.Availability != IMarketService.BuyStatus.SUCCESS || offer.AvailableQuantity < quantity)
                 continue;
@@ -29,11 +33,11 @@ public sealed class OfferCandidateProvider(IReadOnlyList<MarketOffer> offers, de
 
             candidates.Add(new ActionCandidate
             {
-                Id = $"{definition.Id}:{offer.Seller.Parent.Id}:{offer.Seller.Parent.Generation}:{offer.UnitPrice}",
+                Id = FormattableString.Invariant($"{definition.Id}:{offer.Seller.Id}:{offer.Seller.Generation}:{offer.UnitPrice}"),
                 Definition = definition,
                 Bindings = new Dictionary<string, object?>
                 {
-                    ["seller"] = offer.Seller.Parent,
+                    ["seller"] = offer.Seller,
                     ["unitPrice"] = offer.UnitPrice,
                     ["quantity"] = quantity,
                     ["availableQuantity"] = offer.AvailableQuantity
@@ -44,4 +48,7 @@ public sealed class OfferCandidateProvider(IReadOnlyList<MarketOffer> offers, de
 
         return candidates;
     }
+
+    private sealed record OfferSnapshot(EntityRef Seller, decimal UnitPrice,
+        decimal AvailableQuantity, IMarketService.BuyStatus Availability, TimeSpan? AvailableFrom, TimeSpan? AvailableUntil);
 }

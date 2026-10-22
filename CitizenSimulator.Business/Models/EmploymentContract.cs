@@ -17,6 +17,7 @@ public sealed class EmploymentContract
     public TimeSpan CheckedInAt { get; internal set; }
     public TimeSpan CheckedInUntil { get; internal set; }
     public TimeSpan LastAttendanceProcessedAt { get; internal set; }
+    public TimeSpan LastCompletedShiftEnd { get; internal set; }
     public decimal MinutesWorked { get; internal set; }
     public decimal WagesAccrued { get; internal set; }
     public decimal WagesPaid { get; internal set; }

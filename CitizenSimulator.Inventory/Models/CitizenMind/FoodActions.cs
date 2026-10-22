@@ -23,24 +23,39 @@ public static class FoodActions
         var mind = context.Services.Get<ICitizenMindService>();
         var inventoryService = context.Services.Get<IInventoryService>();
         var actions = new List<string>();
+        var drinks = new List<string>();
         mind.RegisterFact(FreeCapacityFact,
             entity => context.Store.GetComponent<InventoryComponent>(entity)?.FreeCapacity ?? 0m,
             canPredict: true);
         foreach (var item in context.Services.Get<IItemService>().GetConsumableItems()
             .OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if (!ConsumptionEffects.TryRead(item, out var effects) || effects.Hunger >= 0)
+            if (!ConsumptionEffects.TryRead(item, out var effects) || (effects.Hunger >= 0 && effects.Thirst >= 0))
                 continue;
 
-            var action = CreateAction(item, effects);
             mind.RegisterFact(
                 QuantityFact(item.Id),
                 entity => context.Store.GetComponent<InventoryComponent>(entity)?.GetQuantity(item.Id) ?? 0m,
                 canPredict: true);
-            mind.RegisterHandler(action.Handler, new EatItemHandler(context.Store, inventoryService, item));
-            mind.RegisterAction(action);
-            actions.Add(action.Id);
+            if (effects.Hunger < 0)
+            {
+                var action = CreateAction(item, effects);
+                mind.RegisterHandler(action.Handler, new EatItemHandler(context.Store, inventoryService, item));
+                mind.RegisterAction(action);
+                actions.Add(action.Id);
+            }
+
+            if (effects.Thirst < 0)
+            {
+                var action = CreateDrinkAction(item, effects);
+                mind.RegisterHandler(action.Handler, new EatItemHandler(context.Store, inventoryService, item));
+                mind.RegisterAction(action);
+                drinks.Add(action.Id);
+            }
         }
+
+        if (drinks.Count > 0)
+            mind.AddGoalActions("citizen_brain.core.satisfy_thirst", drinks);
 
         if (actions.Count == 0)
             return;
@@ -71,6 +86,16 @@ public static class FoodActions
     }
 
     public static ActionDefinition CreateAction(Item item, ConsumptionEffects effects)
+    {
+        return CreateConsumptionAction(item, effects, "eat", "needs.hunger");
+    }
+
+    public static ActionDefinition CreateDrinkAction(Item item, ConsumptionEffects effects)
+    {
+        return CreateConsumptionAction(item, effects, "drink", "needs.thirst");
+    }
+
+    private static ActionDefinition CreateConsumptionAction(Item item, ConsumptionEffects effects, string verb, string need)
     {
         string stock = QuantityFact(item.Id);
         var prediction = new List<PredictionEffectDefinition>
@@ -109,9 +134,9 @@ public static class FoodActions
         PredictNeed("needs.energy", effects.Energy);
         return new()
         {
-            Id = $"inventory.eat.{item.Id}",
-            Handler = $"inventory.eat.{item.Id}",
-            Preconditions = [Op("gte", Fact(stock), Literal(1m)), Op("gt", Fact("needs.hunger"), Literal(0.25))],
+            Id = $"inventory.{verb}.{item.Id}",
+            Handler = $"inventory.{verb}.{item.Id}",
+            Preconditions = [Op("gte", Fact(stock), Literal(1m)), Op("gt", Fact(need), Literal(0.25))],
             Duration = new()
             {
                 Unit = "simulationMinutes",

@@ -1,5 +1,7 @@
 # Proposed configuration contract
 
+Updated 2026-10-22. This document describes the future pack format in `examples/`. Current embedded YAML goal/action loading, typed parameters, expressions, validation, providers, schedules and predictions already exist. Use [the runtime YAML reference](../../doc/docs/citizen-mind/yaml.md) and [API reference](../../doc/docs/citizen-mind/api.md) for executable definitions. Pack manifests, inheritance/patching, profiles, projects, capability versions and hot reload below remain proposals.
+
 The YAML files in `examples/` form one pack. They are illustrative input to a future loader, not supported settings today. Use structured expressions rather than arbitrary scripts or embedded C#.
 
 ## Loading and validation

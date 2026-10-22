@@ -31,7 +31,17 @@ This window is on day zero. Add `TimeSpan.FromDays(dayIndex)` to both timestamps
 
 Preparation permits this commitment to displace ordinary activity before the window opens. It does not automatically move the citizen or reserve preparation time. Include travel and preparation as actions and allow enough lead time.
 
-Replacing manual commitments preserves generated daily occurrences. An unchanged manual ID, goal ID, and start/end window retains its previous outcome, even when priority or preparation time changes. Use a new occurrence ID for a genuinely new appointment.
+Replacing manual commitments preserves generated daily occurrences and other mod sources. An unchanged ID, goal ID, start/end window and target retains its previous outcome, even when priority or preparation time changes. Use a new occurrence ID for a genuinely new appointment.
+
+## Independent mod sources and occurrence targets
+
+`SetScheduleSource(citizen, sourceId, commitments)` replaces only one mod's commitments. Use a stable nonblank source such as `business.employment`. Manual calls, daily rules and other sources remain intact. An unchanged source update is a no-op; IDs must be unique across every source. Invalid updates leave the schedule unchanged. Supply an empty list to withdraw that source's commitments.
+
+By default, an occurrence uses its registered goal's desired conditions. An optional `Target = new CommitmentTarget(factId, minimum)` replaces those conditions for that occurrence with `fact >= minimum`. The fact must be a registered `double` and the minimum must be finite. Eligibility and actions still come from the registered goal. Targets apply consistently during selection, forecasts, live validation and completion. Changing a target creates a new pending outcome rather than reusing an old completion.
+
+Business uses this for real employment shifts: each commitment targets `employment.completedShiftEndMinutes` at its exact shift-end timestamp. Clock time alone cannot satisfy it; real attendance through the end updates the domain fact. Today's completion cannot satisfy a later occurrence. Partial attendance through the end can complete the commitment, while payroll pays only actual attended minutes.
+
+`EmploymentScheduleSystem` publishes eight days of confirmed shifts before minds run, with priority 40 and commute plus one tick of preparation. Overnight shifts keep full start/end times. Dismissal and suspension withdraw current/future shifts, and seven days of outcomes remain available. Safety emergencies may interrupt work and check the worker out. This source does not replace manually configured or recurring schedules.
 
 ## Recurring daily rules
 
@@ -68,7 +78,7 @@ Daily recurrence does not reset world facts. If `example.attend_work` remains sa
 
 Emergencies take precedence over commitments. Ready commitments take precedence over ordinary utility choices, ordered by descending priority, earliest deadline, then ID. A goal must be eligible or already satisfied to be selected for a commitment; a schedule does not override an ineligible goal.
 
-`GetSchedule(citizen)` returns manual and generated `ScheduledCommitmentState` entries. Each exposes its `Commitment`, `Status`, `SourceRuleId`, and `OccurrenceDay`. The latter two are null for manual entries. Status is managed by CitizenMind.
+`GetSchedule(citizen)` returns manual, mod-supplied and generated `ScheduledCommitmentState` entries. Each exposes `Commitment`, `Status`, `SourceId`, `SourceRuleId` and `OccurrenceDay`. `SourceId` identifies a publishing mod; rule/day identify generated daily occurrences. These are null for manual entries. Status is managed by CitizenMind.
 
 | Status | Meaning |
 | --- | --- |

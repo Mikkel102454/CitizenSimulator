@@ -16,6 +16,7 @@ public interface IBusinessService
     IReadOnlyList<JobVacancy> GetAvailableJobs(CitizenComponent worker);
     Employment? GetEmployment(CitizenComponent worker);
     WorkShift? GetNextShift(CitizenComponent worker);
+    IReadOnlyList<WorkShift> GetUpcomingShifts(CitizenComponent worker, int days = 8);
     bool TryResign(CitizenComponent worker);
     bool TryArriveAtWorkplace(BusinessComponent business, CitizenComponent worker);
     bool TryLeaveWorkplace(CitizenComponent worker);

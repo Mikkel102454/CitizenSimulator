@@ -1,38 +1,34 @@
-# CitizenBrain planning
+# CitizenMind implementation and remaining design
 
-This folder is a design proposal, not an implemented brain or executable configuration. All YAML uses a proposed version 1 format. No runtime files or other mods are changed. Repository observations describe the code inspected on 2026-10-19; adapters should absorb future API changes.
+Updated 2026-10-22. CitizenMind implements typed registration and startup validation, utility/emergency goal selection, bounded resumable planning, candidate bindings, elapsed-time prediction, action execution/cancellation, live validation, recurring and one-off commitments, commitment forecasts and planning diagnostics.
 
-Start with [architecture.md](architecture.md), then [integrations.md](integrations.md), [configuration.md](configuration.md), and [delivery-plan.md](delivery-plan.md). The [examples](examples) directory contains a single fictional behavior pack, split into files that are loaded together. Its IDs, facts, queries, expressions, handlers, and events require implementation before use.
+The API reference is [the CitizenMind documentation](../../doc/docs/citizen-mind/index.md). YAML under `examples/` describes a future behavior-pack format, not loadable runtime configuration.
 
-## Recommended approach
+## Connected world behaviors
 
-Use a hybrid with clear responsibilities:
+| Domain | Implemented connection |
+| --- | --- |
+| Food and drinks | Inventory facts, owned-item consumption, catalog effects through Inventory/Items/Needs services |
+| Shopping | Seller-specific offers, price ceilings, availability, stock/funds/capacity checks, atomic purchase |
+| Needs | Home drinking, sleep and emergency rest; passive changes forecast over action durations |
+| Employment | Qualified vacancy selection, job acceptance, commute, attendance, wages, resignation and dated commitments |
+| Housing | Owned-home discovery, rentals, available home purchases, move-in actions, amenity facts, projected rent |
+| Demand | Real food/drink intentions report shortages even when shelves are empty; forecasts do not report demand |
 
-| Part | Responsibility | Example |
-| --- | --- | --- |
-| Needs and world simulation | Produce actual conditions | Hunger rises; a shop sells its last meal |
-| Perception and beliefs | Represent what this citizen knows | Yesterday's vacancy might still exist |
-| Schedule and commitments | Track preferences and obligations | Prefer sleep 23:00–07:00; shift starts 09:00 |
-| Utility AI | Choose the current intention | Eat now, keep working, or find a better job |
-| Bounded GOAP | Find steps for that intention | Buy ingredients → cook → eat |
-| Action executor | Run and verify real actions | Request a purchase and handle its rejection |
-| Projects | Maintain longer ambitions | Save for a house over several months |
-| Memory, emotions, relationships | Shape future choices | A broken promise reduces trust |
+New citizens receive an active mind and an inventory with 20 abstract carrying units. Existing inventories are preserved. Active minds choose homes through actions; citizens without an active mind retain automatic allocation.
 
-The important boundary: YAML chooses and combines capabilities; code provides capabilities and enforces the world's rules. YAML cannot make travel, cooking, contracts, or banking exist by itself. Once generic capabilities exist, new combinations should usually need data rather than new scenario code.
+## Abstract access model
 
-“Evolve on its own” means emergent behavior from changing circumstances, learned preferences, persistent consequences, and interactions. It does not mean rewriting its own rules or inventing unsupported actions. An unemployed cook can discover a vacancy, accept a job, become stressed, look for another job, and eventually start a business without a script for that life story. Each step still obeys the same economic and social rules as everyone else.
+There are no coordinates or routes. Shopping is a five-minute remote order/handover from an accessible retail seller. Working requires a commute (15 minutes by default), arrival, a contract and check-in during the agreed shift intersected with business hours. Moving takes 15 minutes; buying and moving takes 30. Home amenities require a usable residence; metered water/electricity must actually be available when Utilities is loaded. Ownership and occupancy remain separate.
 
-## Initial assumptions
+## Mutation boundary and retries
 
-- Citizens are autonomous individuals with bounded knowledge, resources, and decision budgets.
-- Preferred sleep is 23:00–07:00 by default, customized per citizen. Employment can require a different routine.
-- Survival has priority over ordinary commitments, but preferences and stress do not automatically excuse absence or void contracts.
-- Citizens can make imperfect decisions. Use limited information and imperfect estimates, not arbitrary failures after valid transactions.
-- The authoritative world owns money, property, stock, employment, health, and legal relationships. The brain owns intentions and beliefs about those things.
-- Deterministic simulation and readable decision explanations are first-class requirements.
-- Initial values and timing thresholds in this proposal are tuning starting points, not claims about human psychology.
+Facts, candidate snapshots and predictors only read the world and produce copied planning state. Handlers call authoritative services at execution. Food is consumed at completion, purchases exchange real funds and goods atomically, and wages follow actual attendance. Cancellation before commit creates no goods, payment, lease or ownership change. Canceling work checks the citizen out.
 
-## Decisions that can wait
+Live candidates are checked again before execution. Transaction services recheck stock, price, access, funds and capacity. A quoted market price is a maximum: increases reject the offer; decreases can execute at the lower price. Rental/sale IDs distinguish replaced listings. Competing buyers/tenants are resolved synchronously by domain services. Failed plans use the five-game-minute retry delay and rebuild with fresh offers. Completed executor steps are not executed again. Durable transaction IDs across save/load or network retries remain future work.
 
-Population size and desired simulation speed will determine planning budgets and social detail. The plans default to bounded search and sparse relationships so they can be measured before choosing a final target. Travel needs an adapter whether it becomes a detailed map or an abstract duration model. Business founding and house purchases remain disabled until their world services can perform complete transactions.
+## Confirmed shifts
+
+Business publishes eight days of upcoming confirmed shifts through `SetScheduleSource` with source `business.employment`. Manual schedules, daily rules and other mod sources are preserved. Every shift binds its contract and full start/end times, including overnight shifts. Completion targets the domain's last completed shift end, preventing tomorrow's shift from appearing satisfied by today's attendance. Preparation includes commute plus one action boundary. Dismissal/suspension withdraws current and future commitments. Outcomes are retained for seven days. Safety emergencies can interrupt work; only attended time earns wages.
+
+See [integrations.md](integrations.md) for adapter ownership and [delivery-plan.md](delivery-plan.md) for validation and remaining scope. Architecture/configuration documents distinguish runtime facilities from longer-term proposals.

@@ -44,7 +44,7 @@ internal static class PlanValidator
             PlanReservation? proof = candidate.Reservations.FirstOrDefault(item => item.Commitment.Id == commitment.Id);
             if (proof == null || proof.Goal.Id != commitment.GoalId ||
                 proof.Commitment.Window.Start != commitment.Window.Start ||
-                proof.Commitment.Window.End != commitment.Window.End)
+                proof.Commitment.Window.End != commitment.Window.End || proof.Commitment.Target != commitment.Target)
                 return null;
 
             if (InWindow(commitment.Window, projected.GameTime) && ActionPlanner.IsGoalSatisfied(proof.Goal, projected))

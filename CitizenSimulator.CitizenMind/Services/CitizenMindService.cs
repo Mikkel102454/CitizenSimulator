@@ -45,6 +45,17 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
 
     public void SetSchedule(EntityRef citizen, IReadOnlyList<ScheduledCommitment> commitments)
     {
+        ReplaceSchedule(citizen, commitments, null);
+    }
+
+    public void SetScheduleSource(EntityRef citizen, string sourceId, IReadOnlyList<ScheduledCommitment> commitments)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+        ReplaceSchedule(citizen, commitments, sourceId);
+    }
+
+    private void ReplaceSchedule(EntityRef citizen, IReadOnlyList<ScheduledCommitment> commitments, string? sourceId)
+    {
         ArgumentNullException.ThrowIfNull(commitments);
         var mind = GetMind(citizen);
         var entries = new List<ScheduledCommitmentState>();
@@ -70,23 +81,55 @@ public class CitizenMindService(IEntityStore store) : ICitizenMindService
                 throw new InvalidOperationException(
                     $"Commitment '{commitment.Id}' references unknown goal '{commitment.GoalId}'.");
 
-            ScheduledCommitmentState? previous = mind.Schedule.FirstOrDefault(entry =>
-                entry.SourceRuleId == null && entry.Commitment.Id == commitment.Id &&
-                entry.Commitment.GoalId == commitment.GoalId &&
-                entry.Commitment.Window.Start == commitment.Window.Start &&
-                entry.Commitment.Window.End == commitment.Window.End);
+            if (commitment.Target is { } target && (!double.IsFinite(target.Minimum)
+                || !FactDescriptors.TryGetValue(target.Fact, out var descriptor)
+                || descriptor.ValueType != typeof(double)))
+                throw new ArgumentException("Commitment target requires a registered double fact and a finite minimum.");
 
-            entries.Add(new ScheduledCommitmentState(commitment)
+            ScheduledCommitmentState? previous = mind.Schedule.FirstOrDefault(entry =>
+                entry.SourceRuleId == null && entry.SourceId == sourceId && entry.Commitment.SameOccurrence(commitment));
+
+            entries.Add(new ScheduledCommitmentState(commitment, sourceId: sourceId)
             {
                 Status = previous?.Status ?? CommitmentStatus.PENDING
             });
         }
 
-        entries.AddRange(mind.Schedule.Where(entry => entry.SourceRuleId != null));
+        var owned = mind.Schedule.Where(entry => entry.SourceRuleId == null && entry.SourceId == sourceId).ToArray();
+        if (owned.Length == entries.Count && entries.All(entry => owned.Any(previous => previous.Commitment.Matches(entry.Commitment))))
+            return;
+
+        entries.AddRange(mind.Schedule.Where(entry => entry.SourceRuleId != null || entry.SourceId != sourceId));
+        if (entries.Select(entry => entry.Commitment.Id).Distinct().Count() != entries.Count)
+            throw new InvalidOperationException("Commitment IDs must be unique across schedule sources.");
         long revision = checked(mind.ScheduleRevision + 1);
         mind.Schedule = entries;
         mind.ScheduleRevision = revision;
         mind.GoalRetryTicks.Clear();
+    }
+
+    internal GoalDefinition ResolveGoal(ScheduledCommitment commitment)
+    {
+        GoalDefinition goal = Goals[commitment.GoalId];
+        if (commitment.Target is not { } target)
+            return goal;
+
+        return new GoalDefinition
+        {
+            Id = goal.Id,
+            Eligible = goal.Eligible,
+            Emergency = goal.Emergency,
+            Utility = goal.Utility,
+            GoalActions = goal.GoalActions,
+            Desired =
+            [
+                new ExpressionDefinition
+                {
+                    Op = "gte",
+                    Args = [new() { Fact = target.Fact }, new() { Literal = target.Minimum }]
+                }
+            ]
+        };
     }
 
     public IReadOnlyList<ScheduledCommitmentState> GetSchedule(EntityRef citizen)

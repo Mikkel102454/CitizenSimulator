@@ -75,7 +75,7 @@ public class GoalSelector(CitizenMindService citizenMindService)
                          .ThenBy(entry => entry.Commitment.Window.End)
                          .ThenBy(entry => entry.Commitment.Id))
             {
-                var goal = citizenMindService.Goals[entry.Commitment.GoalId];
+                var goal = citizenMindService.ResolveGoal(entry.Commitment);
                 if (mindComponent.GoalRetryTicks.TryGetValue(goal.Id, out var retryTick) && currentTick < retryTick)
                     continue;
 

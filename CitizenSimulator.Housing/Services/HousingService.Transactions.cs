@@ -1,11 +1,55 @@
 using CitizenSimulator.Citizen.Components;
 using CitizenSimulator.Housing.Models;
+using CitizenSimulator.Housing.Components;
 using CitizenSimulator.Property.Components;
 
 namespace CitizenSimulator.Housing.Services;
 
 public sealed partial class HousingService
 {
+    public IReadOnlyList<PropertySaleListing> FindHomePurchases(CitizenComponent citizen)
+    {
+        if (GetAccount(citizen) is not { } account)
+            return [];
+
+        return GetSaleListings().Where(sale => !ReferenceEquals(sale.Seller, citizen) && sale.Price <= account.Balance
+            && CanOccupyAfterPurchase(sale, citizen)).ToArray();
+    }
+
+    public bool TryBuyHome(CitizenComponent buyer, Guid listingId, decimal expectedPrice)
+    {
+        if (!_sales.TryGetValue(listingId, out var sale) || !IsSaleValid(sale)
+            || !CanOccupyAfterPurchase(sale, buyer) || !TryBuyProperty(buyer, listingId, expectedPrice))
+            return false;
+
+        var house = store.GetComponent<HouseComponent>(sale.Property.Parent)!;
+        if (ReferenceEquals(GetResidence(buyer)?.House, house))
+            return true;
+
+        // The checked vacancy and ownership cannot change between these synchronous domain operations.
+        if (!TryMoveIn(buyer, house))
+            throw new InvalidOperationException("A validated home purchase could not allocate its resident.");
+
+        return true;
+    }
+
+    private bool CanOccupyAfterPurchase(PropertySaleListing sale, CitizenComponent buyer)
+    {
+        if (!store.IsAlive(sale.Property.Parent) || store.GetComponent<HouseComponent>(sale.Property.Parent) is not { } house
+            || !IsUsable(house))
+            return false;
+
+        if (ReferenceEquals(GetResidence(buyer)?.House, house))
+            return true;
+
+        int remainingResidents = house.Occupants.Count;
+        if (_residences.TryGetValue(sale.Seller.Parent, out var sellerHome) && ReferenceEquals(sellerHome.House, house)
+            && sellerHome.Lease == null)
+            remainingResidents--;
+
+        return remainingResidents < house.MaxOccupants;
+    }
+
     public PropertySaleListing? ListSale(CitizenComponent owner, PropertyComponent property, decimal price)
     {
         if (!IsRegistered(property) || property.Destroyed || !IsLiving(owner)

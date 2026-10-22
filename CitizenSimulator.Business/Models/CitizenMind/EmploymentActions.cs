@@ -27,6 +27,7 @@ public static class EmploymentActions
     public const string ShiftDueFact = "employment.shiftDue";
     public const string ShouldResignFact = "employment.shouldResign";
     public const string CommuteMinutesFact = "employment.commuteMinutes";
+    public const string CompletedShiftFact = "employment.completedShiftEndMinutes";
     public const double ApplicationMinutes = 5;
     public const double DefaultCommuteMinutes = 15;
 
@@ -62,6 +63,8 @@ public static class EmploymentActions
         mind.RegisterFact(AtWorkplaceFact, entity =>
             GetEmployment(entity)?.Contract.IsAtWorkplace == true ? 1.0 : 0.0, canPredict: true);
         mind.RegisterFact(CommuteMinutesFact, entity => GetCommuteMinutes(context.Store, entity));
+        mind.RegisterFact(CompletedShiftFact,
+            entity => GetEmployment(entity)?.Contract.LastCompletedShiftEnd.TotalMinutes ?? 0, canPredict: true);
         mind.RegisterFact(ShiftDueFact, entity =>
         {
             var shift = GetShift(entity);
@@ -98,9 +101,11 @@ public static class EmploymentActions
             {
                 ["employer"] = typeof(EntityRef),
                 ["contractId"] = typeof(Guid),
+                ["shiftStartMinutes"] = typeof(double),
                 ["shiftEndMinutes"] = typeof(double)
             }
-        }, entity => new ShiftCandidateProvider(GetShift(entity)));
+        }, entity => new ShiftCandidateProvider(GetWorker(entity) is { } worker
+            ? businesses.GetUpcomingShifts(worker) : [], GetCommuteMinutes(context.Store, entity), calendar.GetGameTime(1)));
 
         mind.RegisterHandler(AcceptJobAction, new AcceptJobHandler(context.Store, businesses));
         mind.RegisterHandler(TravelAction, new TravelToWorkHandler(context.Store, businesses));
@@ -123,8 +128,7 @@ public static class EmploymentActions
             Id = AttendShiftGoal,
             Eligible = GreaterThanZero(ShiftDueFact),
             Desired = [IsZero(ShiftDueFact)],
-            // A shift can interrupt ordinary activities; needs emergencies (90-100) still take priority.
-            Emergency = new EmergencyDefinition { When = GreaterThanZero(ShiftDueFact), Priority = 40 },
+            // Confirmed occurrences are scheduled commitments; needs emergencies still take priority.
             Utility = CreateUtility(0.8),
             GoalActions = [TravelAction, WorkAction]
         });
@@ -179,8 +183,12 @@ public static class EmploymentActions
                 CandidateProvider = ShiftProvider,
                 Preconditions = [GreaterThanZero(HasJobFact), GreaterThanZero(AtWorkplaceFact)],
                 Duration = Minutes(Op("subtract", shiftEnd, clock)),
-                Prediction = [SetFact(ShiftDueFact, 0), SetFact(AtWorkplaceFact, 0)],
-                Completion = [Op("gte", clock, shiftEnd), IsZero(AtWorkplaceFact)],
+                Prediction =
+                [
+                    SetFact(ShiftDueFact, 0), SetFact(AtWorkplaceFact, 0),
+                    new PredictionEffectDefinition { Fact = CompletedShiftFact, Op = "set", Value = shiftEnd }
+                ],
+                Completion = [Op("gte", Fact(CompletedShiftFact), shiftEnd), IsZero(AtWorkplaceFact)],
                 Cost = DurationCost(),
                 Execution = new ExecutionDefinition { Interruptible = true }
             },

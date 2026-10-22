@@ -20,15 +20,18 @@ public interface ICitizenMindService
     /// <summary>
     /// Replaces a citizen's manual one-off commitments at runtime, preserving daily
     /// rules and their occurrences. Existing manual outcomes are retained for unchanged
-    /// IDs, goals and windows. Requires an attached MindComponent. The ID prefix
+    /// IDs, goals, windows and targets. Other mod sources are preserved. Requires an attached MindComponent. The ID prefix
     /// "citizen_mind.daily:" is reserved for generated occurrences.
     /// </summary>
     public void SetSchedule(EntityRef citizen, IReadOnlyList<ScheduledCommitment> commitments);
 
-    /// <summary>Returns manual and generated commitments, including retained outcomes.</summary>
+    /// <summary>Replaces only the named mod's commitments, preserving other sources and unchanged outcomes.</summary>
+    public void SetScheduleSource(EntityRef citizen, string sourceId, IReadOnlyList<ScheduledCommitment> commitments);
+
+    /// <summary>Returns all schedule sources and generated commitments, including retained outcomes.</summary>
     public IReadOnlyList<ScheduledCommitmentState> GetSchedule(EntityRef citizen);
 
-    /// <summary>Removes manual commitments, daily rules, and occurrence history.</summary>
+    /// <summary>Removes every schedule source, daily rules, and occurrence history.</summary>
     public void ClearSchedule(EntityRef citizen);
 
     /// <summary>

@@ -1,4 +1,8 @@
-# Brain architecture
+# Brain architecture: runtime and future design
+
+Updated 2026-10-22. Utility/emergency selection, bounded resumable GOAP, pure prediction, grounded candidates, live validation, execution/cancellation, daily/one-off schedules, forecasts and diagnostics are implemented. Food, drinks, shopping, sleep, employment and housing connect through domain-owned adapters. See [README.md](README.md) and [the API documentation](../../doc/docs/citizen-mind/index.md).
+
+The sections below retain the longer-term design. Profiles, beliefs, projects, stress, social memory, persistence and a general versioned pack loader are proposals. Suggested cadences/budgets are targets, not runtime guarantees. Current execution runs once per game tick: five game minutes, 288 ticks/day.
 
 ## One decision loop, several time scales
 
@@ -15,7 +19,7 @@ Suggested cadences, all measured in simulation time:
 | Career review | Daily | Dismissal, missed pay, sustained severe stress |
 | House/business projects | Weekly | Price, savings, credit, or premises change |
 
-Use elapsed simulation intervals, never wall-clock timers or counts of rendered frames. Calendar boundaries crossed by a large tick must still be processed. At the current 300 ticks/day, one tick spans 4.8 simulated minutes, so finer decisions cannot honestly have sub-tick precision. Support split intervals or accept and document this quantization. Pausing freezes brain time.
+Use elapsed simulation intervals, never wall-clock timers or counts of rendered frames. Calendar boundaries crossed by a large tick must still be processed. At the current 288 ticks/day, one tick spans five simulated minutes, so finer decisions cannot honestly have sub-tick precision. Support split intervals or accept and document this quantization. Pausing freezes brain time.
 
 ## State ownership
 

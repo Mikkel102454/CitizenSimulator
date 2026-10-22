@@ -42,10 +42,11 @@ internal static class EmploymentActionContext
     {
         var employment = GetBoundEmployment(store, businesses, context);
         if (employment == null || !context.Bindings.TryGetValue("shiftEndMinutes", out var value)
-            || value is not double shiftEnd)
+            || value is not double shiftEnd || !context.Bindings.TryGetValue("shiftStartMinutes", out var startValue)
+            || startValue is not double shiftStart)
             return null;
 
-        var shift = businesses.GetNextShift(employment.Contract.Employee);
-        return shift != null && shift.End.TotalMinutes == shiftEnd ? shift : null;
+        return businesses.GetUpcomingShifts(employment.Contract.Employee)
+            .FirstOrDefault(shift => shift.End.TotalMinutes == shiftEnd && shift.Start.TotalMinutes == shiftStart);
     }
 }

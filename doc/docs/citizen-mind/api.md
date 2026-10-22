@@ -12,6 +12,10 @@ ICitizenMindService mind = context.Services.Get<ICitizenMindService>();
 
 Registration methods are available only before CitizenMind's system starts. Schedule methods remain available at runtime. IDs must be nonblank and unique within each registration category. Prefix your IDs with your mod ID to avoid collisions. There is no unregister or replacement API for definitions and providers.
 
+`SetScheduleSource(EntityRef, string sourceId, IReadOnlyList<ScheduledCommitment>)` updates one mod's runtime commitments without replacing manual, daily or other sources. `ScheduledCommitment.Target` optionally supplies an occurrence-specific registered double fact and minimum threshold. See [Schedules](schedules.md).
+
+Vault registers the predictable decimal balance fact `market.balance` (constant `AccountFacts.Balance`). Shopping and housing use this same fact so projected spending shares one budget. `HousingRentPredictor` subtracts prorated rent from copied planning balances; actual collections remain in HousingService. Do not register another balance alias for another purchase action.
+
 ## RegisterFact<T>(string id, Func<EntityRef, T> provider, bool canPredict = false)
 
 Registers a live observation for a citizen. The declared generic type becomes the fact's value type, with nullable value types unwrapped. Providers may be called repeatedly during selection, planning, and verification. Keep them cheap and free of world mutations.

@@ -1,3 +1,4 @@
+using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.CitizenMind.Evaluations;
 using CitizenSimulator.CitizenMind.Models;
 using CitizenSimulator.CitizenMind.Planning;
@@ -7,18 +8,23 @@ namespace CitizenSimulator.Business.Models.CitizenMind;
 
 public sealed class JobCandidateProvider(IReadOnlyList<JobVacancy> vacancies) : IActionCandidateProvider
 {
+    private readonly VacancySnapshot[] _vacancies = vacancies.Select(vacancy => new VacancySnapshot(
+        vacancy.Business.Parent, vacancy.Role, vacancy.HourlyWage)).ToArray();
+
     public IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition definition, EvaluationContext state)
     {
-        return vacancies.Select(vacancy => new ActionCandidate
+        return _vacancies.Select(vacancy => new ActionCandidate
         {
-            Id = $"{definition.Id}:{vacancy.Business.Parent.Id}:{vacancy.Business.Parent.Generation}:{vacancy.Role}",
+            Id = $"{definition.Id}:{vacancy.Employer.Id}:{vacancy.Employer.Generation}:{vacancy.Role}",
             Definition = definition,
             Bindings = new Dictionary<string, object?>
             {
-                ["employer"] = vacancy.Business.Parent,
+                ["employer"] = vacancy.Employer,
                 ["role"] = vacancy.Role,
                 ["hourlyWage"] = vacancy.HourlyWage
             }
         }).ToArray();
     }
+
+    private sealed record VacancySnapshot(EntityRef Employer, string Role, decimal HourlyWage);
 }

@@ -34,7 +34,7 @@ public class Market : IMod
             context.Services.Get<IMarketService>(), context.Services.Get<IBusinessService>()));
         context.Systems.Register(new CitizenDemandSystem(
             context.Services.Get<IMarketService>(), context.Services.Get<IBusinessService>(),
-            context.Services.Get<IItemService>()));
+            context.Services.Get<IItemService>(), context.Services));
         ShoppingActions.Register(context);
     }
 }

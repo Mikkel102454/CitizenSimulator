@@ -228,7 +228,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
         EvaluationContext state = service.CreateEvaluationContext(citizen, gameTime);
         TimeSpan horizon = gameTime + _plannerOptions.MaxPlanDuration;
         ScheduledCommitment[] remaining = GetRemainingCommitments(mind, selection, horizon);
-        IEnumerable<GoalDefinition> goals = remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal);
+        IEnumerable<GoalDefinition> goals = remaining.Select(service.ResolveGoal).Prepend(selection.Goal);
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers = CreateProviders(citizen, goals, measurement);
         int checks = 0;
 
@@ -240,7 +240,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 return new CompletedPlanningSearch(new PlanResult { Status = PlanStatus.BUDGET_EXCEEDED });
 
             ScheduledCommitment commitment = remaining[index];
-            GoalDefinition goal = service.Goals[commitment.GoalId];
+            GoalDefinition goal = service.ResolveGoal(commitment);
             if (projected.GameTime > commitment.Window.End)
                 return new CompletedPlanningSearch(new PlanResult { Status = PlanStatus.NO_PATH });
 
@@ -311,7 +311,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
         ScheduledCommitment[] remaining = GetRemainingCommitments(mind, selection, gameTime + _plannerOptions.MaxPlanDuration);
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers = CreateProviders(citizen,
-            remaining.Select(entry => service.Goals[entry.GoalId]).Prepend(selection.Goal), measurement);
+            remaining.Select(service.ResolveGoal).Prepend(selection.Goal), measurement);
 
         return PlanValidator.Validate(selection.Goal, result, state, service.FactDescriptors,
             providers, service.TimePredictors, _plannerOptions, selection.Commitment?.Commitment.Window, remaining);
@@ -348,7 +348,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 job.Selection.Commitment.Status = CommitmentStatus.COMPLETED;
 
             if (mind.Execution != null && (job.Kind == PlanningJobKind.VALIDATION ||
-                (mind.CurrentGoal == job.Selection.Goal &&
+                (mind.CurrentGoal?.Id == job.Selection.Goal.Id &&
                  mind.CurrentCommitment?.Commitment.Id == job.Selection.Commitment?.Commitment.Id)) &&
                 executor.Cancel(job.Citizen, mind.Execution))
                 ClearPlan(mind);
@@ -384,7 +384,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 continue;
 
             if (gameTime >= entry.Commitment.Window.Start &&
-                ActionPlanner.IsGoalSatisfied(service.Goals[entry.Commitment.GoalId], context))
+                ActionPlanner.IsGoalSatisfied(service.ResolveGoal(entry.Commitment), context))
                 entry.Status = CommitmentStatus.COMPLETED;
         }
     }
@@ -397,8 +397,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
 
     private static bool SameOccurrence(ScheduledCommitment first, ScheduledCommitment second)
     {
-        return first.Id == second.Id && first.GoalId == second.GoalId &&
-               first.Window.Start == second.Window.Start && first.Window.End == second.Window.End;
+        return first.Matches(second);
     }
 
     private static void StartPlan(MindComponent mind, GoalSelection selection, PlanResult result, ulong tick)
@@ -437,7 +436,7 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                 var context = service.CreateEvaluationContext(citizen, gameTime);
 
                 if (gameTime >= entry.Commitment.Window.Start && gameTime <= entry.Commitment.Window.End &&
-                    ActionPlanner.IsGoalSatisfied(service.Goals[entry.Commitment.GoalId], context))
+                    ActionPlanner.IsGoalSatisfied(service.ResolveGoal(entry.Commitment), context))
                     entry.Status = CommitmentStatus.COMPLETED;
                 else if (gameTime > entry.Commitment.Window.End)
                     entry.Status = CommitmentStatus.MISSED;

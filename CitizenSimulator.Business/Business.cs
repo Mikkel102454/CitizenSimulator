@@ -5,6 +5,7 @@ using CitizenSimulator.Business.Systems;
 using CitizenSimulator.Business.Models.CitizenMind;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Items.Services.Abstractions;
+using CitizenSimulator.CitizenMind.Services.Abstractions;
 using CitizenSimulator.Inventory.Services.Abstractions;
 using CitizenSimulator.Vault.Services.Abstractions;
 
@@ -30,5 +31,7 @@ public class Business : IMod
             context.Services.Get<IBusinessService>()));
 
         EmploymentActions.Register(context);
+        context.Systems.Register(new EmploymentScheduleSystem(context.Services.Get<IBusinessService>(),
+            context.Services.Get<ICitizenMindService>(), context.Services.Get<ICalenderService>()));
     }
 }

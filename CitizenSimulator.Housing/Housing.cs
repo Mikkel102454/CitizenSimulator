@@ -4,6 +4,7 @@ using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Housing.Services;
 using CitizenSimulator.Housing.Services.Abstractions;
 using CitizenSimulator.Housing.Systems;
+using CitizenSimulator.Housing.Models.CitizenMind;
 using CitizenSimulator.Inventory.Services.Abstractions;
 using CitizenSimulator.Property.Services.Abstractions;
 using CitizenSimulator.Vault.Services.Abstractions;
@@ -21,5 +22,6 @@ public class Housing : IMod
         context.Services.Register<IHousingService>(housing);
         context.Services.Register<IHomeAccessService>(housing);
         context.Systems.Register(new HousingSystem(housing));
+        HousingActions.Register(context);
     }
 }

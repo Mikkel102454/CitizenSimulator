@@ -105,6 +105,22 @@ public partial class BusinessService
         return TryDismiss(employment.Business, worker);
     }
 
+    public IReadOnlyList<WorkShift> GetUpcomingShifts(CitizenComponent worker, int days = 8)
+    {
+        Employment? employment = GetEmployment(worker);
+        if (days is < 1 or > 31 || employment == null || !HasValidPremises(employment.Business)
+            || employment.Business.State is not (BusinessState.Open or BusinessState.Closed))
+            return [];
+
+        long today = Now.Ticks / TimeSpan.TicksPerDay;
+        TimeSpan from = TimeSpan.FromTicks(Math.Max(0, today - 1) * TimeSpan.TicksPerDay);
+        TimeSpan until = TimeSpan.FromTicks((today + days + 2) * TimeSpan.TicksPerDay);
+        return BusinessTime.GetWorkingWindows(employment.Contract.Shifts, employment.Business.Type.OpeningHours,
+                from, until, calender)
+            .Where(window => window.End > Now && window.Start <= Now + TimeSpan.FromDays(days))
+            .Select(window => new WorkShift(employment, window.Start, window.End)).ToArray();
+    }
+
     public bool TryArriveAtWorkplace(BusinessComponent business, CitizenComponent worker)
     {
         Employment? employment = GetEmployment(worker);
