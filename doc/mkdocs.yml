@@ -40,6 +40,15 @@
                 },
                 {
                     "Troubleshooting":  "troubleshooting.md"
+                },
+                {
+                    "CitizenMind": [
+                        { "Overview": "citizen-mind/index.md" },
+                        { "Processing": "citizen-mind/processing.md" },
+                        { "Mod API": "citizen-mind/api.md" },
+                        { "Goals and actions in YAML": "citizen-mind/yaml.md" },
+                        { "Schedules": "citizen-mind/schedules.md" }
+                    ]
                 }
             ],
     "extra":  {
