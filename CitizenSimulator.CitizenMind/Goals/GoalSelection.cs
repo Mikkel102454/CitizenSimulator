@@ -5,4 +5,5 @@ namespace CitizenSimulator.CitizenMind.Services;
 
 public sealed record GoalSelection(
     GoalDefinition Goal,
-    ScheduledCommitmentState? Commitment = null);
+    ScheduledCommitmentState? Commitment = null,
+    bool IsEmergency = false);

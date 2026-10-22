@@ -5,6 +5,7 @@ namespace CitizenSimulator.CitizenMind.Executor;
 public sealed class PlanExecutionState
 {
     public required ActionPlan Plan { get; init; }
+    public IReadOnlyList<PlanReservation> Reservations { get; init; } = [];
     
     public int StepIndex { get; set; } = 0;
     
@@ -15,4 +16,4 @@ public sealed class PlanExecutionState
     public Dictionary<string, object?> Before { get; set; } = [];
     
     public PlanExecutionStatus Status { get; set; } = PlanExecutionStatus.RUNNING;
-}   
+}

@@ -75,228 +75,28 @@ public class ActionPlanner
         return true;
     }
 
+    public static PlanSearch CreateSearch(GoalDefinition goal, EvaluationContext state,
+        IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
+        IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options,
+        IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null,
+        PlanConstraints? constraints = null)
+        => new(goal, state, actions, descriptors, providers, options, timePredictors, constraints);
+
+    // Synchronous adapter for callers outside the tick scheduler. Both APIs use
+    // the same search implementation.
     public static PlanResult FindPlan(GoalDefinition goal, EvaluationContext state,
         IReadOnlyDictionary<string, ActionDefinition> actions, IReadOnlyDictionary<string, FactDescriptor> descriptors,
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers, PlannerOptions options,
         IReadOnlyDictionary<string, IElapsedTimePredictor>? timePredictors = null,
         PlanConstraints? constraints = null)
     {
-        if (options.MaxDepth < 1)
-            throw new ArgumentOutOfRangeException(nameof(options.MaxDepth));
-
-        if (options.MaxExpansions < 1)
-            throw new ArgumentOutOfRangeException(nameof(options.MaxExpansions));
-        
-        
-        if (options.MaxCandidatesPerAction < 1)
-            throw new ArgumentOutOfRangeException(nameof(options.MaxCandidatesPerAction));
-
-        if (options.MaxPlanDuration <= TimeSpan.Zero)
-            throw new ArgumentOutOfRangeException(nameof(options.MaxPlanDuration));
-
-        if (options.MaxScheduleChecks < 1)
-            throw new ArgumentOutOfRangeException(nameof(options.MaxScheduleChecks));
-
-        var latestAllowedTime = state.GameTime + options.MaxPlanDuration;
-        bool continuationBudgetExceeded = false;
-
-        bool IsAcceptedGoal(EvaluationContext candidateState)
-        {
-            if (!IsGoalSatisfied(goal, candidateState))
-                return false;
-
-            if (constraints?.GoalWindow is { } window &&
-                (candidateState.GameTime < window.Start || candidateState.GameTime > window.End))
-                return false;
-
-            var status = constraints?.CheckContinuation?.Invoke(candidateState) ?? PlanStatus.FOUND;
-            if (status == PlanStatus.BUDGET_EXCEEDED)
-                continuationBudgetExceeded = true;
-
-            return status is PlanStatus.FOUND or PlanStatus.ALREADY_SATISFIED;
-        }
-        
-        if (IsAcceptedGoal(state))
-            return new PlanResult()
-            {
-                Status = PlanStatus.ALREADY_SATISFIED,
-                PredictedState = state
-            };
-
-        if (constraints?.GoalWindow is { } expiredWindow && state.GameTime > expiredWindow.End)
-            return new PlanResult { Status = PlanStatus.NO_PATH };
-        
-        var allowedActions = ActionDependencyResolver.Resolve(goal, actions);
-        
-        var start = new SearchNode
-        {
-            State = state,
-            TotalCost = 0
-        };
-        
-        var known = new List<SearchNode> { start };
-
-        // we use this to always check the lowest cost path first
-        var frontier = new PriorityQueue<SearchNode, (double Cost, long Order)>();
-        
-        long order = 0;
-        
-        frontier.Enqueue(start, (start.TotalCost, order++));
-        
-        int expansions = 0;
-        bool depthLimitReached = false;
-        bool timeLimitReached = false;
-        
-        void ExploreCandidate(SearchNode parent, ActionCandidate candidate)
-        {
-            if (!TryEvaluateAction(candidate, parent.State, out var duration, out var actionCost))
-                return;
-
-            var actionDuration = TimeSpan.FromMinutes(duration);
-
-            if (actionDuration > latestAllowedTime - parent.State.GameTime)
-            {
-                timeLimitReached = true;
-                return;
-            }
-
-            if (constraints?.GoalWindow is { } window &&
-                actionDuration > window.End - parent.State.GameTime)
-                return;
-
-            double totalCost = parent.TotalCost + actionCost;
-
-            if (!double.IsFinite(totalCost))
-                throw new InvalidOperationException("Total plan cost must be finite.");
-
-            var predicted = ActionPredictor.Predict(
-                candidate, parent.State, duration, descriptors, timePredictors);
-
-            if (HaveSameState(parent.State, predicted))
-                return;
-
-            var child = new SearchNode
-            {
-                State = predicted,
-                Parent = parent,
-                Candidate = candidate,
-                DurationMinutes = duration,
-                TotalCost = totalCost,
-                Depth = parent.Depth + 1
-            };
-
-            if (!TryRememberNode(child, known))
-                return;
-
-            frontier.Enqueue(child, (child.TotalCost, order++));
-        }
-        
-        while (frontier.TryDequeue(out var current, out _))
-        {
-            if (!known.Contains(current))
-                continue;
-            
-            // The starting state was already checked before the search began.
-            if (current != start && IsAcceptedGoal(current.State))
-            {
-                return new PlanResult
-                {
-                    Status = PlanStatus.FOUND,
-                    Plan = BuildPlan(current),
-                    PredictedState = current.State
-                };
-            }
-            
-            if (current.Depth >= options.MaxDepth)
-            {
-                depthLimitReached = true;
-                continue;
-            }
-            
-            
-            if (expansions >= options.MaxExpansions)
-            {
-                return new PlanResult
-                {
-                    Status = PlanStatus.BUDGET_EXCEEDED
-                };
-            }
-
-            expansions++;
-
-            var waitTargets = new SortedSet<TimeSpan>();
-
-            if (constraints?.GoalWindow is { } goalWindow && goalWindow.Start > current.State.GameTime)
-            {
-                if (goalWindow.Start <= latestAllowedTime)
-                    waitTargets.Add(goalWindow.Start);
-                else
-                    timeLimitReached = true;
-            }
-            
-            foreach (var action in allowedActions)
-            {
-                var candidates = GetCandidates(action, current.State, providers);
-                
-                if (candidates.Count > options.MaxCandidatesPerAction)
-                {
-                    return new PlanResult
-                    {
-                        Status = PlanStatus.BUDGET_EXCEEDED
-                    };
-                }
-                
-                var providerDescriptor = action.CandidateProvider == null ? null : providers[action.CandidateProvider].Descriptor;
-
-                ValidateCandidates(action, candidates, providerDescriptor);
-
-                foreach (var sourceCandidate in candidates.OrderBy(candidate => candidate.Id))
-                {
-                    var candidate = SnapshotCandidate(sourceCandidate);
-                    
-                    foreach (var opening in candidate.GetUpcomingOpeningTimes(current.State.GameTime))
-                    {
-                        if (constraints?.GoalWindow is { } window && opening > window.End)
-                            continue;
-
-                        if (opening > latestAllowedTime)
-                        {
-                            timeLimitReached = true;
-                            continue;
-                        }
-
-                        waitTargets.Add(opening);
-                    }
-                    
-                    ExploreCandidate(current, candidate);
-                }
-            }
-            
-            if (waitTargets.Count > options.MaxCandidatesPerAction)
-            {
-                return new PlanResult
-                {
-                    Status = PlanStatus.BUDGET_EXCEEDED
-                };
-            }
-            
-            foreach (var target in waitTargets)
-            {
-                ExploreCandidate(
-                    current,
-                    WaitCandidateFactory.Create(target));
-            }
-        }
-        
-        return new PlanResult
-        {
-            Status = depthLimitReached || timeLimitReached || continuationBudgetExceeded
-                ? PlanStatus.BUDGET_EXCEEDED
-                : PlanStatus.NO_PATH
-        };
+        var search = CreateSearch(goal, state, actions, descriptors, providers, options, timePredictors, constraints);
+        while (search.Result == null)
+            search.Advance(new PlanningBudget(int.MaxValue));
+        return search.Result;
     }
 
-    private static bool IsGoalSatisfied(GoalDefinition goal, EvaluationContext state)
+    internal static bool IsGoalSatisfied(GoalDefinition goal, EvaluationContext state)
     {
         foreach (var desired in goal.Desired)
         {
@@ -306,7 +106,7 @@ public class ActionPlanner
         return true;
     }
     
-    private static ActionPlan BuildPlan(SearchNode goalNode)
+    internal static ActionPlan BuildPlan(SearchNode goalNode)
     {
         var steps = new List<PlanStep>();
         var current = goalNode;
@@ -331,7 +131,7 @@ public class ActionPlanner
         };
     }
     
-    private static IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition action, EvaluationContext state, 
+    internal static IReadOnlyList<ActionCandidate> GetCandidates(ActionDefinition action, EvaluationContext state,
         IReadOnlyDictionary<string, CandidateProviderSnapshot> providers)
     {
         if (action.CandidateProvider == null)
@@ -355,7 +155,7 @@ public class ActionPlanner
         return candidates;
     }
     
-    private static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates, CandidateProviderDescriptor? descriptor)
+    internal static void ValidateCandidates(ActionDefinition action, IReadOnlyList<ActionCandidate> candidates, CandidateProviderDescriptor? descriptor)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
 
@@ -414,7 +214,7 @@ public class ActionPlanner
         }
     }
     
-    private static bool HaveSameState(EvaluationContext first, EvaluationContext second)
+    internal static bool HaveSameState(EvaluationContext first, EvaluationContext second)
     {
         return first.GameTime == second.GameTime && HaveSameFacts(first.Facts, second.Facts);
     }
@@ -434,7 +234,7 @@ public class ActionPlanner
         return true;
     }
     
-    private static bool TryRememberNode(SearchNode candidate, List<SearchNode> known)
+    internal static bool TryRememberNode(SearchNode candidate, List<SearchNode> known)
     {
         foreach (var existing in known)
         {
@@ -454,7 +254,7 @@ public class ActionPlanner
         return true;
     }
     
-    private static ActionCandidate SnapshotCandidate(ActionCandidate source)
+    internal static ActionCandidate SnapshotCandidate(ActionCandidate source)
     {
         var bindings = new Dictionary<string, object?>(source.Bindings);
 

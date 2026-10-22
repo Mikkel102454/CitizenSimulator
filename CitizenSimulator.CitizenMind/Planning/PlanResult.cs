@@ -8,4 +8,5 @@ public sealed class PlanResult
     public ActionPlan? Plan { get; init; }
 
     public EvaluationContext? PredictedState { get; init; }
+    public IReadOnlyList<PlanReservation> Reservations { get; init; } = [];
 }

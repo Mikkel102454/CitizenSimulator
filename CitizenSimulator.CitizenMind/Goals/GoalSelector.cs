@@ -61,7 +61,7 @@ public class GoalSelector(CitizenMindService citizenMindService)
             // for now alwyas take gihest prio
             foreach (var goal in emergencyGoals.OrderByDescending(x => x.Value))
             {
-                return new GoalSelection(goal.Key);
+                return new GoalSelection(goal.Key, IsEmergency: true);
             }
         }
         

@@ -23,4 +23,5 @@ public sealed class MindComponent : Component<MindComponent>
     internal List<DailyScheduleRule> DailyScheduleRules { get; set; } = [];
     internal long ScheduleRevision { get; set; }
     internal long PlanScheduleRevision { get; set; }
+    internal ulong? ValidatedAtTick { get; set; }
 }
