@@ -1,4 +1,5 @@
 using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.Abstractions.Services;
 using CitizenSimulator.Abstractions.Modding;
 using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Citizen.Services.Abstraction;
@@ -47,12 +48,22 @@ public class Needs : IMod
             "needs.thirstGrowthPerMinute",
             _ => NeedsDynamics.ThirstChangePerDay / 1440.0);
         
-        citizenMindService.RegisterFact("home.can_drink", _ => true);
+        bool CanDrink(EntityRef citizen) => context.Services.TryGet<IHomeAccessService>(out var housing)
+            && housing!.CanDrink(citizen);
+        bool CanSleep(EntityRef citizen) => context.Services.TryGet<IHomeAccessService>(out var housing)
+            && housing!.CanSleep(citizen);
+
+        citizenMindService.RegisterFact("home.can_drink", citizen => CanDrink(citizen));
+        citizenMindService.RegisterFact("home.can_sleep", citizen => CanSleep(citizen));
+        citizenMindService.RegisterFact("home.can_cook", citizen =>
+            context.Services.TryGet<IHomeAccessService>(out var housing) && housing!.CanCook(citizen));
+        citizenMindService.RegisterFact("home.can_store", citizen =>
+            context.Services.TryGet<IHomeAccessService>(out var housing) && housing!.CanStore(citizen));
 
         citizenMindService.RegisterFact("needs.energyChangePerMinute", _ => NeedsDynamics.EnergyChangePerDay / 1440.0);
-        citizenMindService.RegisterHandler("needs.sleep", new RestHandler(context.Store, context.Services.Get<INeedsService>()));
+        citizenMindService.RegisterHandler("needs.sleep", new RestHandler(context.Store, context.Services.Get<INeedsService>(), CanSleep));
         citizenMindService.RegisterHandler("needs.rest", new RestHandler(context.Store, context.Services.Get<INeedsService>()));
         
-        citizenMindService.RegisterHandler("needs.drink_accessible_safe_water", new DrinkWaterHandler(context.Store, context.Services.Get<INeedsService>()));
+        citizenMindService.RegisterHandler("needs.drink_accessible_safe_water", new DrinkWaterHandler(context.Store, context.Services.Get<INeedsService>(), CanDrink));
     }
 }

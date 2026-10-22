@@ -18,7 +18,9 @@ public class PropertyService(IEntityStore store, IEventBus events) : IPropertySe
         CitizenComponent? owner,
         out PropertyComponent? outProperty)
     {
-        if (areaM2 <= 0 || store.HasComponent<PropertyComponent>(entityRef))
+        if (areaM2 <= 0 || capacity < 0 || !Enum.IsDefined(type)
+            || !double.IsFinite(baseValue) || baseValue < 0
+            || (owner != null && !IsLiving(owner)) || store.HasComponent<PropertyComponent>(entityRef))
         {
             outProperty = null;
             return false;
@@ -36,6 +38,9 @@ public class PropertyService(IEntityStore store, IEventBus events) : IPropertySe
 
     public bool TransferOwnership(PropertyComponent property, CitizenComponent? newOwner)
     {
+        if (!IsRegistered(property) || (newOwner != null && !IsLiving(newOwner)))
+            return false;
+
         property.Owner = newOwner;
         events.Publish(new OnPropertyOwnershipChanged(property));
         return true;
@@ -43,8 +48,28 @@ public class PropertyService(IEntityStore store, IEventBus events) : IPropertySe
 
     public bool DestroyProperty(PropertyComponent property)
     {
+        if (!IsRegistered(property) || property.Destroyed)
+            return false;
+
         property.Destroyed = true;
         events.Publish(new OnPropertyDestroyed(property));
         return true;
     }
+
+    public bool RepairProperty(PropertyComponent property, double conditionPoints)
+    {
+        if (!IsRegistered(property) || property.Destroyed || !double.IsFinite(property.Condition)
+            || !double.IsFinite(conditionPoints) || conditionPoints <= 0
+            || conditionPoints > 100 || property.Condition + conditionPoints > 100)
+            return false;
+
+        property.Condition += conditionPoints;
+        return true;
+    }
+
+    private bool IsRegistered(PropertyComponent property) => store.IsAlive(property.Parent)
+        && ReferenceEquals(store.GetComponent<PropertyComponent>(property.Parent), property);
+
+    private bool IsLiving(CitizenComponent citizen) => citizen.Alive && store.IsAlive(citizen.Parent)
+        && ReferenceEquals(store.GetComponent<CitizenComponent>(citizen.Parent), citizen);
 }

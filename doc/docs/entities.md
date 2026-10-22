@@ -95,3 +95,40 @@ Do not call `Store.GetComponent<CounterComponent>(entity)` in this sequence. The
 `ComponentTypes.Get<T>()` forwards to that registry and throws if initialization has not occurred or the type is absent. `Component<T>.GetComponentType()` is the convenient inherited form.
 
 `ComponentType<T>(int Id)` implements `IQuery`. Its `Matches` method checks the presence of `typeof(T)` in a component dictionary. The numeric ID is registry metadata rather than a persistent identifier to save or transmit.
+## Housing and property transactions
+
+The Housing mod registers `IHousingService` and `IHomeAccessService`. Its system runs at priority -8, before business and citizen decisions. A `Residence` links a living citizen to one `HouseComponent`; the house exposes a read-only occupant roster. Use the service to change occupancy so both directions stay consistent.
+
+### Creating and occupying a home
+
+1. Create and commit a residential or mixed-use property through `IPropertyService`. Its `Capacity` limits occupants, and its owner must be a living citizen.
+2. Call `IHousingService.CreateHousing` with a command buffer and commit it. Choose occupant capacity, storage units, beds, safe water, and kitchen access. Duplicate creation and capacity beyond the property's limit are rejected. Storage is housing-specific and does not add a storage field to `PropertyComponent`.
+3. Owners can call `TryMoveIn` directly. To offer spare places, call `ListRental(owner, house, dailyRent, arrearsGrace)`. Rental prices are per resident per game day; grace must be at least one day. Listing or relisting changes future offers, not existing leases.
+4. `FindHomes` returns eligible homes, preferring the citizen's own property, then cheaper rentals. `TryMoveIn` binds the rental listing's ID and rechecks ownership, capacity, funds, and outstanding rent debt. A failed destination check preserves the current home.
+5. `GetResidence` returns the current home and lease. `TryMoveOut` closes the lease and removes the occupant. Money owed and belongings remain recorded.
+
+Each tick automatically allocates homeless citizens to eligible homes. Displaced residents are considered first. Renting requires a registered citizen bank account, cash covering one day of rent, and no outstanding rent debt to a living landlord. Estate claims remain recorded without blocking relocation. Existing tenants are not displaced to make room for an owner. If nothing is available or affordable, the citizen remains homeless and allocation retries next tick. Scenario mods must create actual properties and homes; this mod does not generate buildings or money.
+
+### Rent, sales, and repairs
+
+Rent accrues in game time, prorated from the lease's start. Cumulative calculation avoids drift from splitting a day into small ticks. Available tenant funds are transferred to the landlord through Vault; partial payments leave arrears. A continuous unpaid period beyond the agreed grace ends occupancy. `GetLeases` includes closed contracts and their debts; `TryCollectRent` can settle old arrears. Closing a lease stops future rent, without forgiving debt.
+
+`ListSale` exposes a property with a seller, listing ID, and price. `TryBuyProperty(buyer, listingId, expectedPrice)` rechecks the offer, current owner, registered accounts, funds, and receiver overflow. Payment precedes ownership transfer; a rejected ownership transfer reverses payment. Listings execute once. A successful sale removes the old owner's rental offer, retains tenants at their agreed rent, closes the old creditor's lease ledger, and starts future rent for the buyer. Pre-sale debt stays payable to the original landlord. An occupying seller moves out unless they already have a tenant contract; selling occupied premises does not grant a buyer another resident's goods.
+
+`TryRepair(owner, property, contractor, conditionPoints, expectedCost)` pays a living contractor and restores condition together. The current policy costs 10 currency units per condition point, available as `HousingService.RepairCostPerPoint`. Invalid quotes, insufficient funds, overflow, over-repair, and destroyed properties are rejected. Periodic property deterioration still applies. Business operating-cost maintenance charges do not automatically call this repair service.
+
+### Access, storage, and cleanup
+
+A property is habitable at condition 20 or above and must not be destroyed. `CanSleep`, `CanDrink`, `CanCook`, and `CanStore` require a living resident and owner and a usable home. Sleeping additionally requires beds; drinking requires safe water; cooking requires a kitchen and safe water. These checks represent access, not a utility supply network or cooking recipes. Future cooking handlers can use `IHomeAccessService.CanCook` to enforce kitchen access.
+
+Needs registers `home.can_sleep`, `home.can_drink`, `home.can_cook`, and `home.can_store` through that interface. Sleep and home-water handlers recheck access at start and every tick. Resting outdoors remains possible. Existing inventory consumption and needs modification are unchanged.
+
+`TryStore` transfers actual carried inventory into resident-owned storage at the current home. All residents' stored goods share the home's storage limit. `TryRetrieve` returns only that citizen's goods and enforces carried inventory capacity. Item quantities and book value are preserved through Inventory. After move-out or eviction, belongings stay at the original location and can still be recovered; they do not move automatically to the new home. Retrieval from a destroyed home currently represents abstract salvage, without a travel or salvage-time simulation.
+
+Unusable or removed premises end occupancy and trigger relocation. Dead occupants are removed and their leases close. A dead owner's listings disappear, ownership becomes unassigned, and residents seek other homes. Old rent debts and stored belongings remain attached to their original parties for estate handling; inheritance and automatic distribution of estates are not implemented.
+
+Run the integration checks with:
+
+```powershell
+dotnet run --project tests/CitizenSimulator.HousingChecks --configuration Release --disable-build-servers -p:UseSharedCompilation=false
+```

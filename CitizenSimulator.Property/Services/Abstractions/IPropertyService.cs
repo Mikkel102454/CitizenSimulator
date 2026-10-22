@@ -16,4 +16,5 @@ public interface IPropertyService
         out PropertyComponent? outProperty);
     bool TransferOwnership(PropertyComponent property, CitizenComponent? newOwner);
     bool DestroyProperty(PropertyComponent property);
+    bool RepairProperty(PropertyComponent property, double conditionPoints);
 }

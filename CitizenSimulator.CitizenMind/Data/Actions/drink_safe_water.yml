@@ -12,9 +12,7 @@ parameters:
     type: DOUBLE
     value: "0.16"
 
-# This starter action assumes accessible water and includes no travel.
-# home.can_drink is a proposed fact requiring a registered provider.
-# A future source binding can supply a particular water source and travel time.
+# Housing supplies home.can_drink; access is rechecked throughout execution.
 preconditions:
   - {fact: home.can_drink}
   - op: gt

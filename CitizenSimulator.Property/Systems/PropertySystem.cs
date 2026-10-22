@@ -1,4 +1,4 @@
-﻿using CitizenSimulator.Abstractions.ECS;
+using CitizenSimulator.Abstractions.ECS;
 using CitizenSimulator.Abstractions.ECS.Queries;
 using CitizenSimulator.Abstractions.Events;
 using CitizenSimulator.Abstractions.Timing;
@@ -22,11 +22,19 @@ public class PropertySystem(IEventBus events, IPropertyService propertyService) 
     {
         foreach (var entity in Store.Query(_propertyComponent))
         {
-            PropertyComponent property = Store.GetComponent<PropertyComponent>(entity);
-            property.Condition -= (property.Owner == null ? 0.08 : 0.005);
+            PropertyComponent property = Store.GetComponent<PropertyComponent>(entity)!;
+            if (property.Destroyed)
+                continue;
+
+            property.Condition = Math.Max(0, property.Condition - (property.Owner == null ? 0.08 : 0.005));
 
             if (property.Condition <= 0)
                 propertyService.DestroyProperty(property);
         }
+    }
+
+    protected override void OnStop(ICommandBuffer commands)
+    {
+        _onDayStart?.Dispose();
     }
 }

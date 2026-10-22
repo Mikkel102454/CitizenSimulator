@@ -8,7 +8,8 @@ using CitizenSimulator.Needs.Services.Abstractions;
 namespace CitizenSimulator.Needs.Models.CitizenMind;
 
 /// <summary>Sleeping and resting share gradual, interruptible recovery.</summary>
-public sealed class RestHandler(IEntityStore store, INeedsService needs) : IMindActionHandler
+public sealed class RestHandler(IEntityStore store, INeedsService needs,
+    Func<EntityRef, bool>? canAccess = null) : IMindActionHandler
 {
     public ActionResult Start(ActionContext context)
     {
@@ -33,6 +34,7 @@ public sealed class RestHandler(IEntityStore store, INeedsService needs) : IMind
     public void Cancel(ActionContext context) { } // Recovery already received is retained.
 
     private NeedsComponent? GetNeeds(ActionContext context) =>
-        store.IsAlive(context.Citizen) && store.GetComponent<CitizenComponent>(context.Citizen) is { Alive: true }
+        store.IsAlive(context.Citizen) && (canAccess == null || canAccess(context.Citizen))
+            && store.GetComponent<CitizenComponent>(context.Citizen) is { Alive: true }
             ? store.GetComponent<NeedsComponent>(context.Citizen) : null;
 }
