@@ -3,8 +3,6 @@ handler: needs.drink_accessible_safe_water
 
 # Configuration passed to the handler and shared with the planner.
 # All times below are simulation minutes; thirst is normalized to [0, 1].
-# The current C# handler still hardcodes target=0.10 and rate=0.16.
-# It must consume these parameters before this draft can drive execution.
 parameters:
   targetThirst:
     type: DOUBLE
@@ -23,10 +21,14 @@ preconditions:
     args:
       - {fact: needs.thirst}
       - {parameter: targetThirst}
+  - op: gt
+    args:
+      - {parameter: reductionPerMinute}
+      - {fact: needs.thirstGrowthPerMinute}
 
 # Estimated active drinking time, evaluated in the current SEARCH STATE.
-# max(0, (currentThirst - targetThirst) / reductionPerMinute)
-# max and parameter references are proposed expression extensions.
+# max(0, (currentThirst - targetThirst) / (reductionPerMinute - passiveGrowthPerMinute))
+# The Needs mod supplies passive growth from its shared dynamics rules.
 duration:
   unit: simulationMinutes
   estimate:
@@ -39,7 +41,10 @@ duration:
             args:
               - {fact: needs.thirst}
               - {parameter: targetThirst}
-          - {parameter: reductionPerMinute}
+          - op: subtract
+            args:
+              - {parameter: reductionPerMinute}
+              - {fact: needs.thirstGrowthPerMinute}
 
 # Predicted completion effects change only the planner's copied state.
 # Actual effects are applied gradually by the handler through INeedsService.

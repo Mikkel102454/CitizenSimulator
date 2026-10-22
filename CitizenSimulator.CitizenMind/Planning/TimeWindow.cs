@@ -19,8 +19,6 @@ public sealed class TimeWindow
         if (duration < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(duration));
 
-        return start >= Start &&
-               start < End &&
-               duration <= End - start;
+        return start >= Start && start < End && duration <= End - start;
     }
 }

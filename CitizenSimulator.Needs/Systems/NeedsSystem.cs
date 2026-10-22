@@ -9,6 +9,7 @@ using CitizenSimulator.Citizen.Events;
 using CitizenSimulator.Citizen.Services.Abstraction;
 using CitizenSimulator.CitizenMind.Components;
 using CitizenSimulator.Needs.Components;
+using CitizenSimulator.Needs.Models;
 
 namespace CitizenSimulator.Needs.Systems;
 
@@ -24,12 +25,14 @@ public class NeedsSystem(IEventBus events, ICalenderService calenderService, ICi
 
     protected override void OnUpdate(SimulationTime time, ICommandBuffer commands)
     {
+        var elapsed = calenderService.GetGameTime(1);
+
         foreach (var entity in Store.Query(_needsComponent))
         {
             NeedsComponent needs = Store.GetComponent<NeedsComponent>(entity);
-            needs.Energy -= .3 / calenderService.GetTicksPerDay();
-            needs.Hunger += .1 / calenderService.GetTicksPerDay();
-            needs.Thirst += .34 / calenderService.GetTicksPerDay();
+            needs.Energy = NeedsDynamics.Advance(needs.Energy, NeedsDynamics.EnergyChangePerDay, elapsed);
+            needs.Hunger = NeedsDynamics.Advance(needs.Hunger, NeedsDynamics.HungerChangePerDay, elapsed);
+            needs.Thirst = NeedsDynamics.Advance(needs.Thirst, NeedsDynamics.ThirstChangePerDay, elapsed);
 
             if (needs.Hunger >= 1 || needs.Thirst >= 1 || needs.Energy <= 0)
             {

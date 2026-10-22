@@ -4,6 +4,7 @@ using CitizenSimulator.Calender.Services.Abstractions;
 using CitizenSimulator.Citizen.Services.Abstraction;
 using CitizenSimulator.CitizenMind.Services.Abstractions;
 using CitizenSimulator.Needs.Components;
+using CitizenSimulator.Needs.Models;
 using CitizenSimulator.Needs.Models.CitizenMind;
 using CitizenSimulator.Needs.Services;
 using CitizenSimulator.Needs.Services.Abstractions;
@@ -33,6 +34,18 @@ public class Needs : IMod
             var component = context.Store.GetComponent<NeedsComponent>(entity);
             return component?.Hunger;
         }, canPredict: true);
+
+        citizenMindService.RegisterFact("needs.energy", (entity) =>
+        {
+            var component = context.Store.GetComponent<NeedsComponent>(entity);
+            return component?.Energy;
+        }, canPredict: true);
+
+        citizenMindService.RegisterTimePredictor("needs.passive_changes", new NeedsTimePredictor());
+
+        citizenMindService.RegisterFact(
+            "needs.thirstGrowthPerMinute",
+            _ => NeedsDynamics.ThirstChangePerDay / 1440.0);
         
         citizenMindService.RegisterFact("home.can_drink", _ => true);
         
