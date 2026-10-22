@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "drink.coffee",
   "name": "Coffee",
   "description": "A freshly brewed cup of coffee.",
@@ -8,14 +8,14 @@
       "type": "needs.modify",
       "values": {
         "need": "thirst",
-        "amount": -15
+        "amount": -0.15
       }
     },
     {
       "type": "needs.modify",
       "values": {
         "need": "energy",
-        "amount": -20
+        "amount": 0.2
       }
     }
   ]

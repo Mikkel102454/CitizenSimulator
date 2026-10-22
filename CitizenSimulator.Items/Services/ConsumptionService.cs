@@ -12,37 +12,34 @@ public class ConsumptionService(IEntityStore store, IEventBus events, INeedsServ
 {
     public bool ConsumeItem(Item item, CitizenComponent citizen)
     {
-        if (!item.Consumable)
+        if (!store.IsAlive(citizen.Parent) || !citizen.Alive ||
+            !ConsumptionEffects.TryRead(item, out _))
             return false;
-        
+        var needs = store.GetComponent<NeedsComponent>(citizen.Parent);
+        if (needs == null || !double.IsFinite(needs.Hunger) || !double.IsFinite(needs.Thirst) ||
+            !double.IsFinite(needs.Energy)) return false;
+        // Validate all effects before mutating. Inventory owns the actual portion.
         foreach (var effect in item.Effects)
         {
-            switch (effect.Type)
-            {
-                case "needs.modify":
-                    ModifyNeeds(effect, store.GetComponent<NeedsComponent>(citizen.Parent));
-                    break;
-            }
+            if (effect.Type == "needs.modify")
+                ModifyNeeds(effect, needs);
         }
-
         return true;
     }
 
-    private void ModifyNeeds(Effect effect, NeedsComponent? needs)
+    private void ModifyNeeds(Effect effect, NeedsComponent needs)
     {
-        if(needs == null)
-            return;
-        
+        double amount = effect.Values["amount"].GetDouble();
         switch (effect.Values["need"].GetString())
         {
             case "hunger":
-                needsService.AddHunger(needs, effect.Values["amount"].GetSingle());
+                needsService.AddHunger(needs, amount);
                 break;
             case "thirst":
-                needsService.AddThirst(needs, effect.Values["amount"].GetSingle());
+                needsService.AddThirst(needs, amount);
                 break;
             case "energy":
-                needsService.AddThirst(needs, effect.Values["amount"].GetSingle());
+                needsService.AddEnergy(needs, amount);
                 break;
         }
     }

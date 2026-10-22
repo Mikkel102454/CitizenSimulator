@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "food.banana",
   "name": "Banana",
   "description": "A ripe banana.",
@@ -8,7 +8,7 @@
       "type": "needs.modify",
       "values": {
         "need": "hunger",
-        "amount": -15
+        "amount": -0.15
       }
     }
   ]

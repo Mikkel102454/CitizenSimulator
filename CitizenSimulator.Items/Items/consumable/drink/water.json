@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "drink.water",
   "name": "Water Bottle",
   "description": "A bottle of clean drinking water.",
@@ -8,7 +8,7 @@
       "type": "needs.modify",
       "values": {
         "need": "thirst",
-        "amount": -40
+        "amount": -0.4
       }
     }
   ]

@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "food.apple",
   "name": "Apple",
   "description": "A fresh, juicy apple.",
@@ -8,7 +8,7 @@
       "type": "needs.modify",
       "values": {
         "need": "hunger",
-        "amount": -12
+        "amount": -0.12
       }
     }
   ]

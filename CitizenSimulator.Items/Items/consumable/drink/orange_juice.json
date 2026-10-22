@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "drink.orange_juice",
   "name": "Orange Juice",
   "description": "A bottle of orange juice.",
@@ -8,7 +8,7 @@
       "type": "needs.modify",
       "values": {
         "need": "thirst",
-        "amount": -30
+        "amount": -0.3
       }
     }
   ]

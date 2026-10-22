@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "drink.milk",
   "name": "Milk",
   "description": "A carton of fresh milk.",
@@ -8,14 +8,14 @@
       "type": "needs.modify",
       "values": {
         "need": "thirst",
-        "amount": -30
+        "amount": -0.3
       }
     },
     {
       "type": "needs.modify",
       "values": {
         "need": "hunger",
-        "amount": -10
+        "amount": -0.1
       }
     }
   ]

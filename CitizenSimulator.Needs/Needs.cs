@@ -48,6 +48,10 @@ public class Needs : IMod
             _ => NeedsDynamics.ThirstChangePerDay / 1440.0);
         
         citizenMindService.RegisterFact("home.can_drink", _ => true);
+
+        citizenMindService.RegisterFact("needs.energyChangePerMinute", _ => NeedsDynamics.EnergyChangePerDay / 1440.0);
+        citizenMindService.RegisterHandler("needs.sleep", new RestHandler(context.Store, context.Services.Get<INeedsService>()));
+        citizenMindService.RegisterHandler("needs.rest", new RestHandler(context.Store, context.Services.Get<INeedsService>()));
         
         citizenMindService.RegisterHandler("needs.drink_accessible_safe_water", new DrinkWaterHandler(context.Store, context.Services.Get<INeedsService>()));
     }

@@ -29,6 +29,9 @@ public class NeedsSystem(IEventBus events, ICalenderService calenderService, ICi
 
         foreach (var entity in Store.Query(_needsComponent))
         {
+            var citizen = Store.GetComponent<CitizenComponent>(entity);
+            if (!citizen.Alive) continue;
+            
             NeedsComponent needs = Store.GetComponent<NeedsComponent>(entity);
             needs.Energy = NeedsDynamics.Advance(needs.Energy, NeedsDynamics.EnergyChangePerDay, elapsed);
             needs.Hunger = NeedsDynamics.Advance(needs.Hunger, NeedsDynamics.HungerChangePerDay, elapsed);
@@ -36,23 +39,18 @@ public class NeedsSystem(IEventBus events, ICalenderService calenderService, ICi
 
             if (needs.Hunger >= 1 || needs.Thirst >= 1 || needs.Energy <= 0)
             {
-                CitizenComponent citizen = Store.GetComponent<CitizenComponent>(entity);
                 citizenService.KillCitizen(citizen);
             }
         }
         
-        foreach (var entity in Store.Query(NeedsComponent.GetComponentType()))
-        {
-            NeedsComponent needs = Store.GetComponent<NeedsComponent>(entity);
-            MindComponent mind = Store.GetComponent<MindComponent>(entity);
-            Console.WriteLine(needs.Thirst);
-            if(mind.CurrentGoal != null)
-                Console.WriteLine(mind.CurrentGoal.Id);
-        }
     }
     
     private void OnCitizenCreated(OnCitizenCreated eventData, SimulationTime time, ICommandBuffer commands)
     {
-        commands.AddComponent(eventData.Citizen.Parent, new NeedsComponent());
+        if (Store.IsAlive(eventData.Citizen.Parent) && eventData.Citizen.Alive &&
+            !Store.HasComponent<NeedsComponent>(eventData.Citizen.Parent))
+            commands.AddComponent(eventData.Citizen.Parent, new NeedsComponent());
     }
+
+    protected override void OnStop(ICommandBuffer commands) => _citizenCreated?.Dispose();
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "food.soup",
   "name": "Soup",
   "description": "A warm bowl of vegetable soup.",
@@ -8,14 +8,14 @@
       "type": "needs.modify",
       "values": {
         "need": "hunger",
-        "amount": -25
+        "amount": -0.25
       }
     },
     {
       "type": "needs.modify",
       "values": {
         "need": "thirst",
-        "amount": -10
+        "amount": -0.1
       }
     }
   ]

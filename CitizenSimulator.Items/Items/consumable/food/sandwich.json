@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "food.sandwich",
   "name": "Sandwich",
   "description": "A filling sandwich with vegetables and meat.",
@@ -8,7 +8,7 @@
       "type": "needs.modify",
       "values": {
         "need": "hunger",
-        "amount": -45
+        "amount": -0.45
       }
     }
   ]

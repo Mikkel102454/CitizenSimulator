@@ -1,0 +1,23 @@
+id: citizen_brain.core.rest
+handler: needs.rest
+parameters:
+  targetEnergy: {type: DOUBLE, value: "0.60"}
+  recoveryPerMinute: {type: DOUBLE, value: "0.001"}
+preconditions:
+  - {op: lt, args: [{fact: needs.energy}, {parameter: targetEnergy}]}
+duration:
+  unit: simulationMinutes
+  estimate:
+    op: divide
+    args:
+      - {op: subtract, args: [{parameter: targetEnergy}, {fact: needs.energy}]}
+      - {op: add, args: [{parameter: recoveryPerMinute}, {fact: needs.energyChangePerMinute}]}
+prediction:
+  - {fact: needs.energy, op: set, value: {parameter: targetEnergy}}
+completion:
+  - {op: gte, args: [{fact: needs.energy}, {parameter: targetEnergy}]}
+cost:
+  expression: {calculated: durationMinutes}
+execution:
+  interruptible: true
+  timeoutMinutes: 900

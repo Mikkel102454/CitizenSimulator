@@ -1,0 +1,14 @@
+id: citizen_brain.core.restore_energy
+eligible: {op: lte, args: [{fact: needs.energy}, {literal: 0.40}]}
+emergency:
+  when: {op: lte, args: [{fact: needs.energy}, {literal: 0.10}]}
+  priority: 95
+desired:
+  - {op: gte, args: [{fact: needs.energy}, {literal: 0.60}]}
+utility:
+  bias: 1.0
+  considerations:
+    - input: {fact: needs.energy}
+      weight: 1
+      curve: [[0, 1], [0.10, 0.95], [0.40, 0.30], [0.60, 0], [1, 0]]
+goalActions: [citizen_brain.core.rest, citizen_brain.core.sleep]

@@ -67,6 +67,6 @@ public class NeedsService : INeedsService
         if (!double.IsFinite(energy))
             return false;
 
-        return SetEnergy(needsComponent, needsComponent.Energy - energy);
+        return SetEnergy(needsComponent, needsComponent.Energy + energy);
     }
 }
