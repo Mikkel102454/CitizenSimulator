@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Inventory"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Utilities", "CitizenSimulator.Utilities\CitizenSimulator.Utilities.csproj", "{F72DDECF-6A70-4CB9-942F-384AB47E46BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CitizenSimulator.Initializer", "CitizenSimulator.Initializer\CitizenSimulator.Initializer.csproj", "{69143F23-EE81-4B00-9450-9F6EFB1FE5C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -118,6 +120,10 @@ Global
 		{F72DDECF-6A70-4CB9-942F-384AB47E46BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F72DDECF-6A70-4CB9-942F-384AB47E46BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F72DDECF-6A70-4CB9-942F-384AB47E46BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69143F23-EE81-4B00-9450-9F6EFB1FE5C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69143F23-EE81-4B00-9450-9F6EFB1FE5C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69143F23-EE81-4B00-9450-9F6EFB1FE5C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69143F23-EE81-4B00-9450-9F6EFB1FE5C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -138,5 +144,6 @@ Global
 		{02D41AA4-1991-4797-873D-6DBCADF048F0} = {7C33812E-382C-4C49-82FD-51105216D822}
 		{C38B290C-173D-4014-9CA5-DEAB603B95CF} = {7C33812E-382C-4C49-82FD-51105216D822}
 		{F72DDECF-6A70-4CB9-942F-384AB47E46BC} = {7C33812E-382C-4C49-82FD-51105216D822}
+		{69143F23-EE81-4B00-9450-9F6EFB1FE5C8} = {7C33812E-382C-4C49-82FD-51105216D822}
 	EndGlobalSection
 EndGlobal

@@ -250,7 +250,9 @@ public class CitizenMindSystem(IEventBus events, GoalSelector goalSelector, Citi
                     new ActionPlan { PlanSteps = [] });
             }
 
-            TimeSpan available = horizon - projected.GameTime;
+            // The horizon selects which commitments to protect, not when their
+            // full actions must end. A shift can start at the horizon boundary.
+            TimeSpan available = commitment.Window.End - projected.GameTime;
             if (available <= TimeSpan.Zero)
                 return new CompletedPlanningSearch(new PlanResult { Status = PlanStatus.BUDGET_EXCEEDED });
             var options = new PlannerOptions

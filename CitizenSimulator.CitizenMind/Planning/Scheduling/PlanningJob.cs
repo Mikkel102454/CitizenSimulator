@@ -33,7 +33,9 @@ internal sealed class PlanningJob
     {
         return ScheduleRevision == other.ScheduleRevision &&
                Selection.IsEmergency == other.Selection.IsEmergency && Priority == other.Priority &&
-               ReferenceEquals(Selection.Goal, other.Selection.Goal) &&
+               // Occurrence targets produce a fresh GoalDefinition on each resolution.
+               // The schedule revision invalidates changed targets, windows and priorities.
+               Selection.Goal.Id == other.Selection.Goal.Id &&
                Selection.Commitment?.Commitment.Id == other.Selection.Commitment?.Commitment.Id &&
                ReferenceEquals(ExpectedExecution, other.ExpectedExecution) && ExpectedStepIndex == other.ExpectedStepIndex;
     }

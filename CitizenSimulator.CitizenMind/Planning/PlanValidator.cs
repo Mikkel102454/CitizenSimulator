@@ -53,7 +53,9 @@ internal static class PlanValidator
                 continue;
             }
 
-            if (!Replay(proof.Plan, projected, horizon, commitment.Window,
+            // Match forecasting: finish each protected commitment by its deadline,
+            // even when its window extends beyond the primary planning horizon.
+            if (!Replay(proof.Plan, projected, commitment.Window.End, commitment.Window,
                     descriptors, providers, timePredictors, options, out var refreshed, out projected) ||
                 !InWindow(commitment.Window, projected.GameTime) || !ActionPlanner.IsGoalSatisfied(proof.Goal, projected))
                 return null;

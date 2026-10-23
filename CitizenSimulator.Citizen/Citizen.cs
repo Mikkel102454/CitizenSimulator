@@ -14,8 +14,5 @@ public class Citizen : IMod
         CitizenService citizenService = new CitizenService(context.Store, context.Events);
         context.Services.Register<ICitizenService>(citizenService);
         context.Systems.Register(new CitizenSystem(context.Events));
-
-        EntityRef entityRef = context.Store.CreateEntity();
-        citizenService.CreateCitizen(entityRef, "Mikkel", 19, out _);
     }
 }

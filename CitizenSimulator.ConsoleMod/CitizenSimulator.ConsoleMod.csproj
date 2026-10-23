@@ -8,6 +8,13 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Business\CitizenSimulator.Business.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Citizen\CitizenSimulator.Citizen.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Housing\CitizenSimulator.Housing.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Needs\CitizenSimulator.Needs.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Vault\CitizenSimulator.Vault.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.CitizenMind\CitizenSimulator.CitizenMind.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Inventory\CitizenSimulator.Inventory.csproj" />
     </ItemGroup>
 
     <Target Name="CopyModToHost"

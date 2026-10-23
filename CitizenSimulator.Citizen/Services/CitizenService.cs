@@ -9,25 +9,27 @@ namespace CitizenSimulator.Citizen.Services;
 
 public sealed class CitizenService(IEntityStore store, IEventBus events) : ICitizenService
 {
-    public bool CreateCitizen(EntityRef entityRef, string name, int age, out CitizenComponent? outCitizen)
+    private uint nextId = 1;
+    public bool CreateCitizen(ICommandBuffer commands, EntityRef entityRef, string name, int age, out CitizenComponent? outCitizen)
     {
         if (store.HasComponent<CitizenComponent>(entityRef))
         {
             outCitizen = null;
             return false;
         }
-        
-        outCitizen = store.AddComponent(entityRef, new CitizenComponent
+
+        outCitizen = commands.AddComponent(entityRef, new CitizenComponent
         {
+            Id = nextId++,
             Name = name,
             Age = age,
             Alive = true
         });
-        store.AddComponent(entityRef, new MindComponent());
+        commands.AddComponent(entityRef, new MindComponent());
 
         events.Publish(new OnCitizenCreated(outCitizen));
-        
-        
+
+
         return true;
     }
 
@@ -35,14 +37,14 @@ public sealed class CitizenService(IEntityStore store, IEventBus events) : ICiti
     {
         if (!citizen.Alive)
             return false;
-        
+
         citizen.Alive = false;
-        
+
         var mind = store.GetComponent<MindComponent>(citizen.Parent);
 
         if (mind != null)
             mind.IsActive = false;
-        
+
         events.Publish(new OnCitizenDied(citizen));
 
         return true;

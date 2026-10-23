@@ -5,6 +5,6 @@ namespace CitizenSimulator.Citizen.Services.Abstraction;
 
 public interface ICitizenService
 {
-    bool CreateCitizen(EntityRef entityRef, string name, int age, out CitizenComponent? outCitizen);
+    bool CreateCitizen(ICommandBuffer commands, EntityRef entityRef, string name, int age, out CitizenComponent? outCitizen);
     bool KillCitizen(CitizenComponent citizen);
 }

@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CitizenSimulator.Abstractions\CitizenSimulator.Abstractions.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Business\CitizenSimulator.Business.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Citizen\CitizenSimulator.Citizen.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Housing\CitizenSimulator.Housing.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Inventory\CitizenSimulator.Inventory.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Items\CitizenSimulator.Items.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Property\CitizenSimulator.Property.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Vault\CitizenSimulator.Vault.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Needs\CitizenSimulator.Needs.csproj" />
+      <ProjectReference Include="..\CitizenSimulator.Utilities\CitizenSimulator.Utilities.csproj" />
+    </ItemGroup>
+
+    <Target Name="CopyModToHost"
+            AfterTargets="Build">
+
+        <PropertyGroup>
+            <ModsDirectory>$(MSBuildProjectDirectory)/../CitizenSimulator/bin/$(Configuration)/$(TargetFramework)/Mods/</ModsDirectory>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(ModsDirectory)/Core" />
+
+        <Copy
+                SourceFiles="$(TargetPath)"
+                DestinationFolder="$(ModsDirectory)/Core"
+                SkipUnchangedFiles="true" />
+
+    </Target>
+</Project>

@@ -61,7 +61,7 @@ class Program
             scheduler.Start(store);
 
             // we use a background thread to avoid blocking program on shutdown
-            // also using for disposing the console after we loose scope so we 
+            // also using for disposing the console after we loose scope so we
             // can restore the console
             using var nativeInput = WindowsConsoleInput.TryCreate(inputDispatcher);
             var input = new Thread(() => ReadLines(inputDispatcher))
@@ -69,14 +69,14 @@ class Program
                 IsBackground = true,
                 Name = "Simulation console input"
             };
-            
+
             if (nativeInput is null) input.Start();
 
             var previous = Stopwatch.GetTimestamp();
 
-            
+
             Console.Error.WriteLine("Simulation Started");
-            
+
             while (!cancellation.IsCancellationRequested)
             {
                 var now = Stopwatch.GetTimestamp();
